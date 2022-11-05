@@ -1,6 +1,6 @@
 package eval
 
-import "github.com/likeawizard/tofiks/internal/board"
+import "github.com/likeawizard/tofiks/pkg/board"
 
 // Piece-square-tables used for positional evaluation of piece placement
 // The tables are asymmetrical and are viewed from white's perspective.

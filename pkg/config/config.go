@@ -9,11 +9,10 @@ import (
 const CONFIG_PATH = "config.yml"
 
 type Config struct {
-	Init    Init    `yaml:"init"`
-	Engine  Engine  `yaml:"engine"`
-	Book    Book    `yaml:"book"`
-	Render  Render  `yaml:"render"`
-	Lichess Lichess `yaml:"lichess"`
+	Init   Init   `yaml:"init"`
+	Engine Engine `yaml:"engine"`
+	Book   Book   `yaml:"book"`
+	Render Render `yaml:"render"`
 }
 
 type Init struct {
@@ -37,20 +36,6 @@ type Book struct {
 
 type Render struct {
 	Mode string `yaml:"mode"`
-}
-
-type Lichess struct {
-	APIToken        string          `yaml:"apiToken"`
-	Ponder          bool            `yaml:"ponder"`
-	ChallengePolicy ChallengePolicy `yaml:"challengePolicy"`
-}
-
-type ChallengePolicy struct {
-	Accept      bool     `yaml:"accept"`
-	AcceptBot   bool     `yaml:"acceptBot"`
-	TimeControl []string `yaml:"tc"`
-	Variant     []string `yaml:"variant"`
-	Rated       bool     `yaml:"rated"`
 }
 
 func LoadConfig() (*Config, error) {

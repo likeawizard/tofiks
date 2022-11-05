@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/likeawizard/tofiks/internal/board"
-	"github.com/likeawizard/tofiks/internal/config"
+	"github.com/likeawizard/tofiks/pkg/board"
+	"github.com/likeawizard/tofiks/pkg/config"
 )
 
 func init() {

@@ -3,7 +3,7 @@ package eval
 import (
 	"fmt"
 
-	"github.com/likeawizard/tofiks/internal/board"
+	"github.com/likeawizard/tofiks/pkg/board"
 )
 
 var weights *Weights
