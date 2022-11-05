@@ -1,7 +1,7 @@
 package board
 
 import (
-	"github.com/likeawizard/tofiks/internal/config"
+	"github.com/likeawizard/tofiks/pkg/config"
 )
 
 var Pieces = [6]string{"P", "B", "N", "R", "Q", "K"}

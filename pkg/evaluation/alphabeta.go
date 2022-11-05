@@ -6,7 +6,7 @@ import (
 	"math"
 	"sync"
 
-	"github.com/likeawizard/tofiks/internal/board"
+	"github.com/likeawizard/tofiks/pkg/board"
 )
 
 func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, side int) int {

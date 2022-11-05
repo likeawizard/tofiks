@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/likeawizard/tofiks/internal/board"
+	"github.com/likeawizard/tofiks/pkg/board"
 	"gopkg.in/yaml.v3"
 )
 

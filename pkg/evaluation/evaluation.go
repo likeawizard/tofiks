@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/likeawizard/tofiks/internal/board"
-	"github.com/likeawizard/tofiks/internal/book"
-	"github.com/likeawizard/tofiks/internal/config"
+	"github.com/likeawizard/tofiks/pkg/board"
+	"github.com/likeawizard/tofiks/pkg/book"
+	"github.com/likeawizard/tofiks/pkg/config"
 )
 
 type PickBookMove func(*board.Board) board.Move

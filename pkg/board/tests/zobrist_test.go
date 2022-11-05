@@ -3,7 +3,7 @@ package board
 import (
 	"testing"
 
-	"github.com/likeawizard/tofiks/internal/board"
+	"github.com/likeawizard/tofiks/pkg/board"
 )
 
 func TestZobristTransposition(t *testing.T) {
