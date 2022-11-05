@@ -1,0 +1,32 @@
+init:
+  startingFen: "r3k1n1/3p1p2/1Rp5/p4p1p/P3r3/2P5/2PK1P1P/6R1 w - - 0 28" # default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+engine:
+  algorithm: "minmax" # minmax|alphabeta(default)
+  maxDepth: 4
+  ttSize: 256
+  debug: false
+  maxGoroutines: 20
+
+lichess:
+  apiToken: ""
+  ponder: false
+  challengePolicy:
+    accept: true
+    acceptBot: true
+    tc:
+      - bullet
+      - blitz
+      - rapid
+      - classical
+    variant: 
+      - standard
+    rated: true
+
+book:
+  enable: true
+  method: "weighted" # weighted | best
+  path: "./book.bin"
+
+render:
+  mode: "simple"
