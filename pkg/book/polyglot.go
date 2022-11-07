@@ -9,16 +9,7 @@ import (
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	"github.com/likeawizard/tofiks/pkg/config"
 )
-
-func init() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		fmt.Println("failed to load config")
-	}
-	LoadBook(cfg.Book.Path)
-}
 
 const (
 	black_pawn = iota

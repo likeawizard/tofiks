@@ -9,9 +9,8 @@ import (
 func TestZobristTransposition(t *testing.T) {
 	moves1 := "e2e4 e7e5 g1f3 g8f6"
 	moves2 := "g1f3 e7e5 e2e4 g8f6"
-	var b1, b2 board.Board
-	b1.InitDefault()
-	b2.InitDefault()
+	b1 := board.NewBoard("")
+	b2 := board.NewBoard("")
 
 	b1.PlayMovesUCI(moves1)
 	b2.PlayMovesUCI(moves2)
@@ -26,9 +25,8 @@ func TestZobristTransposition(t *testing.T) {
 func TestZobristDiff(t *testing.T) {
 	moves1 := "d2d4 e7e5 g1f3 g8f6"
 	moves2 := "e2e4 e7e5 g1f3 g8f6"
-	var b1, b2 board.Board
-	b1.InitDefault()
-	b2.InitDefault()
+	b1 := board.NewBoard("")
+	b2 := board.NewBoard("")
 
 	b1.PlayMovesUCI(moves1)
 	b2.PlayMovesUCI(moves2)

@@ -209,8 +209,7 @@ func (b *Board) WritePGNToFile(data string, path string) {
 
 func (b *Board) GeneratePGN(moves []Move) string {
 	pgn := ""
-	bb := &Board{}
-	bb.InitDefault()
+	bb := NewBoard("")
 	for n, move := range moves {
 		if n%2 == 0 {
 			pgn += fmt.Sprintf("%d. ", bb.FullMoveCounter)

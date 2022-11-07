@@ -2,42 +2,32 @@ package eval
 
 import (
 	"context"
-	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	"github.com/likeawizard/tofiks/pkg/book"
-	"github.com/likeawizard/tofiks/pkg/config"
 )
 
 type PickBookMove func(*board.Board) board.Move
 
 type EvalEngine struct {
+	Quit           bool
+	MU             sync.Mutex
 	Stats          EvalStats
 	Board          *board.Board
-	EnableBook     bool
-	PickBookMove   PickBookMove
+	OwnBook        bool
 	KillerMoves    [100][2]board.Move
 	GameHistoryPly int
 	GameHistory    []uint64
 	SearchDepth    int
 	TTable         *TTable
+	Stop           context.CancelFunc
 }
 
-func NewEvalEngine(b *board.Board, c *config.Config) (*EvalEngine, error) {
-	var bookMethod PickBookMove = book.GetWeighted
-	switch c.Book.Method {
-	case "best":
-		bookMethod = book.GetBest
-	case "weighted":
-		bookMethod = book.GetWeighted
-	}
+func NewEvalEngine() (*EvalEngine, error) {
 	return &EvalEngine{
-		Board:        b,
-		EnableBook:   c.Book.Enable,
-		PickBookMove: bookMethod,
-		SearchDepth:  c.Engine.MaxDepth,
-		TTable:       NewTTable(c.Engine.TTSize),
+		Board:  board.NewBoard("startpos"),
+		TTable: NewTTable(16),
 	}, nil
 }
 
@@ -48,13 +38,8 @@ func (e *EvalEngine) GetMove(ctx context.Context, pv *[]board.Move, silent bool)
 	all := e.Board.MoveGen()
 	if len(all) == 1 {
 		best = all[0]
-	} else if e.EnableBook && book.InBook(e.Board) {
-		book.PrintBookMoves(e.Board)
-		move := e.PickBookMove(e.Board)
-		fmt.Println("Picking Book move: ", move)
-		return move, 0
 	} else {
-		best, ponder, ok = e.IDSearch(ctx, e.SearchDepth, pv, silent)
+		best, ponder, ok = e.IDSearch(ctx, 100, pv)
 		if !ok {
 			best = all[0]
 		}
