@@ -152,11 +152,11 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 }
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
-func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move) (board.Move, board.Move, bool) {
+func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board.Move, bool) {
 	var wg sync.WaitGroup
 	var best, ponder board.Move
 	var eval int
-	var line, bestLine []board.Move
+	var line []board.Move
 	start := time.Now()
 	color := 1
 	alpha, beta := -math.MaxInt, math.MaxInt
@@ -190,7 +190,6 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move) 
 					if len(line) > 1 {
 						ponder = line[1]
 					}
-					bestLine = line
 				}
 				lineStr := ""
 				for _, m := range line {
@@ -214,6 +213,5 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move) 
 	}()
 
 	wg.Wait()
-	*pv = bestLine
 	return best, ponder, ok
 }

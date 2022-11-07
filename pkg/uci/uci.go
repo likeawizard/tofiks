@@ -2,6 +2,8 @@ package uci
 
 import (
 	"regexp"
+	"strconv"
+	"strings"
 )
 
 //TODO: stub, implement the UCI interface
@@ -37,7 +39,29 @@ func ParseUCI(uciCmd string) UCICmd {
 	case C_SET_OPTION:
 		return nil
 	case C_GO:
-		return &Go{}
+		goCmd := Go{}
+		goParts := strings.Fields(args)
+		for i, s := range goParts {
+			switch s {
+			case "wtime":
+				goCmd.wtime, _ = strconv.Atoi(goParts[i+1])
+			case "btime":
+				goCmd.btime, _ = strconv.Atoi(goParts[i+1])
+			case "winc":
+				goCmd.winc, _ = strconv.Atoi(goParts[i+1])
+			case "binc":
+				goCmd.binc, _ = strconv.Atoi(goParts[i+1])
+			case "movestogo":
+				goCmd.movestogo, _ = strconv.Atoi(goParts[i+1])
+			case "depth":
+				goCmd.depth, _ = strconv.Atoi(goParts[i+1])
+			case "movetime":
+				goCmd.movetime, _ = strconv.Atoi(goParts[i+1])
+			case "infinite":
+				goCmd.infinite = true
+			}
+		}
+		return &goCmd
 	}
 
 	return nil

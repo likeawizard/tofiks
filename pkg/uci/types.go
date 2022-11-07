@@ -92,14 +92,45 @@ func (c Stop) Exec(e *eval.EvalEngine) bool {
 }
 
 type Go struct {
+	wtime     int
+	btime     int
+	binc      int
+	winc      int
+	depth     int
+	movetime  int
+	movestogo int
+	infinite  bool
 }
 
 func (c Go) Exec(e *eval.EvalEngine) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	switch {
+	case c.infinite:
+		ctx, cancel = context.WithCancel(context.Background())
+	case c.movetime > 0:
+		movetime := time.Millisecond * time.Duration(c.movetime)
+		ctx, cancel = context.WithTimeout(context.Background(), movetime)
+	case c.movestogo > 0:
+		t := c.wtime
+		inc := c.binc
+		if e.Board.Side == board.BLACK {
+			t = c.btime
+			inc = c.binc
+		}
+		movetime := time.Millisecond * time.Duration((t+inc*c.movestogo)/c.movestogo)
+		ctx, cancel = context.WithTimeout(context.Background(), movetime)
+	default:
+		movetime := time.Millisecond * time.Duration(c.movetime)
+		ctx, cancel = context.WithTimeout(context.Background(), movetime)
+	}
+	var depth = c.depth
+	if depth == 0 {
+		depth = 50
+	}
 	e.Stop = cancel
 	defer cancel()
-	pv := []board.Move{}
-	move, ponder := e.GetMove(ctx, &pv, false)
+	move, ponder := e.GetMove(ctx, depth)
 	fmt.Printf("bestmove %s ponder %s\n", move, ponder)
 	return true
 }

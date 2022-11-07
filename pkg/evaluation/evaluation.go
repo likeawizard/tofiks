@@ -32,14 +32,14 @@ func NewEvalEngine() (*EvalEngine, error) {
 }
 
 // Returns the best move and best opponent response - ponder
-func (e *EvalEngine) GetMove(ctx context.Context, pv *[]board.Move, silent bool) (board.Move, board.Move) {
+func (e *EvalEngine) GetMove(ctx context.Context, depth int) (board.Move, board.Move) {
 	var best, ponder board.Move
 	var ok bool
 	all := e.Board.MoveGen()
 	if len(all) == 1 {
 		best = all[0]
 	} else {
-		best, ponder, ok = e.IDSearch(ctx, 100, pv)
+		best, ponder, ok = e.IDSearch(ctx, depth)
 		if !ok {
 			best = all[0]
 		}
