@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/likeawizard/tofiks/pkg/board"
@@ -45,7 +44,6 @@ func initPieceWeightLUT() {
 	PieceWeights[board.ROOKS] = weights.Pieces.Rook
 	PieceWeights[board.QUEENS] = weights.Pieces.Queen
 	PieceWeights[board.KINGS] = weights.Pieces.King
-	fmt.Println(PieceWeights)
 }
 
 type Weights struct {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 )
@@ -151,11 +152,12 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 }
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
-func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move, silent bool) (board.Move, board.Move, bool) {
+func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board.Move, bool) {
 	var wg sync.WaitGroup
 	var best, ponder board.Move
 	var eval int
-	var line, bestLine []board.Move
+	var line []board.Move
+	start := time.Now()
 	color := 1
 	alpha, beta := -math.MaxInt, math.MaxInt
 	if e.Board.Side != board.WHITE {
@@ -188,21 +190,18 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move, 
 					if len(line) > 1 {
 						ponder = line[1]
 					}
-					bestLine = line
 				}
-				if !silent {
-					evalStr := ""
-					switch eval {
-					case math.MaxInt:
-						evalStr = fmt.Sprintf("#%d", 1+len(line)/2)
-					case -math.MaxInt:
-						evalStr = fmt.Sprintf("#%d", 1+len(line)/2)
-					default:
-						evalStr = fmt.Sprintf("%2.2f", float32(color*eval)/100)
-					}
-
-					fmt.Printf("Depth: %d (%s) Move: %v (%s)\n", d, evalStr, line, e.Stats.String())
+				lineStr := ""
+				for _, m := range line {
+					lineStr += m.String() + " "
 				}
+				totalN := e.Stats.nodes + e.Stats.qNodes
+				timeSince := time.Since(start)
+				nps := int64(totalN)
+				if timeSince.Milliseconds() != 0 {
+					nps = (1000 * nps) / timeSince.Milliseconds()
+				}
+				fmt.Printf("info depth %d score cp %d nodes %d nps %d time %d hashfull %d pv %s\n", d, eval, totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
 
 				//found mate stop
 				if eval == math.MaxInt || eval == -math.MaxInt {
@@ -214,6 +213,5 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, pv *[]board.Move, 
 	}()
 
 	wg.Wait()
-	*pv = bestLine
 	return best, ponder, ok
 }

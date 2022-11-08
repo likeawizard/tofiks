@@ -1,44 +1,33 @@
 package main
 
 import (
-	"context"
-	"flag"
+	"bufio"
 	"fmt"
-	"time"
+	"os"
 
-	"github.com/likeawizard/tofiks/pkg/board"
-	"github.com/likeawizard/tofiks/pkg/config"
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
-	"github.com/pkg/profile"
-	_ "go.uber.org/automaxprocs"
+	"github.com/likeawizard/tofiks/pkg/uci"
 )
 
 func main() {
-	cfg, err := config.LoadConfig()
-	defer profile.Start(profile.CPUProfile).Stop()
-
-	if err != nil {
-		fmt.Printf("Failed to load app config: %s\n", err)
-	}
-	fen := flag.String("fen", "", "FEN")
-	flag.Parse()
-	b := &board.Board{}
-	b.ImportFEN(*fen)
-	if b.ExportFEN() != *fen {
-		fmt.Printf("Error importing FEN: %s, %s\n", b.ExportFEN(), *fen)
-		return
-	}
-	e, err := eval.NewEvalEngine(b, cfg)
+	// defer profile.Start(profile.CPUProfile).Stop()
+	e, err := eval.NewEvalEngine()
 	if err != nil {
 		fmt.Printf("Unable to load EvalEngine: %s\n", err)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*500*1000)
-	start := time.Now()
-	pv := []board.Move{}
-	move, ponder := e.GetMove(ctx, &pv, false)
-	defer cancel()
-	b.MakeMove(move)
-	fmt.Println("bestmove", move, "ponder", ponder, time.Since(start))
+	input := bufio.NewScanner(os.Stdin)
+	for {
+		input.Scan()
+		cmd := uci.ParseUCI(input.Text())
+		if cmd != nil {
+			switch cmd.(type) {
+			case *uci.Quit:
+				return
+			default:
+				cmd.Exec(e)
+			}
+		}
+	}
 }

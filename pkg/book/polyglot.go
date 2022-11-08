@@ -9,16 +9,7 @@ import (
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	"github.com/likeawizard/tofiks/pkg/config"
 )
-
-func init() {
-	cfg, err := config.LoadConfig()
-	if err != nil {
-		fmt.Println("failed to load config")
-	}
-	LoadBook(cfg.Book.Path)
-}
 
 const (
 	black_pawn = iota
@@ -185,7 +176,7 @@ func PrintBookMoves(b *board.Board) {
 func LoadBook(path string) int {
 	file, err := os.Open(path)
 	if err != nil {
-		fmt.Println("failed to open book: ", path)
+		return 0
 	}
 	BookMoves = make(map[uint64][]polyEntry)
 	buffer := make([]byte, entrySize)

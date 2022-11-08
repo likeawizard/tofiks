@@ -1,21 +1,16 @@
 package board
 
-import (
-	"github.com/likeawizard/tofiks/pkg/config"
-)
-
 var Pieces = [6]string{"P", "B", "N", "R", "Q", "K"}
 
-func (b *Board) Init(c *config.Config) {
-	fen := c.Init.StartingFen
-	if fen == "" {
-		fen = startingFEN
+func NewBoard(position string) *Board {
+	b := Board{}
+	switch position {
+	case "startpos", "":
+		b.ImportFEN(startingFEN)
+	default:
+		b.ImportFEN(position)
 	}
-	b.ImportFEN(fen)
-}
-
-func (b *Board) InitDefault() {
-	b.ImportFEN(startingFEN)
+	return &b
 }
 
 func (b *Board) Copy() *Board {

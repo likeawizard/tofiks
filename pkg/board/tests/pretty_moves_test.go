@@ -7,10 +7,9 @@ import (
 )
 
 func TestSimplePawnMove(t *testing.T) {
-	var b board.Board
 	move := "e2e4"
 	pretty := "e4"
-	b.InitDefault()
+	b := board.NewBoard("")
 
 	t.Run("Simple pawn move", func(t *testing.T) {
 		if b.UCIToAlgebraic(move) != pretty {

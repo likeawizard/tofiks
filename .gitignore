@@ -1,11 +1,6 @@
 /.idea/
 /config.yml
-/self-play
-/analyze
-/lichess
-/single-eval
-/dump.pgn
-/perft
+/tofiks
 /cmd/playground/main.go
 /weights/weights.yml
 /*.svg
