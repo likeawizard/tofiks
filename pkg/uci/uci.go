@@ -37,6 +37,24 @@ func ParseUCI(uciCmd string) UCICmd {
 		pos.moves = moves
 		return &pos
 	case C_SET_OPTION:
+		opt := SetOption{}
+		optRE := regexp.MustCompile(`name\s(?P<name>\w+)\svalue\s(?P<value>\w+)`)
+		match = optRE.FindStringSubmatch(args)
+		name := match[optRE.SubexpIndex("name")]
+		value := match[optRE.SubexpIndex("value")]
+		switch name {
+		case "Hash":
+			size, _ := strconv.Atoi(value)
+			opt.option = &Hash{size: size}
+			return &opt
+		case "OwnBook":
+			enable := false
+			if value == "true" {
+				enable = true
+			}
+			opt.option = &OwnBook{enable: enable}
+			return &opt
+		}
 		return nil
 	case C_GO:
 		goCmd := Go{}

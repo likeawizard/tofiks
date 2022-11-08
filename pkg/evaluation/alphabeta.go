@@ -201,7 +201,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score cp %d nodes %d nps %d time %d pv %s\n", d, eval, totalN, nps, timeSince.Milliseconds(), lineStr)
+				fmt.Printf("info depth %d score cp %d nodes %d nps %d time %d hashfull %d pv %s\n", d, eval, totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
 
 				//found mate stop
 				if eval == math.MaxInt || eval == -math.MaxInt {

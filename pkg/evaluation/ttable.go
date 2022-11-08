@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"fmt"
-
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
@@ -29,7 +27,6 @@ type SearchEntry struct {
 
 func NewTTable(sizeInMb int) *TTable {
 	size := (1024 * 1024 * sizeInMb) / 40
-	fmt.Println("TT Size:", size)
 	return &TTable{
 		entries: make([]SearchEntry, size),
 		size:    uint64(size),
@@ -42,6 +39,16 @@ func (tt *TTable) Probe(hash uint64) (*SearchEntry, bool) {
 		return &tt.entries[idx], true
 	}
 	return nil, false
+}
+
+func (tt *TTable) Hashfull() uint64 {
+	entries := uint64(0)
+	for _, e := range tt.entries {
+		if e.hash != 0 {
+			entries++
+		}
+	}
+	return (entries * 1000) / tt.size
 }
 
 func (tt *TTable) Store(hash uint64, entryType ttType, eval, depth int, move board.Move) {

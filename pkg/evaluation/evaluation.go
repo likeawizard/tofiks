@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/likeawizard/tofiks/pkg/board"
+	"github.com/likeawizard/tofiks/pkg/book"
 )
 
 type PickBookMove func(*board.Board) board.Move
@@ -27,7 +28,7 @@ type EvalEngine struct {
 func NewEvalEngine() (*EvalEngine, error) {
 	return &EvalEngine{
 		Board:  board.NewBoard("startpos"),
-		TTable: NewTTable(16),
+		TTable: NewTTable(64),
 	}, nil
 }
 
@@ -38,6 +39,9 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int) (board.Move, board.
 	all := e.Board.MoveGen()
 	if len(all) == 1 {
 		best = all[0]
+	} else if e.OwnBook && book.InBook(e.Board) {
+		move := book.GetWeighted(e.Board)
+		return move, 0
 	} else {
 		best, ponder, ok = e.IDSearch(ctx, depth)
 		if !ok {

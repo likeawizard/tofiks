@@ -7,7 +7,6 @@ import (
 
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
 	"github.com/likeawizard/tofiks/pkg/uci"
-	_ "go.uber.org/automaxprocs"
 )
 
 func main() {
@@ -19,11 +18,16 @@ func main() {
 	}
 
 	input := bufio.NewScanner(os.Stdin)
-	for !e.Quit {
+	for {
 		input.Scan()
 		cmd := uci.ParseUCI(input.Text())
 		if cmd != nil {
-			go cmd.Exec(e)
+			switch cmd.(type) {
+			case *uci.Quit:
+				return
+			default:
+				cmd.Exec(e)
+			}
 		}
 	}
 }
