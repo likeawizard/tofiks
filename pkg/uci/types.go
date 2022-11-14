@@ -21,6 +21,7 @@ const (
 	C_GO         = "go"        // many opts
 	C_STOP       = "stop"
 	C_QUIT       = "quit"
+	C_NEW_GAME   = "ucinewgame"
 	//TODO: commands that are defined by the uci protocol but not implemented
 	//ponderhi, ucinewgame, register
 )
@@ -35,22 +36,18 @@ type UCICmd interface {
 	Exec(*eval.EvalEngine) bool
 }
 
-type UCI struct {
-}
+type UCI struct{}
 
-type IsReady struct {
-}
+type IsReady struct{}
 
 type Position struct {
 	pos   string
 	moves string
 }
 
-type Quit struct {
-}
+type Quit struct{}
 
-type Stop struct {
-}
+type Stop struct{}
 
 type Go struct {
 	wtime     int
@@ -66,6 +63,8 @@ type Go struct {
 type SetOption struct {
 	option UCIOpt
 }
+
+type NewGame struct{}
 
 type UCIOpt interface {
 	Info()
@@ -83,3 +82,5 @@ type Ponder struct {
 type OwnBook struct {
 	enable bool
 }
+
+type Clear struct{}

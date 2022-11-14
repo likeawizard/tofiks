@@ -3,12 +3,14 @@ package eval
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 )
+
+const CheckmateScore int = 90000
+const Inf int = 2 * CheckmateScore
 
 func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, side int) int {
 	select {
@@ -24,7 +26,7 @@ func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply
 
 		e.Stats.nodes++
 
-		if ply > 0 && e.IsDrawByRepetition() {
+		if ply > 0 && (e.Board.HalfMoveCounter >= 100 && e.IsDrawByRepetition()) {
 			return 0
 		}
 
@@ -32,29 +34,17 @@ func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply
 		var pvMove board.Move
 
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && entry.depth >= depth && ply > 0 {
-			switch entry.ttType {
-			case TT_EXACT:
-				*line = []board.Move{entry.move}
-				return entry.eval
-			case TT_LOWER:
-				alpha = Max(alpha, entry.eval)
-			case TT_UPPER:
-				beta = Min(beta, entry.eval)
+			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok {
+				return eval
 			}
-
 			pvMove = entry.move
-
-			if alpha >= beta {
-				*line = []board.Move{entry.move}
-				return entry.eval
-			}
 		}
 
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
 		e.OrderMoves(pvMove, &all, ply)
 
-		value := -math.MaxInt
+		value := -Inf
 		pv := []board.Move{}
 		for i := 0; i < len(all); i++ {
 			umove := e.Board.MakeMove(all[i])
@@ -63,7 +53,9 @@ func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply
 				continue
 			}
 			legalMoves++
+			e.IncrementHistory()
 			value = Max(value, -e.negamax(ctx, &pv, depth-1, ply+1, -beta, -alpha, -side))
+			e.DecrementHistory()
 			umove()
 
 			if value > alpha {
@@ -81,7 +73,7 @@ func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply
 
 		if legalMoves == 0 {
 			if e.Board.IsChecked(e.Board.Side) {
-				value = -math.MaxInt
+				value = -CheckmateScore - ply
 			} else {
 				value = 0
 			}
@@ -129,7 +121,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 		legalMoves := 0
 		e.OrderMoves(0, &all, 0)
 
-		value := -math.MaxInt
+		value := -Inf
 		for i := 0; i < len(all); i++ {
 			umove := e.Board.MakeMove(all[i])
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
@@ -159,7 +151,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 	var line []board.Move
 	start := time.Now()
 	color := 1
-	alpha, beta := -math.MaxInt, math.MaxInt
+	alpha, beta := -Inf, Inf
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
@@ -201,10 +193,10 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score cp %d nodes %d nps %d time %d hashfull %d pv %s\n", d, eval, totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
+				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv %s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
 				//found mate stop
-				if eval == math.MaxInt || eval == -math.MaxInt {
+				if eval > CheckmateScore || eval < -CheckmateScore {
 					done = true
 				}
 			}
@@ -214,4 +206,21 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 
 	wg.Wait()
 	return best, ponder, ok
+}
+
+func (e *EvalEngine) parseEval(eval int) string {
+	off := 0
+	if e.Board.Side == board.WHITE {
+		off = 1
+	}
+
+	if eval < -CheckmateScore {
+		return fmt.Sprintf("mate %d", (eval+CheckmateScore-off)/2)
+	}
+
+	if eval > CheckmateScore {
+		return fmt.Sprintf("mate %d", (eval-CheckmateScore+off)/2)
+	}
+
+	return fmt.Sprintf("cp %d", eval)
 }
