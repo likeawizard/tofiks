@@ -80,6 +80,8 @@ func ParseUCI(uciCmd string) UCICmd {
 			}
 		}
 		return &goCmd
+	case C_NEW_GAME:
+		return &NewGame{}
 	}
 
 	return nil

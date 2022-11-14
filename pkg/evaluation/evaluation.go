@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/likeawizard/tofiks/pkg/board"
@@ -19,7 +20,7 @@ type EvalEngine struct {
 	OwnBook        bool
 	KillerMoves    [100][2]board.Move
 	GameHistoryPly int
-	GameHistory    []uint64
+	GameHistory    [512]uint64
 	SearchDepth    int
 	TTable         *TTable
 	Stop           context.CancelFunc
@@ -44,6 +45,7 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int) (board.Move, board.
 		return move, 0
 	} else {
 		best, ponder, ok = e.IDSearch(ctx, depth)
+		e.TTable.Hashfull()
 		if !ok {
 			best = all[0]
 		}
@@ -75,8 +77,15 @@ func (e *EvalEngine) DecrementHistory() {
 }
 
 // Two-fold repetition detection. While the rules of chess require a three-fold repetition a two-fold repetition should logically lead to three-fold repetition assuming best moves were played to repeat the position once they will be played again.
+// TODO: proper three-fold repetition seems tricky as threefold repetition detection in a search can be obsucred by transpositions table
 func (e *EvalEngine) IsDrawByRepetition() bool {
-	for ply := 0; ply < e.GameHistoryPly; ply++ {
+	// e.GameHistoryPly is the index the next move should be stored at
+	// GameHistoryPly - 1 is current position
+	// So start checking at GameHistoryPly - 3 skipping opponent's move
+	//history depth. the halfmove counter is reset on pawn moves and captures and increased otherwise
+	// no equal position can be found beyond this point.
+	historyDepth := Max(0, e.GameHistoryPly-2-int(e.Board.HalfMoveCounter))
+	for ply := e.GameHistoryPly - 3; ply >= historyDepth; ply -= 2 {
 		if e.Board.Hash == e.GameHistory[ply] {
 			return true
 		}
@@ -119,6 +128,21 @@ func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
 	}
 
 	return
+}
+
+func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
+	moveSlice := strings.Fields(uciMoves)
+	e.GameHistoryPly = 0
+
+	for _, uciMove := range moveSlice {
+		_, ok := e.Board.MoveUCI(uciMove)
+		if !ok {
+			return false
+		}
+		e.IncrementHistory()
+	}
+
+	return true
 }
 
 // TODO: try branchless optimization

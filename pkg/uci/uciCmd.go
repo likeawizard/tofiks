@@ -39,7 +39,12 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 	e.Stop = cancel
 	defer cancel()
 	move, ponder := e.GetMove(ctx, depth)
-	fmt.Printf("bestmove %s ponder %s\n", move, ponder)
+	if ponder != 0 {
+		fmt.Printf("bestmove %s ponder %s\n", move, ponder)
+	} else {
+		fmt.Printf("bestmove %s\n", move)
+	}
+
 	return true
 }
 
@@ -67,10 +72,9 @@ func (c *IsReady) Exec(e *eval.EvalEngine) bool {
 }
 
 func (c *UCI) Exec(e *eval.EvalEngine) bool {
-	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &OwnBook{}}
+	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &Clear{}, &OwnBook{}}
 	fmt.Println("id name Tofiks 0.0.1")
 	fmt.Println("id author Aturs Priede")
-	//TODO: add available opts
 	for _, opt := range availOpts {
 		opt.Info()
 	}
@@ -82,6 +86,15 @@ func (c *SetOption) Exec(e *eval.EvalEngine) bool {
 	e.MU.Lock()
 	defer e.MU.Unlock()
 	c.option.Set(e)
+	return true
+}
+
+func (c *NewGame) Exec(e *eval.EvalEngine) bool {
+	e.MU.Lock()
+	defer e.MU.Unlock()
+	e.TTable.Clear()
+	e.KillerMoves = [100][2]board.Move{}
+	e.GameHistory = [512]uint64{}
 	return true
 }
 
@@ -110,4 +123,12 @@ func (o *Ponder) Set(e *eval.EvalEngine) {
 
 func (o *Ponder) Info() {
 	fmt.Println("option name Ponder type check default false")
+}
+
+func (o *Clear) Set(e *eval.EvalEngine) {
+	e.TTable.Clear()
+}
+
+func (o *Clear) Info() {
+	fmt.Println("option name Clear Hash type button")
 }

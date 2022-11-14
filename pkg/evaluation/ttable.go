@@ -13,8 +13,9 @@ const (
 )
 
 type TTable struct {
-	entries []SearchEntry
-	size    uint64
+	entries  []SearchEntry
+	hashfull uint64
+	size     uint64
 }
 
 type SearchEntry struct {
@@ -42,13 +43,14 @@ func (tt *TTable) Probe(hash uint64) (*SearchEntry, bool) {
 }
 
 func (tt *TTable) Hashfull() uint64 {
-	entries := uint64(0)
+	tt.hashfull = 0
 	for _, e := range tt.entries {
 		if e.hash != 0 {
-			entries++
+			tt.hashfull++
 		}
 	}
-	return (entries * 1000) / tt.size
+	tt.hashfull = (tt.hashfull * 1000) / tt.size
+	return tt.hashfull
 }
 
 func (tt *TTable) Store(hash uint64, entryType ttType, eval, depth int, move board.Move) {
@@ -63,5 +65,29 @@ func (tt *TTable) Store(hash uint64, entryType ttType, eval, depth int, move boa
 }
 
 func (tt *TTable) Clear() {
+	tt.hashfull = 0
 	tt.entries = make([]SearchEntry, tt.size)
+}
+
+func (se *SearchEntry) GetScore(depth, ply, alpha, beta int) (int, bool) {
+	eval := se.eval
+
+	if eval > CheckmateScore {
+		eval -= ply
+	}
+
+	if eval < -CheckmateScore {
+		eval += ply
+	}
+
+	switch {
+	case se.ttType == TT_EXACT:
+		return eval, true
+	case se.ttType == TT_UPPER && eval <= alpha:
+		return eval, true
+	case se.ttType == TT_LOWER && eval >= beta:
+		return eval, true
+	}
+
+	return eval, false
 }

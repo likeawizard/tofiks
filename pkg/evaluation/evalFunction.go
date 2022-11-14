@@ -1,21 +1,15 @@
 package eval
 
 import (
-	"fmt"
-
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-var weights *Weights
-
-func init() {
-	var err error
-	weights, err = LoadWeights()
-	if err != nil {
-		fmt.Println("Unable to load weights")
-		panic(1)
-	}
-	initPieceWeightLUT()
+// TODO: replace by hardcoded constants for performance
+var weights = Weights{
+	Moves:  Moves{Capture: 4, Move: 2},
+	Knight: Knight{Center22: 30, Center44: 20, InnerRim: -5, OuterRim: -20},
+	Bishop: Bishop{MajorDiag: 20, MinorDiag: 10},
+	Pawn:   Pawn{Passed: 10, Protected: 15, Doubled: -15, Isolated: -20, Center22: 15, Center44: 5, Advance: 5},
 }
 
 type pieceEvalFn func(*board.Board, board.Square, int) int

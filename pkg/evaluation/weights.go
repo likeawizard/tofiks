@@ -3,13 +3,12 @@ package eval
 import (
 	"os"
 
-	"github.com/likeawizard/tofiks/pkg/board"
 	"gopkg.in/yaml.v3"
 )
 
 const WEIGHT_PATH = "./weights/weights.yml"
 
-var PieceWeights = [6]int{}
+var PieceWeights = [6]int{100, 325, 325, 500, 975, 10000}
 
 // Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board
 var PiecePawnBonus = [6][9]int{
@@ -37,18 +36,8 @@ func LoadWeights() (*Weights, error) {
 	return &weights, nil
 }
 
-func initPieceWeightLUT() {
-	PieceWeights[board.PAWNS] = weights.Pieces.Pawn
-	PieceWeights[board.BISHOPS] = weights.Pieces.Bishop
-	PieceWeights[board.KNIGHTS] = weights.Pieces.Knight
-	PieceWeights[board.ROOKS] = weights.Pieces.Rook
-	PieceWeights[board.QUEENS] = weights.Pieces.Queen
-	PieceWeights[board.KINGS] = weights.Pieces.King
-}
-
 type Weights struct {
 	Moves  Moves  `yaml:"moves"`
-	Pieces Pieces `yaml:"pieces"`
 	Knight Knight `yaml:"knight"`
 	Bishop Bishop `yaml:"bishop"`
 	Pawn   Pawn   `yaml:"pawn"`
