@@ -1,9 +1,7 @@
 package uci
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
@@ -11,27 +9,14 @@ import (
 )
 
 func (c *Go) Exec(e *eval.EvalEngine) bool {
-	var ctx context.Context
-	var cancel context.CancelFunc
-	switch {
-	case c.infinite:
-		ctx, cancel = context.WithCancel(context.Background())
-	case c.movetime > 0:
-		movetime := time.Millisecond * time.Duration(c.movetime)
-		ctx, cancel = context.WithTimeout(context.Background(), movetime)
-	case c.movestogo > 0:
-		t := c.wtime
-		inc := c.binc
-		if e.Board.Side == board.BLACK {
-			t = c.btime
-			inc = c.binc
-		}
-		movetime := time.Millisecond * time.Duration((t+inc*(c.movestogo))/(c.movestogo+1))
-		ctx, cancel = context.WithTimeout(context.Background(), movetime)
-	default:
-		movetime := time.Millisecond * time.Duration(c.movetime)
-		ctx, cancel = context.WithTimeout(context.Background(), movetime)
-	}
+	e.Clock.Wtime = c.wtime
+	e.Clock.Winc = c.winc
+	e.Clock.Btime = c.btime
+	e.Clock.Binc = c.binc
+	e.Clock.Movestogo = c.movestogo
+	e.Clock.Movetime = c.movetime
+	e.Clock.Infinite = c.infinite
+	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
 	var depth = c.depth
 	if depth == 0 {
 		depth = 50
@@ -40,7 +25,7 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 	defer cancel()
 	move, ponder := e.GetMove(ctx, depth)
 	if ponder != 0 {
-		fmt.Printf("bestmove %s ponder %s\n", move, ponder)
+		fmt.Printf("bestmove %s\n", move)
 	} else {
 		fmt.Printf("bestmove %s\n", move)
 	}
@@ -49,6 +34,9 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 }
 
 func (c *Stop) Exec(e *eval.EvalEngine) bool {
+	if e.Stop != nil {
+		e.Stop()
+	}
 	return true
 }
 
@@ -64,6 +52,12 @@ func (c *Position) Exec(e *eval.EvalEngine) bool {
 	return e.Board.PlayMovesUCI(c.moves)
 }
 
+func (c MoveOverhead) Exec(e *eval.EvalEngine) bool {
+	e.MU.Lock()
+	defer e.MU.Unlock()
+	return true
+}
+
 func (c *IsReady) Exec(e *eval.EvalEngine) bool {
 	e.MU.Lock()
 	defer e.MU.Unlock()
@@ -72,7 +66,7 @@ func (c *IsReady) Exec(e *eval.EvalEngine) bool {
 }
 
 func (c *UCI) Exec(e *eval.EvalEngine) bool {
-	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &Clear{}, &OwnBook{}}
+	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
 	fmt.Println("id name Tofiks 0.0.1")
 	fmt.Println("id author Aturs Priede")
 	for _, opt := range availOpts {
@@ -131,4 +125,13 @@ func (o *Clear) Set(e *eval.EvalEngine) {
 
 func (o *Clear) Info() {
 	fmt.Println("option name Clear Hash type button")
+}
+
+func (o *MoveOverhead) Set(e *eval.EvalEngine) {
+	fmt.Println("yeeer")
+	e.Clock.Overhead = o.delay
+}
+
+func (o *MoveOverhead) Info() {
+	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
 }

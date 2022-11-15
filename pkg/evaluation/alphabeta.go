@@ -185,7 +185,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 				}
 				lineStr := ""
 				for _, m := range line {
-					lineStr += m.String() + " "
+					lineStr += " " + m.String()
 				}
 				totalN := e.Stats.nodes + e.Stats.qNodes
 				timeSince := time.Since(start)
@@ -193,7 +193,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv %s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
+				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
 				//found mate stop
 				if eval > CheckmateScore || eval < -CheckmateScore {
@@ -215,11 +215,11 @@ func (e *EvalEngine) parseEval(eval int) string {
 	}
 
 	if eval < -CheckmateScore {
-		return fmt.Sprintf("mate %d", (eval+CheckmateScore-off)/2)
+		return fmt.Sprintf("mate %d", Max(eval+CheckmateScore-off/2, 1))
 	}
 
 	if eval > CheckmateScore {
-		return fmt.Sprintf("mate %d", (eval-CheckmateScore+off)/2)
+		return fmt.Sprintf("mate %d", Max(eval+CheckmateScore-off/2, 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)

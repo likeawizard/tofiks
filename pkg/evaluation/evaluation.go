@@ -23,6 +23,7 @@ type EvalEngine struct {
 	GameHistory    [512]uint64
 	SearchDepth    int
 	TTable         *TTable
+	Clock          Clock
 	Stop           context.CancelFunc
 }
 
