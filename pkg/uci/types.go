@@ -84,3 +84,7 @@ type OwnBook struct {
 }
 
 type Clear struct{}
+
+type MoveOverhead struct {
+	delay int
+}

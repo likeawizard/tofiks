@@ -26,7 +26,7 @@ func main() {
 			case *uci.Quit:
 				return
 			default:
-				cmd.Exec(e)
+				go cmd.Exec(e)
 			}
 		}
 	}

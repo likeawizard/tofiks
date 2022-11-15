@@ -38,7 +38,7 @@ func ParseUCI(uciCmd string) UCICmd {
 		return &pos
 	case C_SET_OPTION:
 		opt := SetOption{}
-		optRE := regexp.MustCompile(`name\s(?P<name>\w+)\svalue\s(?P<value>\w+)`)
+		optRE := regexp.MustCompile(`name\s(?P<name>[\w\s]+)\svalue\s(?P<value>\w+)`)
 		match = optRE.FindStringSubmatch(args)
 		name := match[optRE.SubexpIndex("name")]
 		value := match[optRE.SubexpIndex("value")]
@@ -53,6 +53,13 @@ func ParseUCI(uciCmd string) UCICmd {
 				enable = true
 			}
 			opt.option = &OwnBook{enable: enable}
+			return &opt
+		case "Clear Hash":
+			opt.option = &Clear{}
+			return &opt
+		case "Move Overhead":
+			delay, _ := strconv.Atoi(value)
+			opt.option = &MoveOverhead{delay: delay}
 			return &opt
 		}
 		return nil
