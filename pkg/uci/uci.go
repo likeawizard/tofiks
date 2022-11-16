@@ -25,6 +25,8 @@ func ParseUCI(uciCmd string) UCICmd {
 		return &IsReady{}
 	case C_STOP:
 		return &Stop{}
+	case C_PONDERHIT:
+		return &Stop{ponderhit: true}
 	case C_QUIT:
 		return &Quit{}
 	case C_POSITION:
@@ -43,6 +45,13 @@ func ParseUCI(uciCmd string) UCICmd {
 		name := match[optRE.SubexpIndex("name")]
 		value := match[optRE.SubexpIndex("value")]
 		switch name {
+		case "Ponder":
+			enable := false
+			if value == "true" {
+				enable = true
+			}
+			opt.option = &Ponder{enable: enable}
+			return &opt
 		case "Hash":
 			size, _ := strconv.Atoi(value)
 			opt.option = &Hash{size: size}
@@ -82,7 +91,7 @@ func ParseUCI(uciCmd string) UCICmd {
 				goCmd.depth, _ = strconv.Atoi(goParts[i+1])
 			case "movetime":
 				goCmd.movetime, _ = strconv.Atoi(goParts[i+1])
-			case "infinite":
+			case "infinite", "ponder":
 				goCmd.infinite = true
 			}
 		}

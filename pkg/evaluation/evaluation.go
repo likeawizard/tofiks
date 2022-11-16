@@ -2,6 +2,7 @@ package eval
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ type EvalEngine struct {
 	MU             sync.Mutex
 	Stats          EvalStats
 	Board          *board.Board
+	Ponder         bool
 	OwnBook        bool
 	KillerMoves    [100][2]board.Move
 	GameHistoryPly int
@@ -144,6 +146,23 @@ func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
 	}
 
 	return true
+}
+
+func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
+	if !allowPonder || ponder == 0 {
+		fmt.Printf("bestmove %v\n", move)
+	} else {
+		umove := e.Board.MakeMove(move)
+		defer umove()
+		moves := e.Board.MoveGen()
+		for _, m := range moves {
+			if m == ponder {
+				fmt.Printf("bestmove %v ponder %v\n", move, ponder)
+				return
+			}
+		}
+		fmt.Printf("bestmove %v\n", move)
+	}
 }
 
 // TODO: try branchless optimization

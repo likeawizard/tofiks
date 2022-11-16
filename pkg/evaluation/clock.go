@@ -23,6 +23,17 @@ func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.Cancel
 	switch {
 	case c.Infinite:
 		return context.WithCancel(context.Background())
+	default:
+		movetime = c.GetMovetime(fmCounter, side)
+	}
+
+	return context.WithTimeout(context.Background(), movetime)
+
+}
+
+func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
+	var movetime = time.Millisecond * 100
+	switch {
 	case c.Movetime > 0:
 		movetime = time.Millisecond * time.Duration(c.Movetime-c.Overhead)
 	case c.Movestogo > 0:
@@ -44,7 +55,5 @@ func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.Cancel
 		}
 		movetime = time.Millisecond * time.Duration((t+((inc-c.Overhead)*movestogo))/(movestogo+1))
 	}
-
-	return context.WithTimeout(context.Background(), movetime)
-
+	return movetime
 }
