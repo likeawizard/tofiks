@@ -20,6 +20,7 @@ const (
 	C_POSITION   = "position"  // [ fen | startpos] moves ...
 	C_GO         = "go"        // many opts
 	C_STOP       = "stop"
+	C_PONDERHIT  = "ponderhit"
 	C_QUIT       = "quit"
 	C_NEW_GAME   = "ucinewgame"
 	//TODO: commands that are defined by the uci protocol but not implemented
@@ -47,7 +48,9 @@ type Position struct {
 
 type Quit struct{}
 
-type Stop struct{}
+type Stop struct {
+	ponderhit bool
+}
 
 type Go struct {
 	wtime     int

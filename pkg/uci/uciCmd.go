@@ -2,6 +2,7 @@ package uci
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
@@ -24,17 +25,16 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 	e.Stop = cancel
 	defer cancel()
 	move, ponder := e.GetMove(ctx, depth)
-	if ponder != 0 {
-		fmt.Printf("bestmove %s\n", move)
-	} else {
-		fmt.Printf("bestmove %s\n", move)
-	}
+	e.ReportMove(move, ponder, e.Ponder)
 
 	return true
 }
 
 func (c *Stop) Exec(e *eval.EvalEngine) bool {
 	if e.Stop != nil {
+		if c.ponderhit {
+			time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
+		}
 		e.Stop()
 	}
 	return true
@@ -94,7 +94,6 @@ func (c *NewGame) Exec(e *eval.EvalEngine) bool {
 
 func (o *Hash) Set(e *eval.EvalEngine) {
 	e.TTable = eval.NewTTable(o.size)
-	fmt.Println("debug tt size", o.size)
 }
 
 func (o *Hash) Info() {
@@ -112,7 +111,7 @@ func (o *OwnBook) Info() {
 }
 
 func (o *Ponder) Set(e *eval.EvalEngine) {
-	//TODO - implement ponder and ponderhit functionality
+	e.Ponder = o.enable
 }
 
 func (o *Ponder) Info() {
@@ -128,7 +127,6 @@ func (o *Clear) Info() {
 }
 
 func (o *MoveOverhead) Set(e *eval.EvalEngine) {
-	fmt.Println("yeeer")
 	e.Clock.Overhead = o.delay
 }
 
