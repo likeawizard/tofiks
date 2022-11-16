@@ -144,7 +144,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 }
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
-func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board.Move, bool) {
+func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (board.Move, board.Move, bool) {
 	var wg sync.WaitGroup
 	var best, ponder board.Move
 	var eval int
@@ -196,7 +196,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int) (board.Move, board
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
 				//found mate stop
-				if eval > CheckmateScore || eval < -CheckmateScore {
+				if !infinite && (eval > CheckmateScore || eval < -CheckmateScore) {
 					done = true
 				}
 			}
@@ -215,11 +215,11 @@ func (e *EvalEngine) parseEval(eval int) string {
 	}
 
 	if eval < -CheckmateScore {
-		return fmt.Sprintf("mate %d", Max(eval+CheckmateScore-off/2, 1))
+		return fmt.Sprintf("mate %d", Min((eval+CheckmateScore-off)/2, -1))
 	}
 
 	if eval > CheckmateScore {
-		return fmt.Sprintf("mate %d", Max(eval+CheckmateScore-off/2, 1))
+		return fmt.Sprintf("mate %d", Max((eval-CheckmateScore+off)/2, 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)

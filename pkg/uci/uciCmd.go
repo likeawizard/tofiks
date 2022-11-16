@@ -24,7 +24,7 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 	}
 	e.Stop = cancel
 	defer cancel()
-	move, ponder := e.GetMove(ctx, depth)
+	move, ponder := e.GetMove(ctx, depth, c.infinite)
 	e.ReportMove(move, ponder, e.Ponder)
 
 	return true

@@ -37,7 +37,7 @@ func NewEvalEngine() (*EvalEngine, error) {
 }
 
 // Returns the best move and best opponent response - ponder
-func (e *EvalEngine) GetMove(ctx context.Context, depth int) (board.Move, board.Move) {
+func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	var ok bool
 	all := e.Board.MoveGen()
@@ -47,7 +47,7 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int) (board.Move, board.
 		move := book.GetWeighted(e.Board)
 		return move, 0
 	} else {
-		best, ponder, ok = e.IDSearch(ctx, depth)
+		best, ponder, ok = e.IDSearch(ctx, depth, infinite)
 		e.TTable.Hashfull()
 		if !ok {
 			best = all[0]
