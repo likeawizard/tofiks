@@ -14,8 +14,7 @@ import (
 type PickBookMove func(*board.Board) board.Move
 
 type EvalEngine struct {
-	Quit           bool
-	MU             sync.Mutex
+	WG             sync.WaitGroup
 	Stats          EvalStats
 	Board          *board.Board
 	Ponder         bool

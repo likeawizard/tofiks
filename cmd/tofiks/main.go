@@ -25,7 +25,10 @@ func main() {
 			switch cmd.(type) {
 			case *uci.Quit:
 				return
+			case *uci.Go, *uci.IsReady:
+				go cmd.Exec(e)
 			default:
+				e.WG.Add(1)
 				go cmd.Exec(e)
 			}
 		}

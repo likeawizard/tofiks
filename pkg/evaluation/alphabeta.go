@@ -73,7 +73,7 @@ func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply
 
 		if legalMoves == 0 {
 			if e.Board.IsChecked(e.Board.Side) {
-				value = -CheckmateScore - ply
+				value = -CheckmateScore + ply
 			} else {
 				value = 0
 			}
@@ -208,18 +208,19 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	return best, ponder, ok
 }
 
+// TODO: fix this ungodly mess
 func (e *EvalEngine) parseEval(eval int) string {
 	off := 0
 	if e.Board.Side == board.WHITE {
 		off = 1
 	}
 
-	if eval < -CheckmateScore {
-		return fmt.Sprintf("mate %d", Min((eval+CheckmateScore-off)/2, -1))
+	if eval < -CheckmateScore+100 {
+		return fmt.Sprintf("mate %d", Min(-(eval+CheckmateScore+off)/2, -1))
 	}
 
-	if eval > CheckmateScore {
-		return fmt.Sprintf("mate %d", Max((eval-CheckmateScore+off)/2, 1))
+	if eval > CheckmateScore-100 {
+		return fmt.Sprintf("mate %d", Max((eval-CheckmateScore-off)/2, 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)
