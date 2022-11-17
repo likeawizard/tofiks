@@ -35,7 +35,8 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 func (c *Stop) Exec(e *eval.EvalEngine) bool {
 	defer e.WG.Done()
 	if e.Stop != nil {
-		if c.ponderhit {
+		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
+		if c.ponderhit && !e.MateFound {
 			time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
 		}
 		e.Stop()

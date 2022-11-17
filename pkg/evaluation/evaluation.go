@@ -19,6 +19,7 @@ type EvalEngine struct {
 	Board          *board.Board
 	Ponder         bool
 	OwnBook        bool
+	MateFound      bool
 	KillerMoves    [100][2]board.Move
 	GameHistoryPly int
 	GameHistory    [512]uint64

@@ -145,6 +145,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
 func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (board.Move, board.Move, bool) {
+	e.MateFound = false
 	var wg sync.WaitGroup
 	var best, ponder board.Move
 	var eval int
@@ -195,8 +196,12 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 				}
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
+				if (eval+100) > CheckmateScore || (eval-100) < -CheckmateScore {
+					e.MateFound = true
+				}
+
 				//found mate stop
-				if !infinite && (eval > CheckmateScore || eval < -CheckmateScore) {
+				if !infinite && e.MateFound {
 					done = true
 				}
 			}
