@@ -73,11 +73,11 @@ func (se *SearchEntry) GetScore(depth, ply, alpha, beta int) (int, bool) {
 	eval := se.eval
 
 	if eval > CheckmateThreshold {
-		eval += ply
+		eval -= ply
 	}
 
 	if eval < -CheckmateThreshold {
-		eval -= ply
+		eval += ply
 	}
 
 	switch {

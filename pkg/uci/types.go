@@ -23,8 +23,6 @@ const (
 	C_PONDERHIT  = "ponderhit"
 	C_QUIT       = "quit"
 	C_NEW_GAME   = "ucinewgame"
-	//TODO: commands that are defined by the uci protocol but not implemented
-	//ponderhi, ucinewgame, register
 )
 
 type UCIOpts struct {
@@ -61,6 +59,7 @@ type Go struct {
 	movetime  int
 	movestogo int
 	infinite  bool
+	isPerft   bool
 }
 
 type SetOption struct {

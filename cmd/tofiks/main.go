@@ -28,6 +28,7 @@ func main() {
 			case *uci.Go, *uci.IsReady:
 				go cmd.Exec(e)
 			default:
+				e.WG.Wait()
 				e.WG.Add(1)
 				go cmd.Exec(e)
 			}
