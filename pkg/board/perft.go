@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Perft(fen string, depth int) (int, time.Duration) {
+func Perft(fen string, depth int) (int64, time.Duration) {
 	b := &Board{}
 	b.ImportFEN(fen)
 	start := time.Now()
@@ -13,12 +13,11 @@ func Perft(fen string, depth int) (int, time.Duration) {
 	return leafs, time.Since(start)
 }
 
-func traverse(b *Board, depth int) int {
-	num := 0
+func traverse(b *Board, depth int) int64 {
+	num := int64(0)
 
 	if depth == 1 {
-
-		return len(b.MoveGenLegal())
+		return int64(len(b.MoveGenLegal()))
 	} else {
 		all := b.PseudoMoveGen()
 		for i := 0; i < len(all); i++ {
@@ -40,12 +39,10 @@ func traverse(b *Board, depth int) int {
 	}
 }
 
-func PerftDebug(fen string, depth int) {
-	b := &Board{}
-	b.ImportFEN(fen)
+func (b *Board) PerftDebug(depth int) {
 	all := b.PseudoMoveGen()
-
-	nodesSearched := 0
+	start := time.Now()
+	nodesSearched := int64(0)
 	for _, move := range all {
 		umove := b.MakeMove(move)
 		if b.IsChecked(b.Side ^ 1) {
@@ -57,5 +54,5 @@ func PerftDebug(fen string, depth int) {
 		fmt.Printf("%s: %d\n", move, nodes)
 		umove()
 	}
-	fmt.Println("\nNodes searched: ", nodesSearched)
+	fmt.Printf("\nNodes searched: %d (nps %d)\n", nodesSearched, (1000000*nodesSearched)/time.Since(start).Microseconds())
 }

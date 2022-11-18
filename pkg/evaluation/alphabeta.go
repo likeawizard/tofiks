@@ -49,7 +49,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		// Do not prune:
 		// - when in check.
 		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
-		if !inCheck && nmp && depth > 3 && beta-alpha == 1 && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
+		if !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/6
 			value := -e.PVS(ctx, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)

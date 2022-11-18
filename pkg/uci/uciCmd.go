@@ -12,24 +12,29 @@ import (
 func (c *Go) Exec(e *eval.EvalEngine) bool {
 	// Check if internal state is ready - should be done by gui
 	e.WG.Wait()
-	e.Clock.Wtime = c.wtime
-	e.Clock.Winc = c.winc
-	e.Clock.Btime = c.btime
-	e.Clock.Binc = c.binc
-	e.Clock.Movestogo = c.movestogo
-	e.Clock.Movetime = c.movetime
-	e.Clock.Infinite = c.infinite
-	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
-	var depth = c.depth
-	if depth == 0 {
-		depth = 50
-	}
-	e.Stop = cancel
-	defer cancel()
-	move, ponder := e.GetMove(ctx, depth, c.infinite)
-	e.ReportMove(move, ponder, e.Ponder)
+	if !c.isPerft {
+		e.Clock.Wtime = c.wtime
+		e.Clock.Winc = c.winc
+		e.Clock.Btime = c.btime
+		e.Clock.Binc = c.binc
+		e.Clock.Movestogo = c.movestogo
+		e.Clock.Movetime = c.movetime
+		e.Clock.Infinite = c.infinite
+		ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
+		var depth = c.depth
+		if depth == 0 {
+			depth = 50
+		}
+		e.Stop = cancel
+		defer cancel()
+		move, ponder := e.GetMove(ctx, depth, c.infinite)
+		e.ReportMove(move, ponder, e.Ponder)
 
-	return true
+		return true
+	} else {
+		e.Board.PerftDebug(c.depth)
+		return true
+	}
 }
 
 func (c *Stop) Exec(e *eval.EvalEngine) bool {

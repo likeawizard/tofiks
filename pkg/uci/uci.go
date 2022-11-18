@@ -93,6 +93,9 @@ func ParseUCI(uciCmd string) UCICmd {
 				goCmd.movetime, _ = strconv.Atoi(goParts[i+1])
 			case "infinite", "ponder":
 				goCmd.infinite = true
+			case "perft": // non-uci command execute perft instead
+				goCmd.isPerft = true
+				goCmd.depth, _ = strconv.Atoi(goParts[i+1])
 			}
 		}
 		return &goCmd
