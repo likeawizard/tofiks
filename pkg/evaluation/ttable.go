@@ -72,12 +72,12 @@ func (tt *TTable) Clear() {
 func (se *SearchEntry) GetScore(depth, ply, alpha, beta int) (int, bool) {
 	eval := se.eval
 
-	if eval+100 > CheckmateScore {
-		eval += ply
+	if eval > CheckmateScore {
+		eval -= ply
 	}
 
-	if eval-100 < -CheckmateScore {
-		eval -= ply
+	if eval < -CheckmateScore {
+		eval += ply
 	}
 
 	switch {
