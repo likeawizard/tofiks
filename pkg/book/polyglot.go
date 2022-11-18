@@ -108,7 +108,7 @@ func convertPolyToUCI(b *board.Board, polyMove string) string {
 
 // Prune book moves that are illegal in current position. Moves in book could be corrupted and castling has different notation
 func pruneIllegal(b *board.Board, polyMoves []polyEntry) []engineMove {
-	moves := b.MoveGen()
+	moves := b.MoveGenLegal()
 	legal := make([]engineMove, 0)
 	for _, pMove := range polyMoves {
 		pMove.move = convertPolyToUCI(b, pMove.move)

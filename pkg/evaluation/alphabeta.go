@@ -12,16 +12,17 @@ import (
 const CheckmateScore int = 90000
 const Inf int = 2 * CheckmateScore
 
-func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, side int) int {
+func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, nmp bool, side int) int {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
 		inCheck := e.Board.IsChecked(e.Board.Side)
-		if depth == 0 && !inCheck {
+		// If search depth is reached and not in check enter Qsearch
+		if depth <= 0 && !inCheck {
 			return e.quiescence(ctx, alpha, beta, side)
-		} else if depth == 0 {
+		} else if depth <= 0 { // If depth is reached and we are in check extend
 			depth++
 		}
 
@@ -37,6 +38,20 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 				return eval
 			}
 			pvMove = entry.move
+		}
+
+		// Null move pruning.
+		// Do not prune:
+		// - when in check.
+		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
+		if !inCheck && nmp && depth > 3 && beta-alpha == 1 && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
+			unull := e.Board.MakeNullMove()
+			R := 3 + depth/6
+			value := -e.PVS(ctx, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
+			unull()
+			if value >= beta {
+				return beta
+			}
 		}
 
 		all := e.Board.PseudoMoveGen()
@@ -57,11 +72,11 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 			legalMoves++
 			e.IncrementHistory()
 			if legalMoves == 1 {
-				value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, -side)
+				value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 			} else {
-				value = -e.PVS(ctx, &pv, depth-1, ply+1, -(alpha + 1), -alpha, -side)
+				value = -e.PVS(ctx, &pv, depth-1, ply+1, -(alpha + 1), -alpha, true, -side)
 				if value > alpha {
-					value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, -side)
+					value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 				}
 			}
 			umove()
@@ -254,7 +269,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 			}
 
 			e.Stats.Start()
-			eval = e.PVS(ctx, &line, d, 0, alpha, beta, color)
+			eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
 
 			select {
 			case <-ctx.Done():

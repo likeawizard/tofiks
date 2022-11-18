@@ -18,7 +18,7 @@ func traverse(b *Board, depth int) int {
 
 	if depth == 1 {
 
-		return len(b.MoveGen())
+		return len(b.MoveGenLegal())
 	} else {
 		all := b.PseudoMoveGen()
 		for i := 0; i < len(all); i++ {
