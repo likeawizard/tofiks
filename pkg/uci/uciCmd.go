@@ -10,6 +10,8 @@ import (
 )
 
 func (c *Go) Exec(e *eval.EvalEngine) bool {
+	// Check if internal state is ready - should be done by gui
+	e.WG.Wait()
 	e.Clock.Wtime = c.wtime
 	e.Clock.Winc = c.winc
 	e.Clock.Btime = c.btime
@@ -24,15 +26,17 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 	}
 	e.Stop = cancel
 	defer cancel()
-	move, ponder := e.GetMove(ctx, depth)
+	move, ponder := e.GetMove(ctx, depth, c.infinite)
 	e.ReportMove(move, ponder, e.Ponder)
 
 	return true
 }
 
 func (c *Stop) Exec(e *eval.EvalEngine) bool {
+	defer e.WG.Done()
 	if e.Stop != nil {
-		if c.ponderhit {
+		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
+		if c.ponderhit && !e.MateFound {
 			time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
 		}
 		e.Stop()
@@ -41,31 +45,23 @@ func (c *Stop) Exec(e *eval.EvalEngine) bool {
 }
 
 func (c *Quit) Exec(e *eval.EvalEngine) bool {
-	e.Quit = true
 	return true
 }
 
 func (c *Position) Exec(e *eval.EvalEngine) bool {
-	e.MU.Lock()
-	defer e.MU.Unlock()
+	defer e.WG.Done()
 	e.Board = board.NewBoard(c.pos)
-	return e.Board.PlayMovesUCI(c.moves)
-}
-
-func (c MoveOverhead) Exec(e *eval.EvalEngine) bool {
-	e.MU.Lock()
-	defer e.MU.Unlock()
-	return true
+	return e.PlayMovesUCI(c.moves)
 }
 
 func (c *IsReady) Exec(e *eval.EvalEngine) bool {
-	e.MU.Lock()
-	defer e.MU.Unlock()
+	e.WG.Wait()
 	fmt.Println("readyok")
 	return true
 }
 
 func (c *UCI) Exec(e *eval.EvalEngine) bool {
+	defer e.WG.Done()
 	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
 	fmt.Println("id name Tofiks 0.0.1")
 	fmt.Println("id author Aturs Priede")
@@ -77,15 +73,13 @@ func (c *UCI) Exec(e *eval.EvalEngine) bool {
 }
 
 func (c *SetOption) Exec(e *eval.EvalEngine) bool {
-	e.MU.Lock()
-	defer e.MU.Unlock()
+	defer e.WG.Done()
 	c.option.Set(e)
 	return true
 }
 
 func (c *NewGame) Exec(e *eval.EvalEngine) bool {
-	e.MU.Lock()
-	defer e.MU.Unlock()
+	defer e.WG.Done()
 	e.TTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
 	e.GameHistory = [512]uint64{}
