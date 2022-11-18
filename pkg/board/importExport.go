@@ -252,7 +252,7 @@ func (b *Board) UCIToAlgebraic(move string) (pretty string) {
 
 // Add rank or file disambiguations for short algebraic
 func (b *Board) Disambiguate(move string) string {
-	moves := b.MoveGen()
+	moves := b.MoveGenLegal()
 	dis := ""
 	from, to := MoveFromString(move).FromTo()
 	_, _, piece := b.PieceAtSquare(from)
