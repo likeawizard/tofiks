@@ -224,7 +224,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) 
 		if inCheck {
 			all = e.Board.PseudoMoveGen()
 		} else {
-			all = e.Board.PseudoCaptureGen()
+			all = e.Board.PseudoCaptureAndQueenPromoGen()
 		}
 
 		legalMoves := 0
@@ -305,7 +305,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 				}
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
-				if (eval+100) > CheckmateScore || (eval-100) < -CheckmateScore {
+				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
 					e.MateFound = true
 				}
 
