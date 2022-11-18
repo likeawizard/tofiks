@@ -9,8 +9,13 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-const CheckmateScore int = 90000
-const Inf int = 2 * CheckmateScore
+const (
+	// Mate score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
+	CheckmateScore int = 90000
+	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval
+	CheckmateThreshold = CheckmateScore - 1000
+	Inf                = 2 * CheckmateScore
+)
 
 func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, nmp bool, side int) int {
 	select {
@@ -104,7 +109,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 
 		if legalMoves == 0 {
 			if inCheck {
-				return -CheckmateScore + ply
+				return ply - CheckmateScore
 			} else {
 				return 0
 			}
@@ -114,6 +119,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 	}
 }
 
+// Deprecated. Might be useful for some benchmarking debugging.
 func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, side int) int {
 	select {
 	case <-ctx.Done():
@@ -297,7 +303,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.parseEval(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
+				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
 
 				if (eval+100) > CheckmateScore || (eval-100) < -CheckmateScore {
 					e.MateFound = true
@@ -314,22 +320,4 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 
 	wg.Wait()
 	return best, ponder, ok
-}
-
-// TODO: fix this ungodly mess
-func (e *EvalEngine) parseEval(eval int) string {
-	off := 0
-	if e.Board.Side == board.WHITE {
-		off = 1
-	}
-
-	if eval < -CheckmateScore+100 {
-		return fmt.Sprintf("mate %d", Min(-(eval+CheckmateScore+off)/2, -1))
-	}
-
-	if eval > CheckmateScore-100 {
-		return fmt.Sprintf("mate %d", Max((eval-CheckmateScore-off)/2, 1))
-	}
-
-	return fmt.Sprintf("cp %d", eval)
 }
