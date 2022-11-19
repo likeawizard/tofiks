@@ -72,18 +72,22 @@ func (e *EvalEngine) DecrementHistory() {
 	e.GameHistoryPly--
 }
 
-// Two-fold repetition detection. While the rules of chess require a three-fold repetition a two-fold repetition should logically lead to three-fold repetition assuming best moves were played to repeat the position once they will be played again.
-// TODO: proper three-fold repetition seems tricky as threefold repetition detection in a search can be obsucred by transpositions table
+// Draw by 3-fold repetition.
+// Detect if the current position has been encountered already twice before.
 func (e *EvalEngine) IsDrawByRepetition() bool {
 	// e.GameHistoryPly is the index the next move should be stored at
-	// GameHistoryPly - 1 is current position
+	// GameHistoryPly - 1 is the current position
 	// So start checking at GameHistoryPly - 3 skipping opponent's move
-	//history depth. the halfmove counter is reset on pawn moves and captures and increased otherwise
+	// history depth: the halfmove counter is reset on pawn moves and captures and increased otherwise
 	// no equal position can be found beyond this point.
 	historyDepth := Max(0, e.GameHistoryPly-2-int(e.Board.HalfMoveCounter))
+	count := 0
 	for ply := e.GameHistoryPly - 3; ply >= historyDepth; ply -= 2 {
 		if e.Board.Hash == e.GameHistory[ply] {
-			return true
+			count++
+			if count > 1 {
+				return true
+			}
 		}
 	}
 

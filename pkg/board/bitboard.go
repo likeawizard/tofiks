@@ -413,9 +413,9 @@ func (b *Board) InsufficentMaterial() bool {
 	}
 	// If any pawn or major piece on the board can't have insufficent material
 	// No game with 3 or more minors is a strict draw.
-	if b.Pieces[WHITE][PAWNS] != 0 && b.Pieces[BLACK][PAWNS] != 0 &&
-		b.Pieces[WHITE][QUEENS] != 0 && b.Pieces[BLACK][QUEENS] != 0 &&
-		b.Pieces[WHITE][ROOKS] != 0 && b.Pieces[BLACK][ROOKS] != 0 &&
+	if b.Pieces[WHITE][PAWNS] != 0 || b.Pieces[BLACK][PAWNS] != 0 ||
+		b.Pieces[WHITE][QUEENS] != 0 || b.Pieces[BLACK][QUEENS] != 0 ||
+		b.Pieces[WHITE][ROOKS] != 0 || b.Pieces[BLACK][ROOKS] != 0 ||
 		b.Occupancy[BOTH].Count() > 4 {
 		return false
 	}
