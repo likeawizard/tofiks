@@ -33,7 +33,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 
 		e.Stats.nodes++
 
-		if ply > 0 && (e.Board.HalfMoveCounter >= 100 && e.IsDrawByRepetition()) {
+		if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficentMaterial() || e.IsDrawByRepetition()) {
 			return 0
 		}
 

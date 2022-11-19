@@ -403,3 +403,42 @@ func (b *Board) Promote(move Move) {
 func (b *Board) IsPawnOnly() bool {
 	return b.Pieces[WHITE][PAWNS]|b.Pieces[WHITE][KINGS]|b.Pieces[BLACK][PAWNS]|b.Pieces[BLACK][KINGS] == b.Occupancy[BOTH]
 }
+
+// Determine if there is a draw by insufficient material
+// This determines theoretical possibility of mate. Not KvKNN, which still can be achieved as a 'help mate'
+func (b *Board) InsufficentMaterial() bool {
+
+	isLight := func(s int) bool {
+		return ((s/8)+(s%8))%2 == 0
+	}
+	// If any pawn or major piece on the board can't have insufficent material
+	// No game with 3 or more minors is a strict draw.
+	if b.Pieces[WHITE][PAWNS] != 0 && b.Pieces[BLACK][PAWNS] != 0 &&
+		b.Pieces[WHITE][QUEENS] != 0 && b.Pieces[BLACK][QUEENS] != 0 &&
+		b.Pieces[WHITE][ROOKS] != 0 && b.Pieces[BLACK][ROOKS] != 0 &&
+		b.Occupancy[BOTH].Count() > 4 {
+		return false
+	}
+
+	// We disqualified all obvious sufficient material cases above and are left with games that have at most 2 minors
+	wN, wB := b.Pieces[WHITE][KNIGHTS].Count(), b.Pieces[WHITE][BISHOPS].Count()
+	bN, bB := b.Pieces[BLACK][KNIGHTS].Count(), b.Pieces[BLACK][BISHOPS].Count()
+	wM, bM := wN+wB, bN+bB
+
+	// Check if only one (or zero) minor on the board. KvKM King v King plus one minor = draw
+	if wM+bM <= 1 {
+		return true
+	}
+
+	// There must be two minors. If either side has two minros - not a draw KvKNN, KvKBB, KvKBN
+	if wM > 1 || bM > 1 {
+		return false
+	}
+
+	//Either side has a minor. Only one possible draw remaining KBvKB with same colors
+	if wB == 1 && bB == 1 {
+		return isLight(b.Pieces[WHITE][BISHOPS].LS1B()) == isLight(b.Pieces[BLACK][BISHOPS].LS1B())
+	}
+
+	return false
+}
