@@ -83,18 +83,24 @@ func (b *Board) PseudoMoveGen() []Move {
 		}
 	}
 
+	enemies := b.Occupancy[b.Side^1]
+	var caps, quiets BBoard
 	pieces = b.Pieces[b.Side][KNIGHTS]
 	for pieces > 0 {
 		from = pieces.PopLS1B()
 		attacks = KnightAttacks[from] & ^b.Occupancy[b.Side]
-		for attacks > 0 {
-			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (3+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
+		caps = attacks & enemies
+		quiets = attacks &^ enemies
+		for caps > 0 {
+			to = caps.PopLS1B()
+			move = Move(to|from<<6) | (3+offset)<<12 | IS_CAPTURE
 			moves = append(moves, move)
 
+		}
+		for quiets > 0 {
+			to = quiets.PopLS1B()
+			move = Move(to|from<<6) | (3+offset)<<12
+			moves = append(moves, move)
 		}
 	}
 
@@ -102,12 +108,17 @@ func (b *Board) PseudoMoveGen() []Move {
 	for pieces > 0 {
 		from = pieces.PopLS1B()
 		attacks = GetBishopAttacks(from, b.Occupancy[BOTH]) & ^b.Occupancy[b.Side]
-		for attacks > 0 {
-			to = attacks.PopLS1B()
+		caps = attacks & enemies
+		quiets = attacks &^ enemies
+		for caps > 0 {
+			to = caps.PopLS1B()
+			move = Move(to|from<<6) | (2+offset)<<12 | IS_CAPTURE
+			moves = append(moves, move)
+
+		}
+		for quiets > 0 {
+			to = quiets.PopLS1B()
 			move = Move(to|from<<6) | (2+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
 			moves = append(moves, move)
 
 		}
@@ -117,12 +128,17 @@ func (b *Board) PseudoMoveGen() []Move {
 	for pieces > 0 {
 		from = pieces.PopLS1B()
 		attacks = GetRookAttacks(from, b.Occupancy[BOTH]) & ^b.Occupancy[b.Side]
-		for attacks > 0 {
-			to = attacks.PopLS1B()
+		caps = attacks & enemies
+		quiets = attacks &^ enemies
+		for caps > 0 {
+			to = caps.PopLS1B()
+			move = Move(to|from<<6) | (4+offset)<<12 | IS_CAPTURE
+			moves = append(moves, move)
+
+		}
+		for quiets > 0 {
+			to = quiets.PopLS1B()
 			move = Move(to|from<<6) | (4+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
 			moves = append(moves, move)
 
 		}
@@ -132,12 +148,17 @@ func (b *Board) PseudoMoveGen() []Move {
 	for pieces > 0 {
 		from = pieces.PopLS1B()
 		attacks = GetQueenAttacks(from, b.Occupancy[BOTH]) & ^b.Occupancy[b.Side]
-		for attacks > 0 {
-			to = attacks.PopLS1B()
+		caps = attacks & enemies
+		quiets = attacks &^ enemies
+		for caps > 0 {
+			to = caps.PopLS1B()
+			move = Move(to|from<<6) | (5+offset)<<12 | IS_CAPTURE
+			moves = append(moves, move)
+
+		}
+		for quiets > 0 {
+			to = quiets.PopLS1B()
 			move = Move(to|from<<6) | (5+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
 			moves = append(moves, move)
 
 		}
