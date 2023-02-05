@@ -51,7 +51,7 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (boa
 }
 
 func (e *EvalEngine) AddKillerMove(ply int, move board.Move) {
-	if !move.IsCapture() {
+	if !e.Board.IsCapture(move) {
 		e.KillerMoves[ply][0] = e.KillerMoves[ply][1]
 		e.KillerMoves[ply][1] = move
 	}
@@ -105,10 +105,12 @@ func (e *EvalEngine) OrderMoves(pv board.Move, moves *[]board.Move, ply int) {
 
 // Estimate the potential strength of the move for move ordering
 func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
+	if e.Board.IsCapture(move) {
+		var victim int
+		attacker := PieceWeights[e.Board.Piece(move)]
+		// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
+		_, _, victim = e.Board.PieceAtSquare(move.To())
 
-	if move.IsCapture() {
-		attacker := PieceWeights[(move.Piece()-1)%6]
-		_, _, victim := e.Board.PieceAtSquare(move.To())
 		value = PieceWeights[victim] - attacker/2
 	}
 
