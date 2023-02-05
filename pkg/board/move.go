@@ -7,21 +7,24 @@ import (
 
 var (
 	// Castling moves. Used for recognizing castling and moving king during castling
-	WCastleKing  = MoveFromString("e1g1") | IS_CASTLING | 6<<12
-	WCastleQueen = MoveFromString("e1c1") | IS_CASTLING | 6<<12
-	BCastleKing  = MoveFromString("e8g8") | IS_CASTLING | 12<<12
-	BCastleQueen = MoveFromString("e8c8") | IS_CASTLING | 12<<12
+	WCastleKing  = MoveFromString("e1g1")
+	WCastleQueen = MoveFromString("e1c1")
+	BCastleKing  = MoveFromString("e8g8")
+	BCastleQueen = MoveFromString("e8c8")
 
 	// Complimentary castling moves. Used during castling to reposition rook
-	WCastleKingRook  = MoveFromString("h1f1") | 4<<12
-	WCastleQueenRook = MoveFromString("a1d1") | 4<<12
-	BCastleKingRook  = MoveFromString("h8f8") | 10<<12
-	BCastleQueenRook = MoveFromString("a8d8") | 10<<12
+	WCastleKingRook  = MoveFromString("h1f1")
+	WCastleQueenRook = MoveFromString("a1d1")
+	BCastleKingRook  = MoveFromString("h8f8")
+	BCastleQueenRook = MoveFromString("a8d8")
 )
 
 // 0..7 a8 to h8
 // 0..63 to a8 to h1 mapping
 type Square int
+
+// LSB 0..5 from 6..11 to 12..14 promotion 15 IS_ENPASSANT MSB
+type Move uint16
 
 func SquareFromString(s string) Square {
 	file := int(s[0] - 'a')
@@ -36,8 +39,6 @@ func (s Square) String() string {
 	return fmt.Sprintf("%c%d", file+'a', rank)
 }
 
-type Move uint64
-
 const (
 	PROMO_QUEEN = 1 + iota
 	PROMO_KNIGHT
@@ -47,29 +48,14 @@ const (
 	FROM         = 0x3f
 	TO           = 0xfc0
 	FROMTO       = FROM + TO
-	PIECE        = 0xf000
-	PROMO        = 0xf0000
-	IS_CAPTURE   = 0x100000
-	IS_DOUBLE    = 0x200000
-	IS_ENPASSANT = 0x400000
-	IS_CASTLING  = 0x800000
+	PROMO        = 0xf000
+	PROMO_SHIFT  = 12
+	IS_ENPASSANT = 1 << 15
 )
 
-func NewMove(from, to, piece, promo int, capture, double, ep, castling bool) Move {
-	move := Move(from | to<<6 | piece<<12)
-	if capture {
-		move |= IS_CAPTURE
-	}
-	if double {
-		move |= IS_DOUBLE
-	}
-	if ep {
-		move |= IS_ENPASSANT
-	}
-	if castling {
-		move |= IS_CASTLING
-	}
-
+// TODO: delete or fix: ep flag is not being set
+func NewMove(from, to, promo int) Move {
+	move := Move(from | to<<6 | promo<<PROMO_SHIFT)
 	return move
 }
 
@@ -78,7 +64,7 @@ func MoveFromString(s string) Move {
 	to := SquareFromString(s[2:4])
 	promotion := 0
 	if len(s) == 5 {
-		promotion = int(s[4]) << 12
+		promotion = int(s[4]) << PROMO_SHIFT
 	}
 	return Move(from + to + Square(promotion))
 }
@@ -96,11 +82,11 @@ func (m Move) To() Square {
 }
 
 func (m Move) Promotion() uint8 {
-	return uint8(m & PROMO >> 16)
+	return uint8(m & PROMO >> PROMO_SHIFT)
 }
 
 func (m Move) SetPromotion(prom uint8) Move {
-	return m&4095 | Move(prom)<<12
+	return m&4095 | Move(prom)<<PROMO_SHIFT
 }
 
 func (m Move) FromTo() (Square, Square) {
@@ -112,24 +98,8 @@ func (m Move) Reverse() Move {
 
 }
 
-func (m Move) IsCastling() bool {
-	return m&IS_CASTLING != 0
-}
-
-func (m Move) IsCapture() bool {
-	return m&IS_CAPTURE != 0
-}
-
-func (m Move) IsDouble() bool {
-	return m&IS_DOUBLE != 0
-}
-
 func (m Move) IsEnPassant() bool {
 	return m&IS_ENPASSANT != 0
-}
-
-func (m Move) Piece() int {
-	return int(m & PIECE >> 12)
 }
 
 func (m Move) String() string {

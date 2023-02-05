@@ -6,11 +6,6 @@ func (b *Board) PseudoMoveGen() []Move {
 	var moves []Move
 	var move Move
 
-	offset := Move(0)
-	if b.Side == BLACK {
-		offset = 6
-	}
-
 	if b.Side == 0 {
 		pieces = b.Pieces[WHITE][PAWNS]
 		for pieces > 0 {
@@ -18,30 +13,30 @@ func (b *Board) PseudoMoveGen() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 1<<12
+				move = Move(to | from<<6)
 
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from - 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				move = Move(to|from<<6) | 1<<12
+				move = Move(to | from<<6)
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from - 16
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from-8]) == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(to|from<<6)|IS_DOUBLE|1<<12)
+				moves = append(moves, Move(to|from<<6))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 1<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				moves = append(moves, move)
 			}
 		}
@@ -54,30 +49,30 @@ func (b *Board) PseudoMoveGen() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 7<<12
+				move = Move(to | from<<6)
 
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from + 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				move = Move(to|from<<6) | 7<<12
+				move = Move(to | from<<6)
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from + 16
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from+8]) == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(to|from<<6)|IS_DOUBLE|7<<12)
+				moves = append(moves, Move(to|from<<6))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 7<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				moves = append(moves, move)
 			}
 		}
@@ -93,13 +88,13 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(to|from<<6) | (3+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(to|from<<6) | (3+offset)<<12
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -112,13 +107,13 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(to|from<<6) | (2+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(to|from<<6) | (2+offset)<<12
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -132,13 +127,13 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(to|from<<6) | (4+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(to|from<<6) | (4+offset)<<12
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -152,13 +147,13 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(to|from<<6) | (5+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(to|from<<6) | (5+offset)<<12
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -173,11 +168,6 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 	var moves []Move
 	var move Move
 
-	offset := Move(0)
-	if b.Side == BLACK {
-		offset = 6
-	}
-
 	if b.Side == 0 {
 		pieces = b.Pieces[WHITE][PAWNS]
 		for pieces > 0 {
@@ -185,10 +175,10 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 1<<12
+				move = Move(to | from<<6)
 
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|PROMO_QUEEN<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
@@ -196,11 +186,11 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 
 			to = from - 8
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(to|from<<6)|1<<12|PROMO_QUEEN<<16)
+				moves = append(moves, Move(to|from<<6)|PROMO_QUEEN<<PROMO_SHIFT)
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 1<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				moves = append(moves, move)
 			}
 		}
@@ -213,10 +203,10 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 7<<12
+				move = Move(to | from<<6)
 
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|PROMO_QUEEN<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
@@ -224,11 +214,11 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 
 			to = from + 8
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(to|from<<6)|7<<12|PROMO_QUEEN<<16)
+				moves = append(moves, Move(to|from<<6)|PROMO_QUEEN<<PROMO_SHIFT)
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 7<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				moves = append(moves, move)
 			}
 		}
@@ -240,7 +230,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = KnightAttacks[from] & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (3+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -251,7 +241,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetBishopAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (2+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -262,7 +252,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetRookAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (4+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -273,7 +263,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetQueenAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (5+offset)<<12 | IS_CAPTURE
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -282,7 +272,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 	attacks = KingAttacks[king] & b.Occupancy[b.Side^1]
 	for attacks > 0 {
 		to = attacks.PopLS1B()
-		move = Move(to|king<<6) | (6+offset)<<12 | IS_CAPTURE
+		move = Move(to | king<<6)
 		moves = append(moves, move)
 	}
 
@@ -320,30 +310,30 @@ func (b *Board) MoveGenLegal() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK] & legalDestinations
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 1<<12
+				move = Move(to | from<<6)
 
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from - 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				move = Move(to|from<<6) | 1<<12
+				move = Move(to | from<<6)
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from - 16
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from-8]) == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				moves = append(moves, Move(to|from<<6)|IS_DOUBLE|1<<12)
+				moves = append(moves, Move(to|from<<6))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 1<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				umake := b.MakeMove(move)
 				if !b.IsChecked(b.Side ^ 1) {
 					moves = append(moves, move)
@@ -368,30 +358,30 @@ func (b *Board) MoveGenLegal() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE] & legalDestinations
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | IS_CAPTURE | 7<<12
+				move = Move(to | from<<6)
 
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from + 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				move = Move(to|from<<6) | 7<<12
+				move = Move(to | from<<6)
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|PROMO_QUEEN<<16, move|PROMO_KNIGHT<<16, move|PROMO_ROOK<<16, move|PROMO_BISHOP<<16)
+					moves = append(moves, move|PROMO_QUEEN<<PROMO_SHIFT, move|PROMO_KNIGHT<<PROMO_SHIFT, move|PROMO_ROOK<<PROMO_SHIFT, move|PROMO_BISHOP<<PROMO_SHIFT)
 				} else {
 					moves = append(moves, move)
 				}
 			}
 			to = from + 16
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from+8]) == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				moves = append(moves, Move(to|from<<6)|IS_DOUBLE|7<<12)
+				moves = append(moves, Move(to|from<<6))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(int(b.EnPassantTarget)|from<<6) | IS_CAPTURE | IS_ENPASSANT | 7<<12
+				move = Move(int(b.EnPassantTarget)|from<<6) | IS_ENPASSANT
 				umake := b.MakeMove(move)
 				if !b.IsChecked(b.Side ^ 1) {
 					moves = append(moves, move)
@@ -399,11 +389,6 @@ func (b *Board) MoveGenLegal() []Move {
 				umake()
 			}
 		}
-	}
-
-	offset := Move(0)
-	if b.Side == BLACK {
-		offset = 6
 	}
 
 	pieces = b.Pieces[b.Side][KNIGHTS]
@@ -418,10 +403,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (3+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -439,10 +421,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (2+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -460,10 +439,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (4+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 
 		}
@@ -481,10 +457,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(to|from<<6) | (5+offset)<<12
-			if b.Occupancy[b.Side^1].Get(to) != 0 {
-				move |= IS_CAPTURE
-			}
+			move = Move(to | from<<6)
 			moves = append(moves, move)
 		}
 	}
@@ -511,10 +484,7 @@ func (b *Board) MoveGenKing() []Move {
 			attacks = KingAttacks[from] & ^(b.Occupancy[WHITE] | attackedSquares)
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | 6<<12
-				if b.Occupancy[BLACK].Get(to) != 0 {
-					move |= IS_CAPTURE
-				}
+				move = Move(to | from<<6)
 				moves = append(moves, move)
 
 			}
@@ -538,10 +508,7 @@ func (b *Board) MoveGenKing() []Move {
 			attacks = KingAttacks[from] & ^(b.Occupancy[BLACK] | attackedSquares)
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(to|from<<6) | 12<<12
-				if b.Occupancy[WHITE].Get(to) != 0 {
-					move |= IS_CAPTURE
-				}
+				move = Move(to | from<<6)
 				moves = append(moves, move)
 
 			}
@@ -566,7 +533,7 @@ func (b *Board) MoveGenCaptures() []Move {
 	all := b.MoveGenLegal()
 	captures := make([]Move, 0)
 	for _, move := range all {
-		if move.IsCapture() {
+		if move.To()&Square(b.Occupancy[b.Side^1]) != 0 {
 			captures = append(captures, move)
 		}
 	}
