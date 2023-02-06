@@ -66,16 +66,14 @@ func (b *Board) SeedHash() uint64 {
 
 // Incrementally update Zborist hash after a move
 // TODO: optimize - remove use of expensive PieceAtSquare function
-func (b *Board) ZobristSimpleMove(move Move) {
+func (b *Board) ZobristSimpleMove(move Move, piece int) {
 	from, to := move.From(), move.To()
-	piece := (move.Piece() - 1) % 6
 	b.Hash ^= pieceKeys[b.Side][piece][to]
 	b.Hash ^= pieceKeys[b.Side][piece][from]
 }
 
-func (b *Board) ZobristCapture(move Move) {
+func (b *Board) ZobristCapture(move Move, piece int) {
 	from, to := move.From(), move.To()
-	piece := (move.Piece() - 1) % 6
 	_, _, capturedPiece := b.PieceAtSquare(to)
 	b.Hash ^= pieceKeys[b.Side^1][capturedPiece][to]
 	b.Hash ^= pieceKeys[b.Side][piece][to]
@@ -107,17 +105,17 @@ func (b *Board) ZobristCastlingRights(right CastlingRights) {
 func (b *Board) ZobristCastling(right CastlingRights) {
 	switch right {
 	case WOO:
-		b.ZobristSimpleMove(WCastleKing)
-		b.ZobristSimpleMove(WCastleKingRook)
+		b.ZobristSimpleMove(WCastleKing, KINGS)
+		b.ZobristSimpleMove(WCastleKingRook, ROOKS)
 	case WOOO:
-		b.ZobristSimpleMove(WCastleQueen)
-		b.ZobristSimpleMove(WCastleQueenRook)
+		b.ZobristSimpleMove(WCastleQueen, KINGS)
+		b.ZobristSimpleMove(WCastleQueenRook, ROOKS)
 	case BOO:
-		b.ZobristSimpleMove(BCastleKing)
-		b.ZobristSimpleMove(BCastleKingRook)
+		b.ZobristSimpleMove(BCastleKing, KINGS)
+		b.ZobristSimpleMove(BCastleKingRook, ROOKS)
 	case BOOO:
-		b.ZobristSimpleMove(BCastleQueen)
-		b.ZobristSimpleMove(BCastleQueenRook)
+		b.ZobristSimpleMove(BCastleQueen, KINGS)
+		b.ZobristSimpleMove(BCastleQueenRook, ROOKS)
 	}
 }
 

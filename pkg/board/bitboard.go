@@ -215,7 +215,9 @@ func (b *Board) GetUnmake() func() {
 // Make a legal move in position and update board state - castling rights, en passant, move count, side to move etc. Returns a function to take back the move made.
 func (b *Board) MakeMove(move Move) func() {
 	umove := b.GetUnmake()
-	if move.IsCapture() || move.Piece() == 1 {
+	isCapture := b.IsCapture(move)
+	piece := b.Piece(move)
+	if isCapture || piece == PAWNS {
 		b.HalfMoveCounter = 0
 	} else {
 		b.HalfMoveCounter++
@@ -225,7 +227,7 @@ func (b *Board) MakeMove(move Move) func() {
 		b.ZobristEnPassant(b.EnPassantTarget)
 	}
 
-	bitboard := b.GetBitBoard(move.Piece(), move)
+	bitboard := b.GetBitBoard(piece)
 
 	switch {
 	case move.IsEnPassant():
@@ -236,21 +238,21 @@ func (b *Board) MakeMove(move Move) func() {
 			direction = -8
 		}
 		b.RemoveCaptured(int(move.To()) - direction)
-	case move.IsCapture():
+	case isCapture:
 		b.EnPassantTarget = -1
-		b.ZobristCapture(move)
+		b.ZobristCapture(move, piece)
 		b.RemoveCaptured(int(move.To()))
-	case move.IsCastling():
+	case b.IsCastling(move, piece):
 		b.EnPassantTarget = -1
-		b.ZobristSimpleMove(move)
+		b.ZobristSimpleMove(move, piece)
 		b.CompleteCastling(move)
-	case move.IsDouble():
-		b.ZobristSimpleMove(move)
+	case b.IsDouble(move, piece):
+		b.ZobristSimpleMove(move, piece)
 		b.EnPassantTarget = (move.To() + move.From()) / 2
 		b.ZobristEnPassant(b.EnPassantTarget)
 	default:
 		b.EnPassantTarget = -1
-		b.ZobristSimpleMove(move)
+		b.ZobristSimpleMove(move, piece)
 	}
 	bitboard.Set(int(move.To()))
 	bitboard.Clear(int(move.From()))
@@ -324,12 +326,8 @@ func (b *Board) PlayMovesUCI(uciMoves string) bool {
 }
 
 // Return a pointer to the bitboard of the piece moved
-func (b *Board) GetBitBoard(piece int, move Move) *BBoard {
-	side := WHITE
-	if piece > 6 {
-		side = BLACK
-	}
-	return &b.Pieces[side][(piece-1)%6]
+func (b *Board) GetBitBoard(piece int) *BBoard {
+	return &b.Pieces[b.Side][piece]
 }
 
 // Remove a piece captured by a move from the opposing bitboard
@@ -354,7 +352,7 @@ func (b *Board) CompleteCastling(move Move) {
 	case BCastleQueen:
 		rookMove = BCastleQueenRook
 	}
-	b.ZobristSimpleMove(rookMove)
+	b.ZobristSimpleMove(rookMove, ROOKS)
 	bitboard.Set(int(rookMove.To()))
 	bitboard.Clear(int(rookMove.From()))
 }
@@ -374,15 +372,16 @@ func (b *Board) PieceAtSquare(sq Square) (bool, int, int) {
 
 // Replace a pawn on the 8th/1st rank with the promotion piece
 func (b *Board) Promote(move Move) {
-	if move.Promotion() == 0 {
+	promotion := move.Promotion()
+	if promotion == 0 {
 		return
 	}
 
 	var pawnBitBoard, promotionBitBoard *BBoard
-	pawnBitBoard = b.GetBitBoard(move.Piece(), move)
+	pawnBitBoard = &b.Pieces[b.Side][PAWNS]
 	var pieceIdx int
 
-	switch move.Promotion() {
+	switch promotion {
 	case PROMO_QUEEN:
 		pieceIdx = QUEENS
 	case PROMO_KNIGHT:

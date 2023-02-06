@@ -11,13 +11,13 @@ import (
 
 const (
 	// Mate score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
-	CheckmateScore int = 90000
+	CheckmateScore int32 = 90000
 	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval
 	CheckmateThreshold = CheckmateScore - 1000
 	Inf                = 2 * CheckmateScore
 )
 
-func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, nmp bool, side int) int {
+func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -38,11 +38,11 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		}
 
 		var pvMove board.Move
-		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && entry.depth >= depth && ply > 0 {
+		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && ply > 0 && entry.Depth() >= depth {
 			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok {
 				return eval
 			}
-			pvMove = entry.move
+			pvMove = entry.Move()
 		}
 
 		// Null move pruning.
@@ -63,7 +63,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		legalMoves := 0
 		e.OrderMoves(pvMove, &all, ply)
 
-		value := 0
+		value := int32(0)
 		entryType := TT_UPPER
 		bestVal := -Inf
 		var bestMove board.Move
@@ -109,7 +109,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 
 		if legalMoves == 0 {
 			if inCheck {
-				return ply - CheckmateScore
+				return int32(ply) - CheckmateScore
 			} else {
 				return 0
 			}
@@ -119,98 +119,14 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 	}
 }
 
-// Deprecated. Might be useful for some benchmarking debugging.
-func (e *EvalEngine) negamax(ctx context.Context, line *[]board.Move, depth, ply int, alpha, beta int, side int) int {
-	select {
-	case <-ctx.Done():
-		// Meaningless return. Should never trust the result after ctx is expired
-		return 0
-	default:
-		inCheck := e.Board.IsChecked(e.Board.Side)
-		if depth == 0 && !inCheck {
-			return e.quiescence(ctx, alpha, beta, side)
-		} else if depth == 0 {
-			depth++
-		}
-
-		e.Stats.nodes++
-
-		if ply > 0 && (e.Board.HalfMoveCounter >= 100 && e.IsDrawByRepetition()) {
-			return 0
-		}
-
-		alphaTemp := alpha
-		var pvMove board.Move
-
-		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && entry.depth >= depth && ply > 0 {
-			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok {
-				return eval
-			}
-			pvMove = entry.move
-		}
-
-		all := e.Board.PseudoMoveGen()
-		legalMoves := 0
-		e.OrderMoves(pvMove, &all, ply)
-
-		value := -Inf
-		pv := []board.Move{}
-		for i := 0; i < len(all); i++ {
-			umove := e.Board.MakeMove(all[i])
-			if e.Board.IsChecked(e.Board.Side ^ 1) {
-				umove()
-				continue
-			}
-			legalMoves++
-			e.IncrementHistory()
-			value = Max(value, -e.negamax(ctx, &pv, depth-1, ply+1, -beta, -alpha, -side))
-			e.DecrementHistory()
-			umove()
-
-			if value > alpha {
-				alpha = value
-				*line = []board.Move{all[i]}
-				*line = append(*line, pv...)
-			}
-
-			if alpha >= beta {
-				e.AddKillerMove(ply, all[i])
-				break
-			}
-
-		}
-
-		if legalMoves == 0 {
-			if inCheck {
-				value = -CheckmateScore + ply
-			} else {
-				value = 0
-			}
-		}
-
-		if len(*line) > 0 {
-			var entryType ttType
-			if value <= alphaTemp {
-				entryType = TT_UPPER
-			} else if value >= beta {
-				entryType = TT_LOWER
-			} else {
-				entryType = TT_EXACT
-			}
-			e.TTable.Store(e.Board.Hash, entryType, value, depth, (*line)[0])
-		}
-		return value
-	}
-}
-
-func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta int, side int) int {
+func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) int32 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
 		e.Stats.qNodes++
-		eval := side * e.GetEvaluation(e.Board)
+		eval := side * int32(e.GetEvaluation(e.Board))
 
 		if eval >= beta {
 			return beta
@@ -257,10 +173,10 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	e.MateFound = false
 	var wg sync.WaitGroup
 	var best, ponder board.Move
-	var eval int
+	var eval int32
 	var line []board.Move
 	start := time.Now()
-	color := 1
+	color := int32(1)
 	alpha, beta := -Inf, Inf
 	if e.Board.Side != board.WHITE {
 		color = -color
@@ -268,7 +184,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	done, ok := false, true
 	wg.Add(1)
 	go func() {
-		for d := 1; d <= depth; d++ {
+		for d := int8(1); d <= int8(depth); d++ {
 			if done {
 				wg.Done()
 				return
