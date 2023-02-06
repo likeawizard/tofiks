@@ -50,7 +50,7 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (boa
 	return best, ponder
 }
 
-func (e *EvalEngine) AddKillerMove(ply int, move board.Move) {
+func (e *EvalEngine) AddKillerMove(ply int8, move board.Move) {
 	if !e.Board.IsCapture(move) {
 		e.KillerMoves[ply][0] = e.KillerMoves[ply][1]
 		e.KillerMoves[ply][1] = move
@@ -94,7 +94,7 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	return false
 }
 
-func (e *EvalEngine) OrderMoves(pv board.Move, moves *[]board.Move, ply int) {
+func (e *EvalEngine) OrderMoves(pv board.Move, moves *[]board.Move, ply int8) {
 	sort.Slice(*moves, func(i int, j int) bool {
 		return (*moves)[i] == pv ||
 			(*moves)[i] == e.KillerMoves[ply][0] ||
@@ -166,27 +166,31 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 }
 
 // Display centipawn score. If the eval is in the checkmate score threshold convert to mate score
-func (e *EvalEngine) ConvertEvalToScore(eval int) string {
+func (e *EvalEngine) ConvertEvalToScore(eval int32) string {
 	if eval < -CheckmateThreshold {
-		return fmt.Sprintf("mate %d", Min(-(eval+CheckmateScore+e.Board.Side^1)/2, -1))
+		return fmt.Sprintf("mate %d", Min(-(eval+CheckmateScore+int32(e.Board.Side^1))/2, -1))
 	}
 
 	if eval > CheckmateThreshold {
-		return fmt.Sprintf("mate %d", Max(-(eval-CheckmateScore-e.Board.Side^1)/2, 1))
+		return fmt.Sprintf("mate %d", Max(-(eval-CheckmateScore-int32(e.Board.Side^1))/2, 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)
 }
 
+type Number interface {
+	int | int16 | int32 | int64
+}
+
 // TODO: try branchless optimization
-func Max(a, b int) int {
+func Max[T Number](a, b T) T {
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func Min(a, b int) int {
+func Min[T Number](a, b T) T {
 	if a < b {
 		return a
 	}
