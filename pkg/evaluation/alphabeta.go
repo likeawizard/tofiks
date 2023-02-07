@@ -191,7 +191,9 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 			}
 
 			e.Stats.Start()
+			// stopHelpers := e.StartHelpers(ctx, d, 3)
 			eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
+			// stopHelpers()
 
 			select {
 			case <-ctx.Done():
@@ -219,8 +221,8 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.hashfull, lineStr)
-
+				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
+				// fmt.Printf("hashfull %d, newwrite %d, overwrite %d, rejected %d\n", e.TTable.Hashfull(), e.TTable.newWrite, e.TTable.overWrite, e.TTable.rejectedWrite)
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
 					e.MateFound = true
 				}

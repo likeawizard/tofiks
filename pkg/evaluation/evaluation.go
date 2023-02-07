@@ -44,7 +44,6 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (boa
 		return move, 0
 	} else {
 		best, ponder, _ = e.IDSearch(ctx, depth, infinite)
-		e.TTable.Hashfull()
 	}
 
 	return best, ponder

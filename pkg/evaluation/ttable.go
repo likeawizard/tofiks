@@ -28,9 +28,11 @@ func (ttt ttType) String() string {
 }
 
 type TTable struct {
-	entries  []SearchEntry
-	hashfull uint64
-	size     uint64
+	entries       []SearchEntry
+	newWrite      uint64
+	overWrite     uint64
+	rejectedWrite uint64
+	size          uint64
 }
 
 // LSB 0..15 move, 16..23 depth 24..31 type 32..63 score MSB
@@ -100,28 +102,40 @@ func (tt *TTable) Probe(hash uint64) (*EntryData, bool) {
 }
 
 func (tt *TTable) Hashfull() uint64 {
-	tt.hashfull = 0
-	for _, e := range tt.entries {
-		if e.key != 0 {
-			tt.hashfull++
-		}
-	}
-	tt.hashfull = (tt.hashfull * 1000) / tt.size
-	return tt.hashfull
+	return (tt.newWrite * 1000) / tt.size
 }
 
 func (tt *TTable) Store(hash uint64, entryType ttType, eval int32, depth int8, move board.Move) {
 	idx := hash % tt.size
 	data := NewEntry(move, depth, entryType, eval)
-	tt.entries[idx] = SearchEntry{
-		key:  hash ^ uint64(data),
-		data: data,
+	if tt.entries[idx].data == 0 {
+		tt.entries[idx] = SearchEntry{
+			key:  hash ^ uint64(data),
+			data: data,
+		}
+		tt.newWrite++
+		return
+	} else if entryType == TT_EXACT || hash^uint64(data) != tt.entries[idx].key || tt.entries[idx].data.Depth() < depth {
+		// Replace entry for new position or same position with greater depth
+		tt.entries[idx] = SearchEntry{
+			key:  hash ^ uint64(data),
+			data: data,
+		}
+		tt.overWrite++
+		return
 	}
+
+	tt.rejectedWrite++
 }
 
 func (tt *TTable) Clear() {
-	tt.hashfull = 0
-	tt.entries = make([]SearchEntry, tt.size)
+	tt.newWrite = 0
+	tt.overWrite = 0
+	tt.rejectedWrite = 0
+	for i := 0; i < int(tt.size); i++ {
+		tt.entries[i].key = 0
+		tt.entries[i].data = 0
+	}
 }
 
 func (ed *EntryData) GetScore(depth, ply int8, alpha, beta int32) (int32, bool) {
@@ -139,9 +153,9 @@ func (ed *EntryData) GetScore(depth, ply int8, alpha, beta int32) (int32, bool) 
 	case ttType == TT_EXACT:
 		return eval, true
 	case ttType == TT_UPPER && eval <= alpha:
-		return eval, true
+		return alpha, true
 	case ttType == TT_LOWER && eval >= beta:
-		return eval, true
+		return beta, true
 	}
 
 	return eval, false
