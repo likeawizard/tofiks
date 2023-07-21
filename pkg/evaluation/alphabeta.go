@@ -199,6 +199,12 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 			e.Stats.Start()
 			// stopHelpers := e.StartHelpers(ctx, d, 3)
 			eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
+
+			if eval <= alpha || eval >= beta {
+				alpha, beta = -Inf, Inf
+				eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
+			}
+			alpha, beta = eval-50, eval+100
 			// stopHelpers()
 
 			select {
