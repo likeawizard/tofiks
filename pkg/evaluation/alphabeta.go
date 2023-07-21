@@ -17,7 +17,7 @@ const (
 	Inf                = 2 * CheckmateScore
 )
 
-func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
+func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -40,6 +40,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		var pvMove board.Move
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && ply > 0 && entry.Depth() >= depth {
 			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok {
+				*line = []board.Move{entry.Move()}
 				return eval
 			}
 			pvMove = entry.Move()
@@ -52,7 +53,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		if !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/6
-			value := -e.PVS(ctx, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
+			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 			unull()
 			if value >= beta {
 				return beta
@@ -61,7 +62,7 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
-		e.OrderMoves(pvMove, &all, ply)
+		e.OrderMovesPV(pvMove, &all, pvOrder, ply)
 
 		value := int32(0)
 		entryType := TT_UPPER
@@ -81,11 +82,11 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 			legalMoves++
 			e.IncrementHistory()
 			if legalMoves == 1 {
-				value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
+				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 			} else {
-				value = -e.PVS(ctx, &pv, depth-1, ply+1, -(alpha + 1), -alpha, true, -side)
+				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -(alpha + 1), -alpha, true, -side)
 				if value > alpha {
-					value = -e.PVS(ctx, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
+					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 				}
 			}
 			umove()
@@ -150,7 +151,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) in
 		}
 
 		legalMoves := 0
-		e.OrderMoves(0, &all, 0)
+		e.OrderMoves(&all)
 
 		value := -Inf
 		for i := 0; i < len(all); i++ {
@@ -198,11 +199,13 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 
 			e.Stats.Start()
 			// stopHelpers := e.StartHelpers(ctx, d, 3)
-			eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
+			pv := []board.Move{}
+			pv = append(pv, line...)
+			eval = e.PVS(ctx, &pv, &line, d, 0, alpha, beta, true, color)
 
 			if eval <= alpha || eval >= beta {
 				alpha, beta = -Inf, Inf
-				eval = e.PVS(ctx, &line, d, 0, alpha, beta, true, color)
+				eval = e.PVS(ctx, &pv, &line, d, 0, alpha, beta, true, color)
 			}
 			alpha, beta = eval-50, eval+100
 			// stopHelpers()

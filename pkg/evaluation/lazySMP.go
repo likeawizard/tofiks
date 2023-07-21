@@ -74,7 +74,7 @@ func (e *EvalEngine) PVSHelper(ctx context.Context, b *board.Board, depth, ply i
 
 		all := b.PseudoMoveGen()
 		legalMoves := 0
-		e.OrderMoves(pvMove, &all, ply)
+		e.OrderMovesPV(pvMove, &all, &all, ply)
 
 		value := int32(0)
 		entryType := TT_UPPER
@@ -153,7 +153,7 @@ func (e *EvalEngine) quiescenceHelper(ctx context.Context, b *board.Board, alpha
 		}
 
 		legalMoves := 0
-		e.OrderMoves(0, &all, 0)
+		e.OrderMoves(&all)
 
 		value := -Inf
 		for i := 0; i < len(all); i++ {
