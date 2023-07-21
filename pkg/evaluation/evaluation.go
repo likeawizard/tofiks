@@ -93,12 +93,20 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	return false
 }
 
-func (e *EvalEngine) OrderMoves(pv board.Move, moves *[]board.Move, ply int8) {
+func (e *EvalEngine) OrderMovesPV(pv board.Move, moves, pvOrder *[]board.Move, ply int8) {
+	lenPV := int8(len(*pvOrder))
 	sort.Slice(*moves, func(i int, j int) bool {
-		return (*moves)[i] == pv ||
+		return (lenPV > ply && (*pvOrder)[ply] == (*moves)[i]) ||
+			(*moves)[i] == pv ||
 			(*moves)[i] == e.KillerMoves[ply][0] ||
 			(*moves)[i] == e.KillerMoves[ply][1] ||
 			e.getMoveValue((*moves)[i]) > e.getMoveValue((*moves)[j])
+	})
+}
+
+func (e *EvalEngine) OrderMoves(moves *[]board.Move) {
+	sort.Slice(*moves, func(i int, j int) bool {
+		return e.getMoveValue((*moves)[i]) > e.getMoveValue((*moves)[j])
 	})
 }
 
