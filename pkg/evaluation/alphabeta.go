@@ -67,8 +67,12 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 		entryType := TT_UPPER
 		bestVal := -Inf
 		var bestMove board.Move
+		moveCount := len(all)
+		if moveCount > 0 {
+			bestMove = all[0]
+		}
 		pv := []board.Move{}
-		for i := 0; i < len(all); i++ {
+		for i := 0; i < moveCount; i++ {
 			umove := e.Board.MakeMove(all[i])
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
@@ -94,12 +98,14 @@ func (e *EvalEngine) PVS(ctx context.Context, line *[]board.Move, depth, ply int
 
 			if value >= beta {
 				e.AddKillerMove(ply, all[i])
+				bestMove = all[i]
 				entryType = TT_LOWER
 				break
 			}
 
 			if value > alpha {
 				entryType = TT_EXACT
+				bestMove = all[i]
 				alpha = value
 				*line = []board.Move{all[i]}
 				*line = append(*line, pv...)
