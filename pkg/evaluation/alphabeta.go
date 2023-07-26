@@ -26,7 +26,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 		inCheck := e.Board.IsChecked(e.Board.Side)
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 && !inCheck {
-			return e.quiescence(ctx, alpha, beta, side)
+			return e.Quiescence(ctx, alpha, beta, side)
 		} else if depth <= 0 { // If depth is reached and we are in check extend
 			depth++
 		}
@@ -126,7 +126,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 	}
 }
 
-func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) int32 {
+func (e *EvalEngine) Quiescence(ctx context.Context, alpha, beta, side int32) int32 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -161,7 +161,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) in
 				continue
 			}
 			legalMoves++
-			value = Max(value, -e.quiescence(ctx, -beta, -alpha, -side))
+			value = Max(value, -e.Quiescence(ctx, -beta, -alpha, -side))
 			umove()
 			alpha = Max(value, alpha)
 			if alpha >= beta {

@@ -9,6 +9,9 @@ build-linux:
 build-windows:
 	GOAMD64=${GOAMD64VERSION} GOOS=windows go build -o tofiks.exe cmd/tofiks/main.go
 
+build-texel:
+	go build -o texel-tuning cmd/texel-tuning/main.go
+
 clean:
 	go clean
 
