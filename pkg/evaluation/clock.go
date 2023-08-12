@@ -33,27 +33,19 @@ func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.Cancel
 
 func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
 	var movetime = time.Millisecond * 100
+	c.Movestogo = Max(40-fmCounter, 10)
 	switch {
 	case c.Movetime > 0:
 		movetime = time.Millisecond * time.Duration(c.Movetime-c.Overhead)
-	case c.Movestogo > 0:
+	default:
 		movestogo := c.Movestogo
 		t := c.Wtime
-		inc := c.Binc
+		inc := c.Winc
 		if side == board.BLACK {
 			t = c.Btime
 			inc = c.Binc
 		}
-		movetime = time.Millisecond * time.Duration((t+((inc-c.Overhead)*movestogo))/(movestogo+1))
-	case c.Movestogo == 0:
-		movestogo := Max(40-int(fmCounter), 10)
-		t := c.Wtime
-		inc := c.Binc
-		if side == board.BLACK {
-			t = c.Btime
-			inc = c.Binc
-		}
-		movetime = time.Millisecond * time.Duration((t+((inc-c.Overhead)*movestogo))/(movestogo+1))
+		movetime = time.Millisecond * time.Duration(Max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
 	}
 	return movetime
 }
