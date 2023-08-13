@@ -110,30 +110,28 @@ func (e *EvalEngine) OrderMoves(moves *[]board.Move) {
 	})
 }
 
+var MVVLVA = [7][6]int{
+	{10, 9, 8, 7, 6, 5},
+	{30, 29, 28, 27, 26, 25},
+	{20, 19, 18, 17, 16, 15},
+	{40, 39, 38, 37, 36, 35},
+	{50, 49, 48, 47, 46, 45},
+}
+
 // Estimate the potential strength of the move for move ordering
 func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
 	if e.Board.IsCapture(move) {
 		var victim int
-		attacker := PieceWeights[e.Board.Piece(move)]
+		attacker := e.Board.Piece(move)
 		// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
 		_, _, victim = e.Board.PieceAtSquare(move.To())
 
-		value = PieceWeights[victim] - attacker/2
+		value = MVVLVA[victim][attacker]
 	}
-
-	// TODO: implement SEE or MVV-LVA ordering
-	// Calculate the relative value of exchange
-	// from, to := move.FromTo()
-	// us, them := PieceWeights[b.Coords[from]], PieceWeights[b.Coords[to]]
-	// if them == 0 {
-	// 	value += 0
-	// } else {
-	// 	value += dir * (0.5*us + them)
-	// }
 
 	// Prioritize promotions
 	if move.Promotion() != 0 {
-		value += 3
+		value += 50
 	}
 
 	return
