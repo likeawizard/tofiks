@@ -367,7 +367,7 @@ func (b *Board) PieceAtSquare(sq Square) (bool, int, int) {
 		}
 	}
 
-	return false, 0, 0
+	return false, 0, 6
 }
 
 // Replace a pawn on the 8th/1st rank with the promotion piece

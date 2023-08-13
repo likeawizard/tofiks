@@ -23,6 +23,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
+		isPV := beta-alpha != 1
 		inCheck := e.Board.IsChecked(e.Board.Side)
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 && !inCheck {
@@ -50,7 +51,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 		// Do not prune:
 		// - when in check.
 		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
-		if !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
+		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/6
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
@@ -80,6 +81,12 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 				continue
 			}
 			legalMoves++
+
+			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && all[i].Promotion() == 0 {
+				umove()
+				continue
+			}
+
 			e.IncrementHistory()
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
