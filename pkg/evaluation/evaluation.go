@@ -14,19 +14,19 @@ import (
 type PickBookMove func(*board.Board) board.Move
 
 type EvalEngine struct {
-	WG             sync.WaitGroup
-	Stats          EvalStats
-	Board          *board.Board
-	Ponder         bool
-	OwnBook        bool
-	MateFound      bool
-	KillerMoves    [100][2]board.Move
-	GameHistoryPly int
-	GameHistory    [512]uint64
-	SearchDepth    int
-	TTable         *TTable
-	Clock          Clock
-	Stop           context.CancelFunc
+	WG          sync.WaitGroup
+	Stats       EvalStats
+	Board       *board.Board
+	Ponder      bool
+	OwnBook     bool
+	MateFound   bool
+	KillerMoves [100][2]board.Move
+	Plys        int
+	GameHistory [512]uint64
+	SearchDepth int
+	TTable      *TTable
+	Clock       Clock
+	Stop        context.CancelFunc
 }
 
 func NewEvalEngine() (*EvalEngine, error) {
@@ -50,9 +50,9 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (boa
 }
 
 func (e *EvalEngine) AddKillerMove(ply int8, move board.Move) {
-	if !e.Board.IsCapture(move) {
-		e.KillerMoves[ply][0] = e.KillerMoves[ply][1]
-		e.KillerMoves[ply][1] = move
+	if !e.Board.IsCapture(move) && move != e.KillerMoves[ply][0] {
+		e.KillerMoves[ply][1] = e.KillerMoves[ply][0]
+		e.KillerMoves[ply][0] = move
 	}
 }
 
@@ -62,13 +62,13 @@ func (e *EvalEngine) AgeKillers() {
 	}
 }
 
-func (e *EvalEngine) IncrementHistory() {
-	e.GameHistory[e.GameHistoryPly] = e.Board.Hash
-	e.GameHistoryPly++
+func (e *EvalEngine) AddPly() {
+	e.GameHistory[e.Plys] = e.Board.Hash
+	e.Plys++
 }
 
-func (e *EvalEngine) DecrementHistory() {
-	e.GameHistoryPly--
+func (e *EvalEngine) RemovePly() {
+	e.Plys--
 }
 
 // Draw by 3-fold repetition.
@@ -79,9 +79,9 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	// So start checking at GameHistoryPly - 3 skipping opponent's move
 	// history depth: the halfmove counter is reset on pawn moves and captures and increased otherwise
 	// no equal position can be found beyond this point.
-	historyDepth := Max(0, e.GameHistoryPly-2-int(e.Board.HalfMoveCounter))
+	historyDepth := Max(0, e.Plys-2-int(e.Board.HalfMoveCounter))
 	count := 0
-	for ply := e.GameHistoryPly - 3; ply >= historyDepth; ply -= 2 {
+	for ply := e.Plys - 3; ply >= historyDepth; ply -= 2 {
 		if e.Board.Hash == e.GameHistory[ply] {
 			count++
 			if count > 1 {
@@ -139,14 +139,14 @@ func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
 
 func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
 	moveSlice := strings.Fields(uciMoves)
-	e.GameHistoryPly = 0
+	e.Plys = 0
 
 	for _, uciMove := range moveSlice {
 		_, ok := e.Board.MoveUCI(uciMove)
 		if !ok {
 			return false
 		}
-		e.IncrementHistory()
+		e.AddPly()
 	}
 
 	return true

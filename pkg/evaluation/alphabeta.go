@@ -87,7 +87,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 				continue
 			}
 
-			e.IncrementHistory()
+			e.AddPly()
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 			} else {
@@ -97,7 +97,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 				}
 			}
 			umove()
-			e.DecrementHistory()
+			e.RemovePly()
 
 			if value > bestVal {
 				bestVal = value
