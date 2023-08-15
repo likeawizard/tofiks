@@ -205,6 +205,8 @@ func (b *Board) GetUnmake() func() {
 		b.Pieces = copy.Pieces
 		b.Occupancy = copy.Occupancy
 		b.Side = copy.Side
+		b.Phase = copy.Phase
+		b.InCheck = copy.InCheck
 		b.CastlingRights = copy.CastlingRights
 		b.EnPassantTarget = copy.EnPassantTarget
 		b.HalfMoveCounter = copy.HalfMoveCounter
@@ -272,14 +274,38 @@ func (b *Board) MakeMove(move Move) func() {
 		b.FullMoveCounter++
 	}
 
+	b.Phase = b.GetGamePhase()
 	b.ZobristSideToMove()
 	b.Side ^= 1
+	b.InCheck = b.IsChecked(b.Side)
 	return umove
+}
+
+// Determine the game phase as a sliding factor between opening and endgame
+// https://www.chessprogramming.org/Tapered_Eval#Implementation_example
+func (b *Board) GetGamePhase() int {
+	phase := 24
+
+	for color := WHITE; color <= BLACK; color++ {
+		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
+			switch pieceType {
+			case BISHOPS, KINGS:
+				phase -= b.Pieces[color][pieceType].Count()
+			case ROOKS:
+				phase -= 2 * b.Pieces[color][pieceType].Count()
+			case QUEENS:
+				phase -= 4 * b.Pieces[color][pieceType].Count()
+			}
+		}
+	}
+
+	return (phase * 268) / 24
 }
 
 func (b *Board) MakeNullMove() func() {
 	type undoNull struct {
-		ep Square
+		inCheck bool
+		ep      Square
 	}
 	undo := undoNull{
 		ep: b.EnPassantTarget,
@@ -290,10 +316,12 @@ func (b *Board) MakeNullMove() func() {
 
 	b.ZobristSideToMove()
 	b.Side ^= 1
+	b.InCheck = b.IsChecked(b.Side)
 	return func() {
 		b.HalfMoveCounter--
 		b.ZobristEnPassant(undo.ep)
 		b.EnPassantTarget = undo.ep
+		b.InCheck = undo.inCheck
 		b.ZobristSideToMove()
 		b.Side ^= 1
 	}

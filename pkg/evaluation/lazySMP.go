@@ -38,7 +38,7 @@ func (e *EvalEngine) PVSHelper(ctx context.Context, b *board.Board, depth, ply i
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
-		inCheck := b.IsChecked(b.Side)
+		inCheck := b.InCheck
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 && !inCheck {
 			return e.quiescenceHelper(ctx, b, alpha, beta, side)
@@ -145,7 +145,7 @@ func (e *EvalEngine) quiescenceHelper(ctx context.Context, b *board.Board, alpha
 			alpha = eval
 		}
 		var all []board.Move
-		inCheck := b.IsChecked(b.Side)
+		inCheck := b.InCheck
 		if inCheck {
 			all = b.PseudoMoveGen()
 		} else {

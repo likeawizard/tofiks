@@ -24,7 +24,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 		return 0
 	default:
 		isPV := beta-alpha != 1
-		inCheck := e.Board.IsChecked(e.Board.Side)
+		inCheck := e.Board.InCheck
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 && !inCheck {
 			return e.quiescence(ctx, alpha, beta, side)
@@ -107,15 +107,15 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 			if value >= beta {
 				if !e.Board.IsCapture(all[i]) {
 					e.AddKillerMove(ply, all[i])
-					e.IncrementHistory(depth, all[i])
+					// e.IncrementHistory(depth, all[i])
 				}
 
 				bestMove = all[i]
 				entryType = TT_LOWER
 				break
-			} else {
-				e.DecrementHistory(all[i])
-			}
+			} //else {
+			// 	e.DecrementHistory(all[i])
+			// }
 
 			if value > alpha {
 				entryType = TT_EXACT
@@ -123,9 +123,9 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 				alpha = value
 				*line = []board.Move{all[i]}
 				*line = append(*line, pv...)
-			} else {
-				e.DecrementHistory(all[i])
-			}
+			} //else {
+			// 	e.DecrementHistory(all[i])
+			// }
 
 		}
 
@@ -158,7 +158,7 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) in
 			alpha = eval
 		}
 		var all []board.Move
-		inCheck := e.Board.IsChecked(e.Board.Side)
+		inCheck := e.Board.InCheck
 		if inCheck {
 			all = e.Board.PseudoMoveGen()
 		} else {
@@ -203,7 +203,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
-	e.AgeHistory()
+	// e.AgeHistory()
 	done, ok := false, true
 	wg.Add(1)
 	go func() {
