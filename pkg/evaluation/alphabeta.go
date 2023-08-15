@@ -105,10 +105,16 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 			}
 
 			if value >= beta {
-				e.AddKillerMove(ply, all[i])
+				if !e.Board.IsCapture(all[i]) {
+					e.AddKillerMove(ply, all[i])
+					e.IncrementHistory(depth, all[i])
+				}
+
 				bestMove = all[i]
 				entryType = TT_LOWER
 				break
+			} else {
+				e.DecrementHistory(all[i])
 			}
 
 			if value > alpha {
@@ -117,6 +123,8 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 				alpha = value
 				*line = []board.Move{all[i]}
 				*line = append(*line, pv...)
+			} else {
+				e.DecrementHistory(all[i])
 			}
 
 		}
@@ -195,6 +203,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
+	e.AgeHistory()
 	done, ok := false, true
 	wg.Add(1)
 	go func() {

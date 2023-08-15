@@ -87,7 +87,8 @@ func (c *NewGame) Exec(e *eval.EvalEngine) bool {
 	defer e.WG.Done()
 	e.TTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
-	e.GameHistory = [512]uint64{}
+	e.Plys = [512]uint64{}
+	e.History = eval.HistoryHeuristic{}
 	return true
 }
 

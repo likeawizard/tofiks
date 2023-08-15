@@ -12,6 +12,7 @@ import (
 )
 
 type PickBookMove func(*board.Board) board.Move
+type HistoryHeuristic [2][64][64]int
 
 type EvalEngine struct {
 	WG          sync.WaitGroup
@@ -21,8 +22,9 @@ type EvalEngine struct {
 	OwnBook     bool
 	MateFound   bool
 	KillerMoves [100][2]board.Move
-	Plys        int
-	GameHistory [512]uint64
+	History     HistoryHeuristic
+	Ply         int
+	Plys        [512]uint64
 	SearchDepth int
 	TTable      *TTable
 	Clock       Clock
@@ -50,39 +52,61 @@ func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (boa
 }
 
 func (e *EvalEngine) AddKillerMove(ply int8, move board.Move) {
-	if !e.Board.IsCapture(move) && move != e.KillerMoves[ply][0] {
+	if move != e.KillerMoves[ply][0] {
 		e.KillerMoves[ply][1] = e.KillerMoves[ply][0]
 		e.KillerMoves[ply][0] = move
 	}
 }
 
-func (e *EvalEngine) AgeKillers() {
-	for i := 1; i < len(e.KillerMoves); i++ {
-		e.KillerMoves[i-1] = e.KillerMoves[i]
+func (e *EvalEngine) IncrementHistory(depth int8, move board.Move) {
+	d := int(depth)
+	from, to := move.FromTo()
+	e.History[e.Board.Side][from][to] += d * d
+}
+
+func (e *EvalEngine) DecrementHistory(move board.Move) {
+	if !e.Board.IsCapture(move) {
+		from, to := move.FromTo()
+		if e.History[e.Board.Side][from][to] > 0 {
+			e.History[e.Board.Side][from][to]--
+		}
+	}
+}
+
+func (e *EvalEngine) GetHistory(move board.Move) int {
+	from, to := move.FromTo()
+	return e.History[e.Board.Side][from][to]
+}
+
+func (e *EvalEngine) AgeHistory() {
+	for from := 0; from < 64; from++ {
+		for to := 0; to < 64; to++ {
+			e.History[e.Board.Side][from][to] /= 2
+		}
 	}
 }
 
 func (e *EvalEngine) AddPly() {
-	e.GameHistory[e.Plys] = e.Board.Hash
-	e.Plys++
+	e.Plys[e.Ply] = e.Board.Hash
+	e.Ply++
 }
 
 func (e *EvalEngine) RemovePly() {
-	e.Plys--
+	e.Ply--
 }
 
 // Draw by 3-fold repetition.
 // Detect if the current position has been encountered already twice before.
 func (e *EvalEngine) IsDrawByRepetition() bool {
-	// e.GameHistoryPly is the index the next move should be stored at
-	// GameHistoryPly - 1 is the current position
-	// So start checking at GameHistoryPly - 3 skipping opponent's move
+	// e.Ply is the index the next move should be stored at
+	// Ply - 1 is the current position
+	// So start checking at Ply - 3 skipping opponent's move
 	// history depth: the halfmove counter is reset on pawn moves and captures and increased otherwise
 	// no equal position can be found beyond this point.
-	historyDepth := Max(0, e.Plys-2-int(e.Board.HalfMoveCounter))
+	historyDepth := Max(0, e.Ply-2-int(e.Board.HalfMoveCounter))
 	count := 0
-	for ply := e.Plys - 3; ply >= historyDepth; ply -= 2 {
-		if e.Board.Hash == e.GameHistory[ply] {
+	for ply := e.Ply - 3; ply >= historyDepth; ply -= 2 {
+		if e.Board.Hash == e.Plys[ply] {
 			count++
 			if count > 1 {
 				return true
@@ -93,24 +117,49 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	return false
 }
 
+type moveScore struct {
+	move  board.Move
+	score int
+}
+
+var capScore = 2048
+
+// Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic
 func (e *EvalEngine) OrderMovesPV(pv board.Move, moves, pvOrder *[]board.Move, ply int8) {
+	moveCount := len(*moves)
+	scoredMoves := make([]moveScore, moveCount)
 	lenPV := int8(len(*pvOrder))
-	sort.Slice(*moves, func(i int, j int) bool {
-		return (lenPV > ply && (*pvOrder)[ply] == (*moves)[i]) ||
-			(*moves)[i] == pv ||
-			(*moves)[i] == e.KillerMoves[ply][0] ||
-			(*moves)[i] == e.KillerMoves[ply][1] ||
-			e.getMoveValue((*moves)[i]) > e.getMoveValue((*moves)[j])
+	for i, move := range *moves {
+		scoredMoves[i].move = move
+		if lenPV > ply && (*pvOrder)[ply] == move {
+			scoredMoves[i].score = capScore + 200
+		} else if move == pv {
+			scoredMoves[i].score = capScore + 100
+		} else if e.Board.IsCapture(move) {
+			scoredMoves[i].score = e.MvvLva(move)
+		} else if move == e.KillerMoves[ply][0] {
+			scoredMoves[i].score = capScore - 5
+		} else if move == e.KillerMoves[ply][1] {
+			scoredMoves[i].score = capScore - 10
+		} else {
+			scoredMoves[i].score = e.GetHistory(move)
+		}
+	}
+	sort.Slice(scoredMoves, func(i, j int) bool {
+		return scoredMoves[i].score > scoredMoves[j].score
 	})
+	for i := 0; i < moveCount; i++ {
+		(*moves)[i] = scoredMoves[i].move
+	}
 }
 
 func (e *EvalEngine) OrderMoves(moves *[]board.Move) {
 	sort.Slice(*moves, func(i int, j int) bool {
-		return e.getMoveValue((*moves)[i]) > e.getMoveValue((*moves)[j])
+		return e.MvvLva((*moves)[i]) > e.MvvLva((*moves)[j])
 	})
 }
 
-var MVVLVA = [7][6]int{
+var mvvlva = [7][6]int{
 	{10, 9, 8, 7, 6, 5},
 	{30, 29, 28, 27, 26, 25},
 	{20, 19, 18, 17, 16, 15},
@@ -119,15 +168,12 @@ var MVVLVA = [7][6]int{
 }
 
 // Estimate the potential strength of the move for move ordering
-func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
-	if e.Board.IsCapture(move) {
-		var victim int
-		attacker := e.Board.Piece(move)
-		// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
-		_, _, victim = e.Board.PieceAtSquare(move.To())
-
-		value = MVVLVA[victim][attacker]
-	}
+func (e *EvalEngine) MvvLva(move board.Move) (value int) {
+	var victim int
+	attacker := e.Board.Piece(move)
+	// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
+	_, _, victim = e.Board.PieceAtSquare(move.To())
+	value = mvvlva[victim][attacker]
 
 	// Prioritize promotions
 	if move.Promotion() != 0 {
@@ -139,7 +185,7 @@ func (e *EvalEngine) getMoveValue(move board.Move) (value int) {
 
 func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
 	moveSlice := strings.Fields(uciMoves)
-	e.Plys = 0
+	e.Ply = 0
 
 	for _, uciMove := range moveSlice {
 		_, ok := e.Board.MoveUCI(uciMove)
