@@ -19,6 +19,8 @@ func (b *Board) Copy() *Board {
 		Pieces:          b.Pieces,
 		Occupancy:       b.Occupancy,
 		Side:            b.Side,
+		Phase:           b.Phase,
+		InCheck:         b.InCheck,
 		CastlingRights:  b.CastlingRights,
 		EnPassantTarget: b.EnPassantTarget,
 		HalfMoveCounter: b.HalfMoveCounter,

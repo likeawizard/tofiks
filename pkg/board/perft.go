@@ -53,7 +53,7 @@ func (b *Board) PerftDebug(depth int) {
 	nodesSearched := int64(0)
 	for _, move := range all {
 		umove := b.MakeMove(move)
-		if b.IsChecked(b.Side ^ 1) {
+		if b.InCheck {
 			umove()
 			continue
 		}

@@ -20,6 +20,8 @@ type Board struct {
 	Pieces          [2][6]BBoard
 	Occupancy       [3]BBoard
 	Side            int
+	Phase           int
+	InCheck         bool
 	CastlingRights  CastlingRights
 	EnPassantTarget Square
 	HalfMoveCounter uint8
