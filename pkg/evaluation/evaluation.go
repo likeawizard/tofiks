@@ -103,7 +103,7 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	// So start checking at Ply - 3 skipping opponent's move
 	// history depth: the halfmove counter is reset on pawn moves and captures and increased otherwise
 	// no equal position can be found beyond this point.
-	historyDepth := Max(0, e.Ply-2-int(e.Board.HalfMoveCounter))
+	historyDepth := max(0, e.Ply-2-int(e.Board.HalfMoveCounter))
 	count := 0
 	for ply := e.Ply - 3; ply >= historyDepth; ply -= 2 {
 		if e.Board.Hash == e.Plys[ply] {
@@ -219,31 +219,12 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 // Display centipawn score. If the eval is in the checkmate score threshold convert to mate score
 func (e *EvalEngine) ConvertEvalToScore(eval int32) string {
 	if eval < -CheckmateThreshold {
-		return fmt.Sprintf("mate %d", Min(-(eval+CheckmateScore+int32(e.Board.Side^1))/2, -1))
+		return fmt.Sprintf("mate %d", max(-(eval+CheckmateScore+int32(e.Board.Side^1))/2, -1))
 	}
 
 	if eval > CheckmateThreshold {
-		return fmt.Sprintf("mate %d", Max(-(eval-CheckmateScore-int32(e.Board.Side^1))/2, 1))
+		return fmt.Sprintf("mate %d", max(-(eval-CheckmateScore-int32(e.Board.Side^1))/2, 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)
-}
-
-type Number interface {
-	int | int16 | int32 | int64
-}
-
-// TODO: try branchless optimization
-func Max[T Number](a, b T) T {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func Min[T Number](a, b T) T {
-	if a < b {
-		return a
-	}
-	return b
 }

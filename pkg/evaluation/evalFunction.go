@@ -110,12 +110,12 @@ func (e *EvalEngine) GetEvaluation(b *board.Board) int {
 // TODO: try branchless: eliminate min/max and use branchless abs()
 func distCenter(sq board.Square) int {
 	c := int(sq)
-	return Max(3-c/8, c/8-4) + Max(3-c%8, c%8-4)
+	return max(3-c/8, c/8-4) + max(3-c%8, c%8-4)
 }
 
 func distSqares(us, them board.Square) int {
 	u, t := int(us), int(them)
-	return Max((u-t)/8, (t-u)/8) + Max((u-t)%8, (t-u)%8)
+	return max((u-t)/8, (t-u)/8) + max((u-t)%8, (t-u)%8)
 }
 
 // King safety score as a measure of distance from the board center and the number of adjacent enemy pieces and friendly pieces

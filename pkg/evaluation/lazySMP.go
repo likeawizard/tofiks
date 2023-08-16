@@ -163,9 +163,9 @@ func (e *EvalEngine) quiescenceHelper(ctx context.Context, b *board.Board, alpha
 				continue
 			}
 			legalMoves++
-			value = Max(value, -e.quiescenceHelper(ctx, b, -beta, -alpha, -side))
+			value = max(value, -e.quiescenceHelper(ctx, b, -beta, -alpha, -side))
 			umove()
-			alpha = Max(value, alpha)
+			alpha = max(value, alpha)
 			if alpha >= beta {
 				break
 			}

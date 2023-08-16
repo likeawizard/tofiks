@@ -33,7 +33,7 @@ func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.Cancel
 
 func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
 	var movetime = time.Millisecond * 100
-	c.Movestogo = Max(40-fmCounter, 10)
+	c.Movestogo = max(40-fmCounter, 10)
 	switch {
 	case c.Movetime > 0:
 		movetime = time.Millisecond * time.Duration(c.Movetime-c.Overhead)
@@ -45,7 +45,7 @@ func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
 			t = c.Btime
 			inc = c.Binc
 		}
-		movetime = time.Millisecond * time.Duration(Max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
+		movetime = time.Millisecond * time.Duration(max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
 	}
 	return movetime
 }

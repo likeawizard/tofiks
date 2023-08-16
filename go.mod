@@ -1,6 +1,6 @@
 module github.com/likeawizard/tofiks
 
-go 1.19
+go 1.21
 
 require (
 	github.com/pkg/profile v1.7.0
