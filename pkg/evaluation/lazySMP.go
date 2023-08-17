@@ -74,14 +74,16 @@ func (e *EvalEngine) PVSHelper(ctx context.Context, b *board.Board, depth, ply i
 
 		all := b.PseudoMoveGen()
 		legalMoves := 0
-		e.OrderMovesPV(pvMove, &all, &all, ply)
+		selectMove := e.GetMoveSelector(pvMove, all, []board.Move{}, ply)
+		var currMove board.Move
 
 		value := int32(0)
 		entryType := TT_UPPER
 		bestVal := -Inf
 		var bestMove board.Move
 		for i := 0; i < len(all); i++ {
-			umove := b.MakeMove(all[i])
+			currMove = selectMove(i)
+			umove := b.MakeMove(currMove)
 			if b.IsChecked(b.Side ^ 1) {
 				umove()
 				continue
@@ -101,11 +103,11 @@ func (e *EvalEngine) PVSHelper(ctx context.Context, b *board.Board, depth, ply i
 
 			if value > bestVal {
 				bestVal = value
-				bestMove = all[i]
+				bestMove = currMove
 			}
 
 			if value >= beta {
-				e.AddKillerMove(ply, all[i])
+				e.AddKillerMove(ply, currMove)
 				entryType = TT_LOWER
 				break
 			}
@@ -153,11 +155,12 @@ func (e *EvalEngine) quiescenceHelper(ctx context.Context, b *board.Board, alpha
 		}
 
 		legalMoves := 0
-		e.OrderMoves(&all)
-
+		selectMove := e.GetMoveSelectorQ(all)
+		var currMove board.Move
 		value := -Inf
 		for i := 0; i < len(all); i++ {
-			umove := b.MakeMove(all[i])
+			currMove = selectMove(i)
+			umove := b.MakeMove(currMove)
 			if b.IsChecked(b.Side ^ 1) {
 				umove()
 				continue

@@ -3,7 +3,6 @@ package eval
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"sync"
 
@@ -124,39 +123,64 @@ type moveScore struct {
 
 var capScore = 2048
 
+type moveSelector func(k int) board.Move
+
 // Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic
-func (e *EvalEngine) OrderMovesPV(pv board.Move, moves, pvOrder *[]board.Move, ply int8) {
-	moveCount := len(*moves)
-	scoredMoves := make([]moveScore, moveCount)
-	lenPV := int8(len(*pvOrder))
-	for i, move := range *moves {
-		scoredMoves[i].move = move
-		if lenPV > ply && (*pvOrder)[ply] == move {
-			scoredMoves[i].score = capScore + 200
-		} else if move == pv {
-			scoredMoves[i].score = capScore + 100
-		} else if e.Board.IsCapture(move) {
-			scoredMoves[i].score = e.MvvLva(move)
-		} else if move == e.KillerMoves[ply][0] {
-			scoredMoves[i].score = capScore - 5
-		} else if move == e.KillerMoves[ply][1] {
-			scoredMoves[i].score = capScore - 10
-		} else {
-			scoredMoves[i].score = e.GetHistory(move)
+func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) moveSelector {
+	moveCount := len(moves)
+	scores := make([]int, moveCount)
+	lenPV := int8(len(pvOrder))
+	for i := range moves {
+		switch {
+		case lenPV > ply && pvOrder[ply] == moves[i]:
+			scores[i] = capScore + 200
+		case moves[i] == hashMove:
+			scores[i] = capScore + 100
+		case e.Board.IsCapture(moves[i]):
+			scores[i] = e.MvvLva(moves[i])
+		case moves[i] == e.KillerMoves[ply][0]:
+			scores[i] = capScore - 5
+		case moves[i] == e.KillerMoves[ply][1]:
+			scores[i] = capScore - 10
+		default:
+			scores[i] = e.GetHistory(moves[i])
 		}
 	}
-	sort.Slice(scoredMoves, func(i, j int) bool {
-		return scoredMoves[i].score > scoredMoves[j].score
-	})
-	for i := 0; i < moveCount; i++ {
-		(*moves)[i] = scoredMoves[i].move
+
+	return func(k int) board.Move {
+		maxIndex := k
+		n := len(moves)
+		for i := k; i < n; i++ {
+			if scores[i] > scores[maxIndex] {
+				maxIndex = i
+			}
+		}
+		scores[k], scores[maxIndex] = scores[maxIndex], scores[k]
+		moves[k], moves[maxIndex] = moves[maxIndex], moves[k]
+		return moves[k]
 	}
 }
 
-func (e *EvalEngine) OrderMoves(moves *[]board.Move) {
-	sort.Slice(*moves, func(i int, j int) bool {
-		return e.MvvLva((*moves)[i]) > e.MvvLva((*moves)[j])
-	})
+func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) moveSelector {
+	moveCount := len(moves)
+	scores := make([]int, moveCount)
+
+	for i := range moves {
+		scores[i] = e.MvvLva(moves[i])
+	}
+
+	return func(k int) board.Move {
+		maxIndex := k
+		n := len(moves)
+		for i := k; i < n; i++ {
+			if scores[i] > scores[maxIndex] {
+				maxIndex = i
+			}
+		}
+		scores[k], scores[maxIndex] = scores[maxIndex], scores[k]
+		moves[k], moves[maxIndex] = moves[maxIndex], moves[k]
+		return moves[k]
+	}
 }
 
 var mvvlva = [7][6]int{
@@ -168,19 +192,12 @@ var mvvlva = [7][6]int{
 }
 
 // Estimate the potential strength of the move for move ordering
-func (e *EvalEngine) MvvLva(move board.Move) (value int) {
+func (e *EvalEngine) MvvLva(move board.Move) int {
 	var victim int
 	attacker := e.Board.Piece(move)
 	// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
 	_, _, victim = e.Board.PieceAtSquare(move.To())
-	value = mvvlva[victim][attacker]
-
-	// Prioritize promotions
-	if move.Promotion() != 0 {
-		value += 50
-	}
-
-	return
+	return mvvlva[victim][attacker]
 }
 
 func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {

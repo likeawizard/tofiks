@@ -25,11 +25,14 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 	default:
 		isPV := beta-alpha != 1
 		inCheck := e.Board.InCheck
-		// If search depth is reached and not in check enter Qsearch
-		if depth <= 0 && !inCheck {
-			return e.quiescence(ctx, alpha, beta, side)
-		} else if depth <= 0 { // If depth is reached and we are in check extend
+
+		if e.Board.InCheck {
 			depth++
+		}
+
+		// If search depth is reached and not in check enter Qsearch
+		if depth <= 0 {
+			return e.quiescence(ctx, alpha, beta, side)
 		}
 
 		e.Stats.nodes++
@@ -63,26 +66,27 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
-		e.OrderMovesPV(pvMove, &all, pvOrder, ply)
+		selectMove := e.GetMoveSelector(pvMove, all, *pvOrder, ply)
 
 		value := int32(0)
 		entryType := TT_UPPER
 		bestVal := -Inf
-		var bestMove board.Move
+		var currMove, bestMove board.Move
 		moveCount := len(all)
 		if moveCount > 0 {
 			bestMove = all[0]
 		}
 		pv := []board.Move{}
 		for i := 0; i < moveCount; i++ {
-			umove := e.Board.MakeMove(all[i])
+			currMove = selectMove(i)
+			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
 				continue
 			}
 			legalMoves++
 
-			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && all[i].Promotion() == 0 {
+			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && currMove.Promotion() == 0 {
 				umove()
 				continue
 			}
@@ -101,31 +105,31 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 
 			if value > bestVal {
 				bestVal = value
-				bestMove = all[i]
+				bestMove = currMove
 			}
 
 			if value >= beta {
-				if !e.Board.IsCapture(all[i]) {
-					e.AddKillerMove(ply, all[i])
-					// e.IncrementHistory(depth, all[i])
+				if !e.Board.IsCapture(currMove) {
+					e.AddKillerMove(ply, currMove)
+					e.IncrementHistory(depth, currMove)
 				}
 
-				bestMove = all[i]
+				bestMove = currMove
 				entryType = TT_LOWER
 				break
-			} //else {
-			// 	e.DecrementHistory(all[i])
-			// }
+			} else {
+				e.DecrementHistory(currMove)
+			}
 
 			if value > alpha {
 				entryType = TT_EXACT
-				bestMove = all[i]
+				bestMove = currMove
 				alpha = value
-				*line = []board.Move{all[i]}
+				*line = []board.Move{currMove}
 				*line = append(*line, pv...)
-			} //else {
-			// 	e.DecrementHistory(all[i])
-			// }
+			} else {
+				e.DecrementHistory(currMove)
+			}
 
 		}
 
@@ -166,11 +170,13 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) in
 		}
 
 		legalMoves := 0
-		e.OrderMoves(&all)
 
+		selectMove := e.GetMoveSelectorQ(all)
+		var currMove board.Move
 		value := -Inf
 		for i := 0; i < len(all); i++ {
-			umove := e.Board.MakeMove(all[i])
+			currMove = selectMove(i)
+			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
 				continue
@@ -203,7 +209,8 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
-	// e.AgeHistory()
+
+	e.AgeHistory()
 	done, ok := false, true
 	wg.Add(1)
 	go func() {

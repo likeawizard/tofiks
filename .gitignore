@@ -1,7 +1,7 @@
 /.idea/
 /config.yml
 /tofiks
-/cmd/playground/main.go
+/cmd/playground/*
 /weights/weights.yml
 /*.svg
 /*.pprof
