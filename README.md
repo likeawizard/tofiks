@@ -12,8 +12,11 @@ Latest stable version 64-bit binaries can be found in the release section.
 * Magic Bitboard move generator
 * MVV-LVA move ordering
 * Principal Variation Search
-* Null move pruning
+* Null Move pruning
+* Late Move pruning
 * Transposition table
+* History Heuristic
+* Killer Move Heuristic
 * Quiescence search
 * Draw detection - repetition, 50-move rule and insufficient material
 * Piece-Square-Table evaluation for early game and endgame.
