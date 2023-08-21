@@ -121,7 +121,7 @@ type moveScore struct {
 	score int
 }
 
-var capScore = 2048
+var capScore = 4096
 
 type moveSelector func(k int) board.Move
 
@@ -137,7 +137,7 @@ func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board
 		case moves[i] == hashMove:
 			scores[i] = capScore + 100
 		case e.Board.IsCapture(moves[i]):
-			scores[i] = e.MvvLva(moves[i])
+			scores[i] = capScore + e.MvvLva(moves[i])
 		case moves[i] == e.KillerMoves[ply][0]:
 			scores[i] = capScore - 5
 		case moves[i] == e.KillerMoves[ply][1]:
