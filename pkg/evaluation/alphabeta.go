@@ -17,7 +17,7 @@ const (
 	Inf                = 2 * CheckmateScore
 )
 
-func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
+func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -66,17 +66,18 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
-		selectMove := e.GetMoveSelector(pvMove, all, *pvOrder, ply)
+		selectMove := e.GetMoveSelector(pvMove, all, pvOrder, ply)
 
 		value := int32(0)
 		entryType := TT_UPPER
 		bestVal := -Inf
 		var currMove, bestMove board.Move
+		var pv []board.Move
 		moveCount := len(all)
 		if moveCount > 0 {
 			bestMove = all[0]
 		}
-		pv := []board.Move{}
+
 		for i := 0; i < moveCount; i++ {
 			currMove = selectMove(i)
 			umove := e.Board.MakeMove(currMove)
@@ -92,6 +93,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 			}
 
 			e.AddPly()
+			pv = []board.Move{}
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 			} else {
@@ -114,7 +116,6 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder, line *[]board.Move, depth
 					e.IncrementHistory(depth, currMove)
 				}
 
-				bestMove = currMove
 				entryType = TT_LOWER
 				break
 			} else {
@@ -224,11 +225,11 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 			// stopHelpers := e.StartHelpers(ctx, d, 3)
 			pv := []board.Move{}
 			pv = append(pv, line...)
-			eval = e.PVS(ctx, &pv, &line, d, 0, alpha, beta, true, color)
+			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 
 			if eval <= alpha || eval >= beta {
 				alpha, beta = -Inf, Inf
-				eval = e.PVS(ctx, &pv, &line, d, 0, alpha, beta, true, color)
+				eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 			}
 			alpha, beta = eval-50, eval+100
 			// stopHelpers()
@@ -260,7 +261,6 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
-				// fmt.Printf("hashfull %d, newwrite %d, overwrite %d, rejected %d\n", e.TTable.Hashfull(), e.TTable.newWrite, e.TTable.overWrite, e.TTable.rejectedWrite)
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
 					e.MateFound = true
 				}

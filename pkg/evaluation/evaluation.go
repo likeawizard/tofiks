@@ -30,11 +30,11 @@ type EvalEngine struct {
 	Stop        context.CancelFunc
 }
 
-func NewEvalEngine() (*EvalEngine, error) {
+func NewEvalEngine() *EvalEngine {
 	return &EvalEngine{
 		Board:  board.NewBoard("startpos"),
 		TTable: NewTTable(64),
-	}, nil
+	}
 }
 
 // Returns the best move and best opponent response - ponder
@@ -116,12 +116,7 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	return false
 }
 
-type moveScore struct {
-	move  board.Move
-	score int
-}
-
-var capScore = 4096
+const capScore int = 1 << 24
 
 type moveSelector func(k int) board.Move
 
