@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
@@ -11,11 +10,7 @@ import (
 
 func main() {
 	// defer profile.Start(profile.CPUProfile).Stop()
-	e, err := eval.NewEvalEngine()
-	if err != nil {
-		fmt.Printf("Unable to load EvalEngine: %s\n", err)
-		return
-	}
+	e := eval.NewEvalEngine()
 
 	input := bufio.NewScanner(os.Stdin)
 	for {
