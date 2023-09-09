@@ -13,3 +13,12 @@ clean:
 	go clean
 
 build: clean build-tofiks
+
+test-suite:
+	go test -v -timeout 0 ./test_suite
+
+test-pv:
+	go test -run=TestValidPV -v -timeout 0 ./test_suite/
+
+test-perft:
+	go test -run=TestPerft -v -timeout 0 ./test_suite/
