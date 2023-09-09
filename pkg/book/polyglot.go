@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 )
@@ -141,7 +140,7 @@ func GetWeighted(b *board.Board) board.Move {
 		moveBins[idx] = bin{min: counter, max: counter + int(move.weight), move: move.move}
 		counter += int(move.weight)
 	}
-	rand.Seed(time.Now().UnixNano())
+
 	r := rand.Intn(counter)
 	for _, bin := range moveBins {
 		if r > bin.min && r <= bin.max {

@@ -83,7 +83,7 @@ func bishopEval(b *board.Board, sq board.Square, side int) int {
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {
 	e.Stats.evals++
-	var eval, pieceEval int = 0, 0
+	var eval, pieceEval int
 
 	// TODO: ensure no move gen is dependent on b.IsWhite internally
 	var side = -1

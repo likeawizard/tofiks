@@ -492,11 +492,9 @@ func GetMagicNumber() BBoard {
 
 // Find magic numbers with a brute force approach for a square
 func FindMagicNumber(sq, bitCount int, isBishop bool) BBoard {
-	occ := [4096]BBoard{}
-	attacks := [4096]BBoard{}
-	usedAttacks := [4096]BBoard{}
-
+	var occ, attacks, usedAttacks [4096]BBoard
 	var attack BBoard
+
 	if isBishop {
 		attack = BishopRelOcc(sq)
 	} else {
