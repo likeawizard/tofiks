@@ -2,7 +2,6 @@ package board
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -201,10 +200,6 @@ func (b *Board) serializePosition() string {
 	}
 
 	return fen
-}
-
-func (b *Board) WritePGNToFile(data string, path string) {
-	os.WriteFile(path, []byte(data), 0644)
 }
 
 func (b *Board) GeneratePGN(moves []Move) string {

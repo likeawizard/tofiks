@@ -19,24 +19,19 @@ type Clock struct {
 }
 
 func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.CancelFunc) {
-	var movetime = time.Millisecond * 100
 	switch {
 	case c.Infinite:
 		return context.WithCancel(context.Background())
 	default:
-		movetime = c.GetMovetime(fmCounter, side)
+		return context.WithTimeout(context.Background(), c.GetMovetime(fmCounter, side))
 	}
-
-	return context.WithTimeout(context.Background(), movetime)
-
 }
 
 func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
-	var movetime = time.Millisecond * 100
 	c.Movestogo = max(40-fmCounter, 10)
 	switch {
 	case c.Movetime > 0:
-		movetime = time.Millisecond * time.Duration(c.Movetime-c.Overhead)
+		return time.Millisecond * time.Duration(c.Movetime-c.Overhead)
 	default:
 		movestogo := c.Movestogo
 		t := c.Wtime
@@ -45,7 +40,6 @@ func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
 			t = c.Btime
 			inc = c.Binc
 		}
-		movetime = time.Millisecond * time.Duration(max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
+		return time.Millisecond * time.Duration(max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
 	}
-	return movetime
 }
