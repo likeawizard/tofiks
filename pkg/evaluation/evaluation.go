@@ -231,11 +231,11 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 // Display centipawn score. If the eval is in the checkmate score threshold convert to mate score
 func (e *EvalEngine) ConvertEvalToScore(eval int32) string {
 	if eval < -CheckmateThreshold {
-		return fmt.Sprintf("mate %d", -(eval+CheckmateScore)/2+int32(e.Board.Side))
+		return fmt.Sprintf("mate %d", min(-(eval+CheckmateScore)/2+int32(e.Board.Side), -1))
 	}
 
 	if eval > CheckmateThreshold {
-		return fmt.Sprintf("mate %d", -(eval-CheckmateScore)/2+int32(e.Board.Side))
+		return fmt.Sprintf("mate %d", max(-(eval-CheckmateScore)/2+int32(e.Board.Side), 1))
 	}
 
 	return fmt.Sprintf("cp %d", eval)
