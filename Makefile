@@ -22,3 +22,6 @@ test-pv:
 
 test-perft:
 	go test -run=TestPerft -v -timeout 0 ./test_suite/
+
+test-mate:
+	go test -run=TestMate -v -timeout 0 ./test_suite/

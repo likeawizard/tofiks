@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Perft test known positions and validate correct node count.
+//
+// Perft also does internal health / sanity checks by re-validating updated and fully computed hashes.
 func TestPerft(t *testing.T) {
 	maxDepth := 6
 	for _, tt := range perftResults {
