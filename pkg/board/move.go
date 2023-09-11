@@ -53,12 +53,6 @@ const (
 	IS_ENPASSANT = 1 << 15
 )
 
-// TODO: delete or fix: ep flag is not being set
-func NewMove(from, to, promo int) Move {
-	move := Move(from | to<<6 | promo<<PROMO_SHIFT)
-	return move
-}
-
 func MoveFromString(s string) Move {
 	from := SquareFromString(s[:2]) << 6
 	to := SquareFromString(s[2:4])
@@ -67,10 +61,6 @@ func MoveFromString(s string) Move {
 		promotion = int(s[4]) << PROMO_SHIFT
 	}
 	return Move(from + to + Square(promotion))
-}
-
-func MoveFromSquares(from, to Square) Move {
-	return Move(to | from<<6)
 }
 
 func (m Move) From() Square {
@@ -91,11 +81,6 @@ func (m Move) SetPromotion(prom uint8) Move {
 
 func (m Move) FromTo() (Square, Square) {
 	return Square(m>>6) & 63, Square(m) & 63
-}
-
-func (m Move) Reverse() Move {
-	return m>>6&63 | m&63<<6
-
 }
 
 func (m Move) IsEnPassant() bool {

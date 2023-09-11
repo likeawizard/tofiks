@@ -4,13 +4,39 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-// TODO: replace by hardcoded constants for performance
-var weights = Weights{
-	Moves:  Moves{Capture: 4, Move: 2},
-	Knight: Knight{Center22: 30, Center44: 20, InnerRim: -5, OuterRim: -20},
-	Bishop: Bishop{MajorDiag: 20, MinorDiag: 10},
-	Pawn:   Pawn{Passed: 10, Protected: 15, Doubled: -15, Isolated: -20, Center22: 15, Center44: 5, Advance: 5},
+var PieceWeights = [6]int{100, 325, 325, 500, 975, 10000}
+
+// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board
+var PiecePawnBonus = [6][9]int{
+	{},
+	{},
+	{-25, -19, -13, -6, 0, 6, 13, 19, 25},
+	{50, 37, 25, 12, 0, -12, -25, -37, -50},
+	{},
+	{},
 }
+
+const (
+	// Mobility related weights
+	W_MOVE    int = 2
+	W_CAPTURE int = 4
+
+	// Knight
+	W_N_C22       int = 30
+	W_N_C44       int = 20
+	W_N_INNER_RIM int = -5
+	W_N_OUTER_RIM int = -20
+
+	// Bishop
+	W_B_MAJD int = 20
+	W_B_MIND int = 10
+
+	// Pawn
+	W_P_PASSED    int = 10
+	W_P_PROTECTED int = 15
+	W_P_DOUBLED   int = -15
+	W_P_ISOLATED  int = -20
+)
 
 type pieceEvalFn func(*board.Board, board.Square, int) int
 
@@ -19,17 +45,17 @@ var pieceEvals = [6]pieceEvalFn{pawnEval, bishopEval, knightEval, rookEval, quee
 func pawnEval(b *board.Board, sq board.Square, side int) int {
 	value := 0
 	if IsProtected(b, sq, side) {
-		value += weights.Pawn.Protected
+		value += W_P_PROTECTED
 	}
 	if IsDoubled(b, sq, side) {
-		value += weights.Pawn.Doubled
+		value += W_P_DOUBLED
 	}
 
 	if IsIsolated(b, sq, side) {
-		value += weights.Pawn.Isolated
+		value += W_P_ISOLATED
 	}
 	if IsPassed(b, sq, side) {
-		value += weights.Pawn.Passed
+		value += W_P_PASSED
 	}
 
 	return value
@@ -37,7 +63,7 @@ func pawnEval(b *board.Board, sq board.Square, side int) int {
 
 func queenEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
-	return moves.Count()*weights.Moves.Move + (moves&b.Occupancy[side^1]).Count()*weights.Moves.Move
+	return moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_MOVE
 }
 
 // TODO: combine all pawn functions in one with multi value return
@@ -64,7 +90,7 @@ func IsPassed(b *board.Board, sq board.Square, side int) bool {
 
 func knightEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
-	return moves.Count()*weights.Moves.Move + (moves&b.Occupancy[side^1]).Count()*weights.Moves.Capture
+	return moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func bishopPairEval(b *board.Board, side int) int {
@@ -76,9 +102,9 @@ func bishopPairEval(b *board.Board, side int) int {
 
 func bishopEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
-	return bishopPairEval(b, side) + moves.Count()*weights.Moves.Move + (moves&b.Occupancy[side^1]).Count()*weights.Moves.Capture +
-		(board.SquareBitboards[sq]&board.MajorDiag).Count()*weights.Bishop.MajorDiag +
-		(board.SquareBitboards[sq]&board.MinorDiag).Count()*weights.Bishop.MinorDiag
+	return bishopPairEval(b, side) + moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
+		(board.SquareBitboards[sq]&board.MajorDiag).Count()*W_B_MAJD +
+		(board.SquareBitboards[sq]&board.MinorDiag).Count()*W_B_MIND
 }
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {
@@ -141,6 +167,6 @@ func kingEval(b *board.Board, king board.Square, side int) int {
 // Evaluation for rooks - connected & (semi)open files
 func rookEval(b *board.Board, sq board.Square, side int) (rookScore int) {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
-	rookScore = moves.Count()*weights.Moves.Move + (moves&b.Occupancy[side^1]).Count()*weights.Moves.Capture
+	rookScore = moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 	return
 }
