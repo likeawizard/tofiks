@@ -106,12 +106,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
 
-				if value > alpha && depthR > 0 {
-					value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -beta, -alpha, true, -side)
-					if value > alpha {
-						value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
-					}
-				} else if value > alpha && value < beta {
+				if value > alpha && value < beta {
 					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 				}
 
