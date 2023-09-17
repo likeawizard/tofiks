@@ -99,7 +99,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 			} else {
 
 				depthR := int8(0)
-				if !isPV && legalMoves > 1 && !inCheck && depth > 2 &&
+				if !isPV && legalMoves > 1 && !inCheck && depth > 3 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && board.SquareBitboards[currMove.To()]&e.Board.Occupancy[board.BOTH] == 0 {
 					depthR = max(2, depth/2)
 				}
