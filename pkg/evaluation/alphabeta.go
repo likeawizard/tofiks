@@ -155,16 +155,19 @@ func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) in
 		e.Stats.qNodes++
 		eval := side * int32(e.GetEvaluation(e.Board))
 
-		if eval >= beta {
+		if !e.Board.InCheck && eval >= beta {
 			return beta
+		}
+
+		if !e.Board.InCheck && eval < alpha-975 {
+			return alpha
 		}
 
 		if eval > alpha {
 			alpha = eval
 		}
 		var all []board.Move
-		inCheck := e.Board.InCheck
-		if inCheck {
+		if e.Board.InCheck {
 			all = e.Board.PseudoMoveGen()
 		} else {
 			all = e.Board.PseudoCaptureAndQueenPromoGen()
