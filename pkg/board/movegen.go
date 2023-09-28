@@ -40,7 +40,6 @@ func (b *Board) PseudoMoveGen() []Move {
 				moves = append(moves, move)
 			}
 		}
-
 	} else {
 		pieces = b.Pieces[BLACK][PAWNS]
 		for pieces > 0 {
@@ -90,7 +89,6 @@ func (b *Board) PseudoMoveGen() []Move {
 			to = caps.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
@@ -109,13 +107,11 @@ func (b *Board) PseudoMoveGen() []Move {
 			to = caps.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -129,13 +125,11 @@ func (b *Board) PseudoMoveGen() []Move {
 			to = caps.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -149,13 +143,11 @@ func (b *Board) PseudoMoveGen() []Move {
 			to = caps.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -194,7 +186,6 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 				moves = append(moves, move)
 			}
 		}
-
 	} else {
 		pieces = b.Pieces[BLACK][PAWNS]
 		for pieces > 0 {
@@ -279,7 +270,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 	return moves
 }
 
-// Generate all legal moves for the current side to move
+// Generate all legal moves for the current side to move.
 func (b *Board) MoveGenLegal() []Move {
 	var from, to int
 	var pieces, attacks BBoard
@@ -341,7 +332,6 @@ func (b *Board) MoveGenLegal() []Move {
 				umake()
 			}
 		}
-
 	} else {
 		pieces = b.Pieces[BLACK][PAWNS]
 		for pieces > 0 {
@@ -405,7 +395,6 @@ func (b *Board) MoveGenLegal() []Move {
 			to = attacks.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -423,7 +412,6 @@ func (b *Board) MoveGenLegal() []Move {
 			to = attacks.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -441,7 +429,6 @@ func (b *Board) MoveGenLegal() []Move {
 			to = attacks.PopLS1B()
 			move = Move(to | from<<6)
 			moves = append(moves, move)
-
 		}
 	}
 
@@ -468,7 +455,7 @@ func (b *Board) MoveGenLegal() []Move {
 	// return b.RemoveIllegal(moves)
 }
 
-// Return king moves for the current side to move
+// Return king moves for the current side to move.
 func (b *Board) MoveGenKing() []Move {
 	var from, to int
 	var pieces, attacks, attackedSquares BBoard
@@ -486,7 +473,6 @@ func (b *Board) MoveGenKing() []Move {
 				to = attacks.PopLS1B()
 				move = Move(to | from<<6)
 				moves = append(moves, move)
-
 			}
 		}
 
@@ -498,7 +484,6 @@ func (b *Board) MoveGenKing() []Move {
 				moves = append(moves, WCastleQueen)
 			}
 		}
-
 	} else {
 		attackedSquares = b.AttackedSquares(b.Side, b.Occupancy[BOTH]&^b.Pieces[b.Side][KINGS])
 		pieces = b.Pieces[BLACK][KINGS]
@@ -510,7 +495,6 @@ func (b *Board) MoveGenKing() []Move {
 				to = attacks.PopLS1B()
 				move = Move(to | from<<6)
 				moves = append(moves, move)
-
 			}
 		}
 
@@ -528,7 +512,7 @@ func (b *Board) MoveGenKing() []Move {
 }
 
 // Get all legal capture moves for current side to move
-// TODO: performance: implement independetly of MoveGen to reduce redundancy
+// TODO: performance: implement independently of MoveGen to reduce redundancy.
 func (b *Board) MoveGenCaptures() []Move {
 	all := b.MoveGenLegal()
 	captures := make([]Move, 0)
@@ -541,7 +525,7 @@ func (b *Board) MoveGenCaptures() []Move {
 }
 
 // Prune Illegal moves by making the move and verifying that the resulting position doesn't leave own king in check
-// TODO: Due to removal. Make the MoveGen generate only legal moves using check and pin restrictions on piece movement
+// TODO: Due to removal. Make the MoveGen generate only legal moves using check and pin restrictions on piece movement.
 func (b *Board) RemoveIllegal(moves []Move) []Move {
 	legal := make([]Move, 0)
 	for _, move := range moves {

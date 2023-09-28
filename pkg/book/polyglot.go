@@ -67,13 +67,13 @@ func squareToRowAndFile(sq int) (int, int) {
 	return 7 - (sq / 8), sq % 8
 }
 
-// Check if current position is in book
+// Check if current position is in book.
 func InBook(b *board.Board) bool {
 	_, ok := BookMoves[PolyZobrist(b)]
 	return ok
 }
 
-// Convert polyglot castling moves to UCI else return unchanged
+// Convert polyglot castling moves to UCI else return unchanged.
 func convertPolyToUCI(b *board.Board, polyMove string) string {
 	switch polyMove {
 	case "e1h1":
@@ -105,7 +105,7 @@ func convertPolyToUCI(b *board.Board, polyMove string) string {
 	}
 }
 
-// Prune book moves that are illegal in current position. Moves in book could be corrupted and castling has different notation
+// Prune book moves that are illegal in current position. Moves in book could be corrupted and castling has different notation.
 func pruneIllegal(b *board.Board, polyMoves []polyEntry) []engineMove {
 	moves := b.MoveGenLegal()
 	legal := make([]engineMove, 0)
@@ -126,7 +126,7 @@ func GetBest(b *board.Board) board.Move {
 	return moves[0].move
 }
 
-// Get weighted random
+// Get weighted random.
 func GetWeighted(b *board.Board) board.Move {
 	moves := getBookMoves(b)
 	type bin struct {
@@ -169,7 +169,6 @@ func PrintBookMoves(b *board.Board) {
 		fmt.Printf(" %s (%.1f%%)", pMove.move, 100*float32(pMove.weight)/totalWeight)
 	}
 	fmt.Println()
-
 }
 
 func LoadBook(path string) int {
@@ -229,7 +228,7 @@ func PolyZobrist(b *board.Board) uint64 {
 			for pieces > 0 {
 				sq := pieces.PopLS1B()
 				row, file := squareToRowAndFile(sq)
-				// fmt.Printf("Piece: %d, Sqaure: %d (%v), Row: %d, File: %d, Polypiece: %d Offset:%d\n", piece, sq, board.Square(sq), row, file, polyPiece, getPieceIdx(polyPiece, row, file))
+				// fmt.Printf("Piece: %d, Square: %d (%v), Row: %d, File: %d, Polypiece: %d Offset:%d\n", piece, sq, board.Square(sq), row, file, polyPiece, getPieceIdx(polyPiece, row, file))
 				hash ^= zobristHashes[getPieceIdx(polyPiece, row, file)]
 			}
 		}

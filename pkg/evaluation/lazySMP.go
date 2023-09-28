@@ -6,7 +6,7 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-// Start number of helper threads to build the hash table
+// Start number of helper threads to build the hash table.
 func (e *EvalEngine) StartHelpers(ctx context.Context, depth, numThreads int8) context.CancelFunc {
 	helperCtx, cancelFn := context.WithCancel(ctx)
 	for offset := int8(1); offset <= numThreads; offset++ {
@@ -116,7 +116,6 @@ func (e *EvalEngine) PVSHelper(ctx context.Context, b *board.Board, depth, ply i
 				entryType = TT_EXACT
 				alpha = value
 			}
-
 		}
 
 		if legalMoves == 0 {

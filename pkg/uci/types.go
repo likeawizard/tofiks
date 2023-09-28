@@ -14,7 +14,7 @@ type UCI_CMD string
 
 const (
 	C_UCI = "uci"
-	// C_DEBUG      = "debug" // on | off
+	// C_DEBUG      = "debug" // on | off.
 	C_IS_READY   = "isready"
 	C_SET_OPTION = "setoption" // name [value]
 	C_POSITION   = "position"  // [ fen | startpos] moves ...

@@ -6,13 +6,13 @@ import (
 )
 
 var (
-	// Castling moves. Used for recognizing castling and moving king during castling
+	// Castling moves. Used for recognizing castling and moving king during castling.
 	WCastleKing  = MoveFromString("e1g1")
 	WCastleQueen = MoveFromString("e1c1")
 	BCastleKing  = MoveFromString("e8g8")
 	BCastleQueen = MoveFromString("e8c8")
 
-	// Complimentary castling moves. Used during castling to reposition rook
+	// Complimentary castling moves. Used during castling to reposition rook.
 	WCastleKingRook  = MoveFromString("h1f1")
 	WCastleQueenRook = MoveFromString("a1d1")
 	BCastleKingRook  = MoveFromString("h8f8")
@@ -20,10 +20,10 @@ var (
 )
 
 // 0..7 a8 to h8
-// 0..63 to a8 to h1 mapping
+// 0..63 to a8 to h1 mapping.
 type Square int
 
-// LSB 0..5 from 6..11 to 12..14 promotion 15 IS_ENPASSANT MSB
+// LSB 0..5 from 6..11 to 12..14 promotion 15 IS_ENPASSANT MSB.
 type Move uint16
 
 func SquareFromString(s string) Square {
@@ -99,6 +99,5 @@ func (m Move) String() string {
 	case PROMO_ROOK:
 		promo = "r"
 	}
-	return fmt.Sprintf("%v%v%s", Square(m.From()), Square(m.To()), promo)
-
+	return fmt.Sprintf("%v%v%s", m.From(), m.To(), promo)
 }

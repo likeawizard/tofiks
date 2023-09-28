@@ -1,8 +1,8 @@
 package testsuite
 
 type matePosition struct {
-	mateIn int
 	fen    string
+	mateIn int
 }
 
 var matePositions = []matePosition{

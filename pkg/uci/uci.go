@@ -6,9 +6,7 @@ import (
 	"strings"
 )
 
-//TODO: stub, implement the UCI interface
-
-// Parse uci command and return executable UCICmd on successful parse or nil
+// Parse uci command and return executable UCICmd on successful parse or nil.
 func ParseUCI(uciCmd string) UCICmd {
 	cmdRE := regexp.MustCompile(`(?P<cmd>^\w+)\s?(?P<args>.*)`)
 	if !cmdRE.MatchString(uciCmd) {

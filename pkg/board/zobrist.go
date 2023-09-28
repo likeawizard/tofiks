@@ -4,11 +4,13 @@ import (
 	"math/rand"
 )
 
-var seed uint64
-var pieceKeys [2][6][64]uint64
-var castlingKeys map[CastlingRights]uint64
-var swapSide uint64
-var enPassantKeys [64]uint64
+var (
+	seed          uint64
+	pieceKeys     [2][6][64]uint64
+	castlingKeys  map[CastlingRights]uint64
+	swapSide      uint64
+	enPassantKeys [64]uint64
+)
 
 func init() {
 	seed = rand.Uint64()
@@ -20,7 +22,6 @@ func init() {
 			}
 		}
 		for i := 1; i <= 12; i++ {
-
 		}
 		enPassantKeys[sq] = rand.Uint64()
 	}
@@ -33,7 +34,7 @@ func init() {
 	swapSide = rand.Uint64()
 }
 
-// Calculate Zborist hash of the position
+// Calculate Zborist hash of the position.
 func (b *Board) SeedHash() uint64 {
 	hash := seed
 
@@ -65,7 +66,7 @@ func (b *Board) SeedHash() uint64 {
 }
 
 // Incrementally update Zborist hash after a move
-// TODO: optimize - remove use of expensive PieceAtSquare function
+// TODO: optimize - remove use of expensive PieceAtSquare function.
 func (b *Board) ZobristSimpleMove(move Move, piece int) {
 	from, to := move.From(), move.To()
 	b.Hash ^= pieceKeys[b.Side][piece][to]
@@ -91,17 +92,17 @@ func (b *Board) ZobristEPCapture(move Move) {
 	b.Hash ^= pieceKeys[b.Side][PAWNS][from]
 }
 
-// Update Zobirst hash with flipping side to move
+// Update Zobirst hash with flipping side to move.
 func (b *Board) ZobristSideToMove() {
 	b.Hash ^= swapSide
 }
 
-// Update Zobrist hash with castling rights
+// Update Zobrist hash with castling rights.
 func (b *Board) ZobristCastlingRights(right CastlingRights) {
 	b.Hash ^= castlingKeys[right]
 }
 
-// Update Zobrist hash with castling move
+// Update Zobrist hash with castling move.
 func (b *Board) ZobristCastling(right CastlingRights) {
 	switch right {
 	case WOO:
@@ -119,7 +120,7 @@ func (b *Board) ZobristCastling(right CastlingRights) {
 	}
 }
 
-// Update Zobrist hash when promoting a piece
+// Update Zobrist hash when promoting a piece.
 func (b *Board) ZobristPromotion(move Move) {
 	var promotion int
 	switch move.Promotion() {
@@ -139,7 +140,7 @@ func (b *Board) ZobristPromotion(move Move) {
 	b.Hash ^= pieceKeys[b.Side][PAWNS][to]
 }
 
-// Update Zobrist hash with En Passant square
+// Update Zobrist hash with En Passant square.
 func (b *Board) ZobristEnPassant(square Square) {
 	if b.EnPassantTarget != -1 {
 		b.Hash ^= enPassantKeys[square]

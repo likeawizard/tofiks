@@ -66,9 +66,8 @@ func (b *Board) PerftDebug(depth int) {
 }
 
 // Simple check for ensuring hash table data packing and unpacking
-// Copy & pasted from eval package to avoid cyclic import
+// Copy & pasted from eval package to avoid cyclic import.
 func ttDataHealthCheck(move Move) bool {
-
 	const (
 		move_mask   = (1 << 16) - 1
 		type_mask   = (1 << 8) - 1

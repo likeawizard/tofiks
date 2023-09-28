@@ -38,11 +38,11 @@ func TestZobristDiff(t *testing.T) {
 	})
 }
 
-// Asymetrical transposition - same position, opposite side to move
+// Asymetrical transposition - same position, opposite side to move.
 func TestTempoLoss(t *testing.T) {
 	var b board.Board
 	moves := "e8e7 e1f2 e7e8 f2e2 e8e7 e2e1 e7e8"
-	//Artificially removed castling rights in FEN
+
 	b.ImportFEN("rnbqkbnr/pppp1ppp/4p3/8/8/4PP2/PPPP2PP/RNBQKBNR b - - 0 2")
 	seed := b.Hash
 	b.PlayMovesUCI(moves)

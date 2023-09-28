@@ -10,13 +10,16 @@ import (
 	"github.com/likeawizard/tofiks/pkg/book"
 )
 
-type PickBookMove func(*board.Board) board.Move
-type HistoryHeuristic [2][64][64]int
+type (
+	PickBookMove     func(*board.Board) board.Move
+	HistoryHeuristic [2][64][64]int
+)
 
 type EvalEngine struct {
+	Board       *board.Board
+	TTable      *TTable
 	WG          sync.WaitGroup
 	Stats       EvalStats
-	Board       *board.Board
 	Ponder      bool
 	OwnBook     bool
 	MateFound   bool
@@ -25,7 +28,6 @@ type EvalEngine struct {
 	Ply         int
 	Plys        [512]uint64
 	SearchDepth int
-	TTable      *TTable
 	Clock       Clock
 	Stop        context.CancelFunc
 }
@@ -37,7 +39,7 @@ func NewEvalEngine() *EvalEngine {
 	}
 }
 
-// Returns the best move and best opponent response - ponder
+// Returns the best move and best opponent response - ponder.
 func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	if e.OwnBook && book.InBook(e.Board) {
@@ -120,7 +122,7 @@ const capScore int = 1 << 24
 
 type moveSelector func(k int) board.Move
 
-// Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic
+// Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic.
 func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) moveSelector {
 	moveCount := len(moves)
 	scores := make([]int, moveCount)
@@ -186,7 +188,7 @@ var mvvlva = [7][6]int{
 	{50, 49, 48, 47, 46, 45},
 }
 
-// Estimate the potential strength of the move for move ordering
+// Estimate the potential strength of the move for move ordering.
 func (e *EvalEngine) MvvLva(move board.Move) int {
 	var victim int
 	attacker := e.Board.Piece(move)
@@ -228,7 +230,7 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 	}
 }
 
-// Display centipawn score. If the eval is in the checkmate score threshold convert to mate score
+// Display centipawn score. If the eval is in the checkmate score threshold convert to mate score.
 func (e *EvalEngine) ConvertEvalToScore(eval int32) string {
 	if eval < -CheckmateThreshold {
 		return fmt.Sprintf("mate %d", min(-(eval+CheckmateScore)/2+int32(e.Board.Side), -1))

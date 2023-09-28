@@ -8,55 +8,54 @@ output:
   print-linter-name: true
   uniq-by-line: true
 linters-settings:
-  # errcheck:
-  #   check-type-assertions: true
-  #   check-blank: false
-  # gci:
-  #   custom-order: true
-  #   sections:
-  #     - standard
-  #     - prefix(github.com/toggl/toggl_work_api)
-  #     - default
-  # gocognit:
-  #   min-complexity: 15
+  errcheck:
+    check-type-assertions: true
+    check-blank: false
+  gci:
+    custom-order: true
+    sections:
+      - standard
+      - prefix(github.com/toggl/toggl_work_api)
+      - default
+  gocognit:
+    min-complexity: 15
   govet:
     enable:
       - fieldalignment
 linters:
   enable:
     # Enable by default, see more in https://golangci-lint.run/usage/linters/#enabled-by-default-linters
-    # - errcheck
-    # - gci
-    # - gosimple
+    - errcheck
+    - gci
+    - gosimple
     - govet
-    # - ineffassign
-    # - staticcheck
-    # - typecheck
-    # - unused
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
     # Custom to project, see more in https://golangci-lint.run/usage/linters/#disabled-by-default-linters--e--enable
     # - gosec
-    # - godot
+    - godot
     # - gocognit
     # - gocyclo
-    # - gofmt
+    - gofmt
     # - revive
-    # - gofumpt
+    - gofumpt
     # - forbidigo
-    # - asciicheck
-    # - depguard
-    # - dogsled
-    # - exportloopref
-    # - errcheck
-    # - gocritic
-    # - goimports
-    # - goprintffuncname
-    # - misspell
-    # - nakedret
-    # - nolintlint
-    # - rowserrcheck
+    - asciicheck
+    - dogsled
+    - exportloopref
+    - errcheck
+    - gocritic
+    - goimports
+    - goprintffuncname
+    - misspell
+    - nakedret
+    - nolintlint
+    - rowserrcheck
     # - stylecheck
-    # - unconvert
-    # - unparam
-    # - whitespace
+    - unconvert
+    - unparam
+    - whitespace
 
 

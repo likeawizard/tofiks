@@ -22,27 +22,27 @@ func (bb BBoard) String() string {
 	return s
 }
 
-// Get the bit at position
+// Get the bit at position.
 func (bb *BBoard) Get(sq int) BBoard {
 	return *bb >> sq & 1
 }
 
-// Set a bit to one at position
+// Set a bit to one at position.
 func (bb *BBoard) Set(sq int) {
 	*bb |= SquareBitboards[sq]
 }
 
-// Set a bit to zero at position
+// Set a bit to zero at position.
 func (bb *BBoard) Clear(sq int) {
 	*bb &= ^SquareBitboards[sq]
 }
 
-// Return population count (number of 1's)
+// Return population count (number of 1's).
 func (bb BBoard) Count() int {
 	return bits.OnesCount64(uint64(bb))
 }
 
-// Get the position of the Least Signficant
+// Get the position of the Least Significant.
 func (bb BBoard) LS1B() int {
 	return bits.TrailingZeros64(uint64(bb))
 }
@@ -53,7 +53,7 @@ func (bb *BBoard) PopLS1B() int {
 	return ls1b
 }
 
-// Get bishop attack mask with blocker occupancy
+// Get bishop attack mask with blocker occupancy.
 func GetBishopAttacks(sq int, occ BBoard) BBoard {
 	occ &= BishopAttackMasks[sq]
 	occ *= BishopMagics[sq]
@@ -61,7 +61,7 @@ func GetBishopAttacks(sq int, occ BBoard) BBoard {
 	return BishopAttacks[sq][occ]
 }
 
-// Get Rook attack mask with blocker occupancy
+// Get Rook attack mask with blocker occupancy.
 func GetRookAttacks(sq int, occ BBoard) BBoard {
 	occ &= RookAttackMasks[sq]
 	occ *= RookMagics[sq]
@@ -69,7 +69,7 @@ func GetRookAttacks(sq int, occ BBoard) BBoard {
 	return RookAttacks[sq][occ]
 }
 
-// Get Queen attacks as a Bishop and Rook superposition
+// Get Queen attacks as a Bishop and Rook superposition.
 func GetQueenAttacks(sq int, occ BBoard) BBoard {
 	return GetBishopAttacks(sq, occ) | GetRookAttacks(sq, occ)
 }
@@ -150,7 +150,7 @@ func (b *Board) GetChecksBB(side int) (BBoard, bool) {
 	return checks, numChecks > 1
 }
 
-// Determine if a square is attacked by the opposing side
+// Determine if a square is attacked by the opposing side.
 func (b *Board) IsAttacked(sq, side int, occ BBoard) bool {
 	var isAttacked bool
 
@@ -177,27 +177,27 @@ func (b *Board) IsAttacked(sq, side int, occ BBoard) bool {
 	return isAttacked
 }
 
-// Determine if the king for the given side is in check
+// Determine if the king for the given side is in check.
 func (b *Board) IsChecked(side int) bool {
 	king := b.Pieces[side][KINGS].LS1B()
 
 	return b.IsAttacked(king, side, b.Occupancy[BOTH])
 }
 
-// Get a bitboard of all the squares attacked by the opposition
+// Get a bitboard of all the squares attacked by the opposition.
 func (b *Board) AttackedSquares(side int, occ BBoard) BBoard {
 	attacked := BBoard(0)
 
 	for sq := 0; sq < 64; sq++ {
 		if b.IsAttacked(sq, side, occ) {
-			attacked = attacked | SquareBitboards[sq]
+			attacked |= SquareBitboards[sq]
 		}
 	}
 
 	return attacked
 }
 
-// Generate a function to return the board state the it's current state
+// Generate a function to return the board state the it's current state.
 func (b *Board) GetUnmake() func() {
 	copy := b.Copy()
 	return func() {
@@ -327,7 +327,7 @@ func (b *Board) MakeNullMove() func() {
 	}
 }
 
-// Attempt to play a UCI move in position. Returns unmake closure and ok
+// Attempt to play a UCI move in position. Returns unmake closure and ok.
 func (b *Board) MoveUCI(uciMove string) (func(), bool) {
 	all := b.MoveGenLegal()
 
@@ -353,12 +353,12 @@ func (b *Board) PlayMovesUCI(uciMoves string) bool {
 	return true
 }
 
-// Return a pointer to the bitboard of the piece moved
+// Return a pointer to the bitboard of the piece moved.
 func (b *Board) GetBitBoard(piece int) *BBoard {
 	return &b.Pieces[b.Side][piece]
 }
 
-// Remove a piece captured by a move from the opposing bitboard
+// Remove a piece captured by a move from the opposing bitboard.
 func (b *Board) RemoveCaptured(sq int) {
 	b.Occupancy[b.Side^1].Clear(sq)
 	for piece := PAWNS; piece <= KINGS; piece++ {
@@ -366,7 +366,7 @@ func (b *Board) RemoveCaptured(sq int) {
 	}
 }
 
-// Make the complimentary rook move when castling
+// Make the complimentary rook move when castling.
 func (b *Board) CompleteCastling(move Move) {
 	bitboard := &b.Pieces[b.Side][ROOKS]
 	var rookMove Move
@@ -385,7 +385,7 @@ func (b *Board) CompleteCastling(move Move) {
 	bitboard.Clear(int(rookMove.From()))
 }
 
-// Get the piece at square as a collection of values: found, color, piece
+// Get the piece at square as a collection of values: found, color, piece.
 func (b *Board) PieceAtSquare(sq Square) (bool, int, int) {
 	for color := WHITE; color <= BLACK; color++ {
 		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
@@ -398,7 +398,7 @@ func (b *Board) PieceAtSquare(sq Square) (bool, int, int) {
 	return false, 0, 6
 }
 
-// Replace a pawn on the 8th/1st rank with the promotion piece
+// Replace a pawn on the 8th/1st rank with the promotion piece.
 func (b *Board) Promote(move Move) {
 	promotion := move.Promotion()
 	if promotion == 0 {
@@ -426,19 +426,18 @@ func (b *Board) Promote(move Move) {
 	b.ZobristPromotion(move)
 }
 
-// Determine if the game only consists of pawns and kings
+// Determine if the game only consists of pawns and kings.
 func (b *Board) IsPawnOnly() bool {
 	return b.Pieces[WHITE][PAWNS]|b.Pieces[WHITE][KINGS]|b.Pieces[BLACK][PAWNS]|b.Pieces[BLACK][KINGS] == b.Occupancy[BOTH]
 }
 
 // Determine if there is a draw by insufficient material
-// This determines theoretical possibility of mate. Not KvKNN, which still can be achieved as a 'help mate'
+// This determines theoretical possibility of mate. Not KvKNN, which still can be achieved as a 'help mate'.
 func (b *Board) InsufficentMaterial() bool {
-
 	isLight := func(s int) bool {
 		return ((s/8)+(s%8))%2 == 0
 	}
-	// If any pawn or major piece on the board can't have insufficent material
+	// If any pawn or major piece on the board can't have insufficient material
 	// No game with 3 or more minors is a strict draw.
 	if b.Pieces[WHITE][PAWNS] != 0 || b.Pieces[BLACK][PAWNS] != 0 ||
 		b.Pieces[WHITE][QUEENS] != 0 || b.Pieces[BLACK][QUEENS] != 0 ||
@@ -462,7 +461,6 @@ func (b *Board) InsufficentMaterial() bool {
 		return false
 	}
 
-	//Either side has a minor. Only one possible draw remaining KBvKB with same colors
 	if wB == 1 && bB == 1 {
 		return isLight(b.Pieces[WHITE][BISHOPS].LS1B()) == isLight(b.Pieces[BLACK][BISHOPS].LS1B())
 	}

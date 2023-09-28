@@ -7,31 +7,34 @@ import (
 	"math/rand"
 )
 
-var SquareBitboards [64]BBoard
-var PawnAttacks [2][64]BBoard
-var KnightAttacks [64]BBoard
-var KingAttacks [64]BBoard
-var KingSafetyMask [2][64]BBoard
-var BishopOccBitCount [64]int
-var RookOccBitCount [64]int
-var BishopMagics = [64]BBoard{
-	0x20010400808600, 0xa008010410820000, 0x1004440082038008, 0x904040098084800,
-	0x600c052000520541, 0x4002010420402022, 0x11040104400480, 0x200104104202080,
-	0x1200210204080080, 0x6c18600204e20682, 0x2202004200e0, 0x100044404810840,
-	0x400220211108110, 0x20002011009000c, 0xa00200a2084210, 0x202008098011000,
-	0xc40002004019206, 0x116042040804c500, 0x419002080a80200a, 0x4000844000800,
-	0x404b080a04800, 0x4608080482012002, 0x44040500a0880841, 0x2002100909050d00,
-	0x8404004030a400, 0x90709004040080, 0x11444043040d0204, 0x8080100202020,
-	0x801001181004000, 0x4140822002021000, 0x102089092009006, 0x540a042100540203,
-	0x50100409482820, 0x8010880900041004, 0x230100500414, 0x200800050810,
-	0x8294064010040100, 0x9010100220044404, 0x154202022004008e, 0x9420220008401,
-	0x71080840110401, 0x2000a40420400201, 0x802619048001004, 0x209280a058000500,
-	0x2004044810100a00, 0xa0208d000804300, 0x638a80d000684, 0x1910401000080,
-	0x800420210400200, 0x4404410090100, 0x8020808400880000, 0x400081042120c21,
-	0x4009001022120001, 0x4902220802082000, 0x410841000820290, 0x820020401002440,
-	0x800420041084000, 0x10818c05a000, 0x301804213d000, 0x800040018208801,
-	0x1b80000004104405, 0x2500214084184884, 0x1000628801050400, 0x8040229e24002080,
-}
+var (
+	SquareBitboards   [64]BBoard
+	PawnAttacks       [2][64]BBoard
+	KnightAttacks     [64]BBoard
+	KingAttacks       [64]BBoard
+	KingSafetyMask    [2][64]BBoard
+	BishopOccBitCount [64]int
+	RookOccBitCount   [64]int
+	BishopMagics      = [64]BBoard{
+		0x20010400808600, 0xa008010410820000, 0x1004440082038008, 0x904040098084800,
+		0x600c052000520541, 0x4002010420402022, 0x11040104400480, 0x200104104202080,
+		0x1200210204080080, 0x6c18600204e20682, 0x2202004200e0, 0x100044404810840,
+		0x400220211108110, 0x20002011009000c, 0xa00200a2084210, 0x202008098011000,
+		0xc40002004019206, 0x116042040804c500, 0x419002080a80200a, 0x4000844000800,
+		0x404b080a04800, 0x4608080482012002, 0x44040500a0880841, 0x2002100909050d00,
+		0x8404004030a400, 0x90709004040080, 0x11444043040d0204, 0x8080100202020,
+		0x801001181004000, 0x4140822002021000, 0x102089092009006, 0x540a042100540203,
+		0x50100409482820, 0x8010880900041004, 0x230100500414, 0x200800050810,
+		0x8294064010040100, 0x9010100220044404, 0x154202022004008e, 0x9420220008401,
+		0x71080840110401, 0x2000a40420400201, 0x802619048001004, 0x209280a058000500,
+		0x2004044810100a00, 0xa0208d000804300, 0x638a80d000684, 0x1910401000080,
+		0x800420210400200, 0x4404410090100, 0x8020808400880000, 0x400081042120c21,
+		0x4009001022120001, 0x4902220802082000, 0x410841000820290, 0x820020401002440,
+		0x800420041084000, 0x10818c05a000, 0x301804213d000, 0x800040018208801,
+		0x1b80000004104405, 0x2500214084184884, 0x1000628801050400, 0x8040229e24002080,
+	}
+)
+
 var RookMagics = [64]BBoard{
 	0x18010a040018000, 0x40002000401001, 0x290010a841e00100, 0x29001000050900a0,
 	0x4080030400800800, 0x1200040200100801, 0x2200208200040851, 0x220000820425004c,
@@ -50,17 +53,24 @@ var RookMagics = [64]BBoard{
 	0x8800800010290041, 0x401500228206, 0x8002a00011090041, 0x42008100101,
 	0x283000800100205, 0x2008810010402, 0x490102200880104, 0x800010920940042,
 }
-var BishopAttackMasks [64]BBoard
-var RookAttackMasks [64]BBoard
-var BishopAttacks [64][4096]BBoard
-var RookAttacks [64][4096]BBoard
 
-var PassedPawns [2][64]BBoard
-var IsolatedPawns [64]BBoard
-var DoubledPawns [64]BBoard
+var (
+	BishopAttackMasks [64]BBoard
+	RookAttackMasks   [64]BBoard
+	BishopAttacks     [64][4096]BBoard
+	RookAttacks       [64][4096]BBoard
+)
 
-const MajorDiag BBoard = 9314046665258451585
-const MinorDiag BBoard = 4946458877011600706
+var (
+	PassedPawns   [2][64]BBoard
+	IsolatedPawns [64]BBoard
+	DoubledPawns  [64]BBoard
+)
+
+const (
+	MajorDiag BBoard = 9314046665258451585
+	MinorDiag BBoard = 4946458877011600706
+)
 
 func init() {
 	InitSquares()
@@ -79,7 +89,7 @@ func InitSquares() {
 	}
 }
 
-// Initialize pawn attack lookup table
+// Initialize pawn attack lookup table.
 func InitPawnAttacks() {
 	pawnAttack := func(sq int, isWhite bool) BBoard {
 		var piece, attacks BBoard
@@ -212,7 +222,7 @@ func InitPawnStrucutreMasks() {
 	}
 }
 
-// Initialize Knight attack lookup table
+// Initialize Knight attack lookup table.
 func InitKnightAttacks() {
 	knightAttack := func(sq int) BBoard {
 		var piece, attacks BBoard
@@ -245,7 +255,7 @@ func InitKnightAttacks() {
 	}
 }
 
-// Initialize King move lookup table
+// Initialize King move lookup table.
 func InitKingAttacks() {
 	kingAttack := func(sq int) BBoard {
 		var piece, attacks BBoard
@@ -273,9 +283,8 @@ func InitKingAttacks() {
 	}
 }
 
-// King safety masks ar similar to KingAttacks but do not cover squares behind the king. Only pieces in front of the kind attribute to safety
+// King safety masks ar similar to KingAttacks but do not cover squares behind the king. Only pieces in front of the kind attribute to safety.
 func InitKingSafetyMasks() {
-
 	safetyMask := func(sq int, side int) BBoard {
 		var piece, attacks BBoard
 		piece.Set(sq)
@@ -315,7 +324,7 @@ func InitKingSafetyMasks() {
 
 // Generate bishop relevant occupancy look table
 // Relevant occupancy are the squares where a potential blocking piece can cut a sliding piece from moving beyond it
-// Relevant occupancy does not include border squares as a piece on the edge of the board can not block it moving past it
+// Relevant occupancy does not include border squares as a piece on the edge of the board can not block it moving past it.
 func BishopRelOcc(sq int) BBoard {
 	var piece, attacks BBoard
 	piece.Set(sq)
@@ -357,7 +366,7 @@ func RookRelOcc(sq int) BBoard {
 	return attacks
 }
 
-// Initialize sliding piece lookup tables with magic numbers
+// Initialize sliding piece lookup tables with magic numbers.
 func InitSliders() {
 	for sq := 0; sq < 64; sq++ {
 		BishopAttackMasks[sq] = BishopRelOcc(sq)
@@ -401,7 +410,7 @@ func Occupancy(index, count int, attack BBoard) BBoard {
 	return occ
 }
 
-// Generate Bishop sliding attacks with a blocker bitboard on the fly. Only used for finding and initializing magic numbers. Too slow to use for movegen
+// Generate Bishop sliding attacks with a blocker bitboard on the fly. Only used for finding and initializing magic numbers. Too slow to use for movegen.
 func BishopAttacksWithBlocker(sq int, blocker BBoard) BBoard {
 	var piece, attacks BBoard
 	piece.Set(sq)
@@ -439,7 +448,7 @@ func BishopAttacksWithBlocker(sq int, blocker BBoard) BBoard {
 	return attacks
 }
 
-// Generate Rook sliding attacks with a blocker bitboard on the fly. Only used for finding and initializing magic numbers. Too slow to use for movegen
+// Generate Rook sliding attacks with a blocker bitboard on the fly. Only used for finding and initializing magic numbers. Too slow to use for movegen.
 func RookAttacksWithBlocker(sq int, blocker BBoard) BBoard {
 	var piece, attacks BBoard
 	piece.Set(sq)
@@ -477,7 +486,7 @@ func RookAttacksWithBlocker(sq int, blocker BBoard) BBoard {
 	return attacks
 }
 
-// Calculate and initialize the number of relevant occupancies for Bishops and Rooks for all squares
+// Calculate and initialize the number of relevant occupancies for Bishops and Rooks for all squares.
 func InitOccBitCounts() {
 	for sq := 0; sq < 64; sq++ {
 		BishopOccBitCount[sq] = BishopRelOcc(sq).Count()
@@ -485,12 +494,12 @@ func InitOccBitCounts() {
 	}
 }
 
-// Generate a random bitboard with few non-zero bits for Magic Number candidates
+// Generate a random bitboard with few non-zero bits for Magic Number candidates.
 func GetMagicNumber() BBoard {
 	return BBoard(rand.Uint64() & rand.Uint64() & rand.Uint64())
 }
 
-// Find magic numbers with a brute force approach for a square
+// Find magic numbers with a brute force approach for a square.
 func FindMagicNumber(sq, bitCount int, isBishop bool) BBoard {
 	var occ, attacks, usedAttacks [4096]BBoard
 	var attack BBoard

@@ -35,7 +35,7 @@ type TTable struct {
 	size          uint64
 }
 
-// LSB 0..15 move, 16..23 depth 24..31 type 32..63 score MSB
+// LSB 0..15 move, 16..23 depth 24..31 type 32..63 score MSB.
 type EntryData uint64
 
 const (

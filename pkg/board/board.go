@@ -30,7 +30,7 @@ func (b *Board) Copy() *Board {
 	return &copy
 }
 
-// Get the type of piece moved
+// Get the type of piece moved.
 func (b *Board) Piece(move Move) int {
 	from := SquareBitboards[move.From()]
 	for bb := PAWNS; bb <= KINGS; bb++ {
@@ -42,7 +42,7 @@ func (b *Board) Piece(move Move) int {
 	return 0
 }
 
-// Check if destination square is occupied and implies capture
+// Check if destination square is occupied and implies capture.
 func (b *Board) IsCapture(move Move) bool {
 	return SquareBitboards[move.To()]&b.Occupancy[BOTH] != 0 || move.IsEnPassant()
 }
@@ -82,8 +82,8 @@ func (b *Board) updateCastlingRights(move Move) {
 			b.ZobristCastlingRights(WOOO)
 		}
 
-		b.CastlingRights = b.CastlingRights &^ WOOO
-		b.CastlingRights = b.CastlingRights &^ WOO
+		b.CastlingRights &^= WOOO
+		b.CastlingRights &^= WOO
 
 	case b.CastlingRights&(BOOO|BOO) != 0 && from == BCastleQueen.From():
 		if b.CastlingRights&BOOO != 0 {
@@ -93,23 +93,23 @@ func (b *Board) updateCastlingRights(move Move) {
 			b.ZobristCastlingRights(BOO)
 		}
 
-		b.CastlingRights = b.CastlingRights &^ BOOO
-		b.CastlingRights = b.CastlingRights &^ BOO
+		b.CastlingRights &^= BOOO
+		b.CastlingRights &^= BOO
 
 	case b.CastlingRights&WOOO != 0 && (from == WCastleQueenRook.From() || to == WCastleQueenRook.From()):
 		b.ZobristCastlingRights(WOOO)
-		b.CastlingRights = b.CastlingRights &^ WOOO
+		b.CastlingRights &^= WOOO
 
 	case b.CastlingRights&WOO != 0 && (from == WCastleKingRook.From() || to == WCastleKingRook.From()):
 		b.ZobristCastlingRights(WOO)
-		b.CastlingRights = b.CastlingRights &^ WOO
+		b.CastlingRights &^= WOO
 
 	case b.CastlingRights&BOOO != 0 && (from == BCastleQueenRook.From() || to == BCastleQueenRook.From()):
 		b.ZobristCastlingRights(BOOO)
-		b.CastlingRights = b.CastlingRights &^ BOOO
+		b.CastlingRights &^= BOOO
 
 	case b.CastlingRights&BOO != 0 && (from == BCastleKingRook.From() || to == BCastleKingRook.From()):
 		b.ZobristCastlingRights(BOO)
-		b.CastlingRights = b.CastlingRights &^ BOO
+		b.CastlingRights &^= BOO
 	}
 }

@@ -71,13 +71,13 @@ func (b *Board) ImportFEN(fen string) error {
 	for _, c := range []byte(castling) {
 		switch c {
 		case 'K':
-			b.CastlingRights = b.CastlingRights | WOO
+			b.CastlingRights |= WOO
 		case 'Q':
-			b.CastlingRights = b.CastlingRights | WOOO
+			b.CastlingRights |= WOOO
 		case 'k':
-			b.CastlingRights = b.CastlingRights | BOO
+			b.CastlingRights |= BOO
 		case 'q':
-			b.CastlingRights = b.CastlingRights | BOOO
+			b.CastlingRights |= BOOO
 		}
 	}
 
@@ -143,7 +143,7 @@ func (b *Board) parsePieces(position string) {
 	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
 }
 
-// Serialize the board into fen representation of piece placement
+// Serialize the board into fen representation of piece placement.
 func (b *Board) serializePosition() string {
 	byteBoard := make([]byte, 64)
 	for color := WHITE; color <= BLACK; color++ {

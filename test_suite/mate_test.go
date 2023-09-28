@@ -59,7 +59,6 @@ func TestMate(t *testing.T) {
 					assert.GreaterOrEqual(t, mateIn, mateInMin, "mate score increased with depth was %d now %d", mateInMin, mateIn)
 					mateInMin = max(mateInMin, mateIn)
 				}
-
 			}
 			wg.Wait()
 			cancel()

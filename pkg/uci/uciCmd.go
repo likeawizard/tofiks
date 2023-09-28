@@ -21,7 +21,7 @@ func (c *Go) Exec(e *eval.EvalEngine) bool {
 		e.Clock.Movetime = c.movetime
 		e.Clock.Infinite = c.infinite
 		ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
-		var depth = c.depth
+		depth := c.depth
 		if depth == 0 {
 			depth = 50
 		}

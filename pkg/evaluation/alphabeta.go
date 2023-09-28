@@ -12,7 +12,7 @@ import (
 const (
 	// Mate score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
 	CheckmateScore int32 = 90000
-	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval
+	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval.
 	CheckmateThreshold = CheckmateScore - 1000
 	Inf                = 2 * CheckmateScore
 )
@@ -97,7 +97,6 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 			} else {
-
 				depthR := int8(0)
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && board.SquareBitboards[currMove.To()]&e.Board.Occupancy[board.BOTH] == 0 {
@@ -109,7 +108,6 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 				if value > alpha && value < beta {
 					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 				}
-
 			}
 			umove()
 			e.RemovePly()
@@ -140,7 +138,6 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 			} else {
 				e.DecrementHistory(currMove)
 			}
-
 		}
 
 		if legalMoves == 0 {
@@ -277,7 +274,6 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 					e.MateFound = true
 				}
 
-				//found mate stop
 				if !infinite && e.MateFound {
 					done = true
 				}
