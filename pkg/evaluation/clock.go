@@ -19,11 +19,12 @@ type Clock struct {
 }
 
 func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.CancelFunc) {
+	clock := c.GetMovetime(fmCounter, side)
 	switch {
-	case c.Infinite:
+	case c.Infinite || clock == time.Duration(0):
 		return context.WithCancel(context.Background())
 	default:
-		return context.WithTimeout(context.Background(), c.GetMovetime(fmCounter, side))
+		return context.WithTimeout(context.Background(), clock)
 	}
 }
 
@@ -40,6 +41,6 @@ func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
 			t = c.Btime
 			inc = c.Binc
 		}
-		return time.Millisecond * time.Duration(max((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead, 10))
+		return time.Millisecond * time.Duration((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead)
 	}
 }
