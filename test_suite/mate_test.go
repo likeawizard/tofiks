@@ -36,7 +36,7 @@ func TestMate(t *testing.T) {
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, false)
+				e.IDSearch(ctx, 50, true)
 			}()
 
 			mateInMin := 100
@@ -58,6 +58,9 @@ func TestMate(t *testing.T) {
 				} else {
 					assert.GreaterOrEqual(t, mateIn, mateInMin, "mate score increased with depth was %d now %d", mateInMin, mateIn)
 					mateInMin = max(mateInMin, mateIn)
+				}
+				if mateInMin == testPos.mateIn {
+					cancel()
 				}
 			}
 			wg.Wait()
