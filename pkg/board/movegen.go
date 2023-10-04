@@ -3,7 +3,7 @@ package board
 func (b *Board) PseudoMoveGen() []Move {
 	var from, to int
 	var pieces, attacks BBoard
-	var moves []Move
+	moves := make([]Move, 0, 64)
 	var move Move
 
 	if b.Side == 0 {
@@ -460,7 +460,7 @@ func (b *Board) MoveGenKing() []Move {
 	var from, to int
 	var pieces, attacks, attackedSquares BBoard
 	var isInCheck bool
-	var moves []Move
+	moves := make([]Move, 0, 9)
 	var move Move
 	if b.Side == WHITE {
 		attackedSquares = b.AttackedSquares(b.Side, b.Occupancy[BOTH]&^b.Pieces[b.Side][KINGS])
