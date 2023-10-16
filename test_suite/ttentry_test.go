@@ -9,7 +9,7 @@ import (
 )
 
 func FuzzEntry(f *testing.F) {
-	f.Fuzz(func(t *testing.T, move uint16, depth int8, eType uint8, age int8, score int16) {
+	f.Fuzz(func(t *testing.T, move uint32, depth int8, eType uint8, age int8, score int16) {
 		if eType > 2 || depth < 0 || age < 0 {
 			t.Skip()
 		}

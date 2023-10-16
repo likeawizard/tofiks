@@ -407,19 +407,7 @@ func (b *Board) Promote(move Move) {
 
 	var pawnBitBoard, promotionBitBoard *BBoard
 	pawnBitBoard = &b.Pieces[b.Side][PAWNS]
-	var pieceIdx int
-
-	switch promotion {
-	case PROMO_QUEEN:
-		pieceIdx = QUEENS
-	case PROMO_KNIGHT:
-		pieceIdx = KNIGHTS
-	case PROMO_ROOK:
-		pieceIdx = ROOKS
-	case PROMO_BISHOP:
-		pieceIdx = BISHOPS
-	}
-	promotionBitBoard = &b.Pieces[b.Side][pieceIdx]
+	promotionBitBoard = &b.Pieces[b.Side][promotion]
 
 	pawnBitBoard.Clear(int(move.To()))
 	promotionBitBoard.Set(int(move.To()))

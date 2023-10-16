@@ -23,8 +23,8 @@ var (
 // 0..63 to a8 to h1 mapping.
 type Square int
 
-// LSB 0..5 from 6..11 to 12..14 promotion 15 IS_ENPASSANT MSB.
-type Move uint16
+// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16..31 unused MSB.
+type Move uint32
 
 func SquareFromString(s string) Square {
 	file := int(s[0] - 'a')
@@ -40,64 +40,62 @@ func (s Square) String() string {
 }
 
 const (
-	PROMO_QUEEN = 1 + iota
-	PROMO_KNIGHT
-	PROMO_BISHOP
-	PROMO_ROOK
+	fromMask   = 1<<6 - 1
+	fromShift  = 0
+	toMask     = 1<<6 - 1
+	toShift    = 6
+	fromToMask = 1<<12 - 1
+	promoMask  = 1<<3 - 1
+	promoShift = 12
 
-	FROM         = 0x3f
-	TO           = 0xfc0
-	FROMTO       = FROM + TO
-	PROMO        = 0xf000
-	PROMO_SHIFT  = 12
-	IS_ENPASSANT = 1 << 15
+	IsEnpassant = 1 << 15
 )
 
 func MoveFromString(s string) Move {
-	from := SquareFromString(s[:2]) << 6
+	from := SquareFromString(s[:2])
 	to := SquareFromString(s[2:4])
-	promotion := 0
+	promotion := Square(0)
 	if len(s) == 5 {
-		promotion = int(s[4]) << PROMO_SHIFT
+		promotion = Square(s[4])
 	}
-	return Move(from + to + Square(promotion))
+	return Move(from | to<<toShift | promotion<<promoShift)
 }
 
 func (m Move) From() Square {
-	return Square(m>>6) & 63
+	return Square(m) & fromMask
 }
 
 func (m Move) To() Square {
-	return Square(m) & 63
+	return Square(m>>toShift) & toMask
 }
 
 func (m Move) Promotion() uint8 {
-	return uint8(m & PROMO >> PROMO_SHIFT)
+	return uint8(m>>promoShift) & promoMask
 }
 
 func (m Move) SetPromotion(prom uint8) Move {
-	return m&4095 | Move(prom)<<PROMO_SHIFT
+	return m&fromToMask | Move(prom)<<promoShift
 }
 
 func (m Move) FromTo() (Square, Square) {
-	return Square(m>>6) & 63, Square(m) & 63
+	return Square(m) & fromMask, Square(m>>toShift) & toMask
 }
 
 func (m Move) IsEnPassant() bool {
-	return m&IS_ENPASSANT != 0
+	return m&IsEnpassant != 0
 }
 
 func (m Move) String() string {
 	promo := ""
 	switch m.Promotion() {
-	case PROMO_BISHOP:
+	case BISHOPS:
 		promo = "b"
-	case PROMO_KNIGHT:
+	case KNIGHTS:
 		promo = "n"
-	case PROMO_QUEEN:
-		promo = "q"
-	case PROMO_ROOK:
+	case ROOKS:
 		promo = "r"
+	case QUEENS:
+		promo = "q"
 	}
 	return fmt.Sprintf("%v%v%s", m.From(), m.To(), promo)
 }

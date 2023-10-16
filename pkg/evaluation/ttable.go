@@ -36,18 +36,18 @@ type TTable struct {
 	size          uint64
 }
 
-// LSB 0..15 move, 16..22 depth 23..24 type 25..31 unused 48..63 score MSB.
+// LSB 0..31 move, 32..38 depth 39..40 type 41..47 age 48..63 score MSB.
 type EntryData uint64
 
 const (
-	move_mask   = (1 << 16) - 1
+	move_mask   = (1 << 32) - 1
 	type_mask   = (1 << 2) - 1
 	depth_mask  = (1 << 7) - 1
 	age_mask    = (1 << 7) - 1
 	score_mask  = (1 << 16) - 1
-	depth_shift = 16
-	type_shift  = 23
-	age_shift   = 25
+	depth_shift = 32
+	type_shift  = 39
+	age_shift   = 41
 	score_shift = 48
 )
 
@@ -83,7 +83,7 @@ func (ed EntryData) Type() EntryType {
 }
 
 func (ed EntryData) Age() int8 {
-	return int8(ed >> age_shift)
+	return int8((ed >> age_shift) & age_mask)
 }
 
 type SearchEntry struct {

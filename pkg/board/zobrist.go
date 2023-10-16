@@ -122,21 +122,10 @@ func (b *Board) ZobristCastling(right CastlingRights) {
 
 // Update Zobrist hash when promoting a piece.
 func (b *Board) ZobristPromotion(move Move) {
-	var promotion int
-	switch move.Promotion() {
-	case PROMO_QUEEN:
-		promotion = QUEENS
-	case PROMO_KNIGHT:
-		promotion = KNIGHTS
-	case PROMO_ROOK:
-		promotion = ROOKS
-	case PROMO_BISHOP:
-		promotion = BISHOPS
-	}
 	to := move.To()
 
 	// set destination with newly promoted piece
-	b.Hash ^= pieceKeys[b.Side][promotion][to]
+	b.Hash ^= pieceKeys[b.Side][move.Promotion()][to]
 	b.Hash ^= pieceKeys[b.Side][PAWNS][to]
 }
 
