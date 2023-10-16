@@ -199,18 +199,18 @@ func (b *Board) AttackedSquares(side int, occ BBoard) BBoard {
 
 // Generate a function to return the board state the it's current state.
 func (b *Board) GetUnmake() func() {
-	copy := b.Copy()
+	cp := b.Copy()
 	return func() {
-		b.Hash = copy.Hash
-		b.Pieces = copy.Pieces
-		b.Occupancy = copy.Occupancy
-		b.Side = copy.Side
-		b.Phase = copy.Phase
-		b.InCheck = copy.InCheck
-		b.CastlingRights = copy.CastlingRights
-		b.EnPassantTarget = copy.EnPassantTarget
-		b.HalfMoveCounter = copy.HalfMoveCounter
-		b.FullMoveCounter = copy.FullMoveCounter
+		b.Hash = cp.Hash
+		b.Pieces = cp.Pieces
+		b.Occupancy = cp.Occupancy
+		b.Side = cp.Side
+		b.Phase = cp.Phase
+		b.InCheck = cp.InCheck
+		b.CastlingRights = cp.CastlingRights
+		b.EnPassantTarget = cp.EnPassantTarget
+		b.HalfMoveCounter = cp.HalfMoveCounter
+		b.FullMoveCounter = cp.FullMoveCounter
 	}
 }
 

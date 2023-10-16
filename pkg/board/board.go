@@ -1,7 +1,5 @@
 package board
 
-var Pieces = [6]string{"P", "B", "N", "R", "Q", "K"}
-
 func NewBoard(position string) *Board {
 	b := Board{}
 	switch position {
@@ -18,7 +16,7 @@ func NewBoard(position string) *Board {
 }
 
 func (b *Board) Copy() *Board {
-	copy := Board{
+	cp := Board{
 		Hash:            b.Hash,
 		Pieces:          b.Pieces,
 		Occupancy:       b.Occupancy,
@@ -31,7 +29,7 @@ func (b *Board) Copy() *Board {
 		FullMoveCounter: b.FullMoveCounter,
 	}
 
-	return &copy
+	return &cp
 }
 
 // Get the type of piece moved.

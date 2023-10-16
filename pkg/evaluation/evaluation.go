@@ -120,10 +120,10 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 
 const capScore int = 1 << 24
 
-type moveSelector func(k int) board.Move
+type MoveSelector func(k int) board.Move
 
 // Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic.
-func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) moveSelector {
+func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) MoveSelector {
 	moveCount := len(moves)
 	scores := make([]int, moveCount)
 	lenPV := int8(len(pvOrder))
@@ -158,7 +158,7 @@ func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board
 	}
 }
 
-func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) moveSelector {
+func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
 	moveCount := len(moves)
 	scores := make([]int, moveCount)
 
