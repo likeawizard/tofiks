@@ -219,7 +219,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
-
+	e.TTable.age = max(0, int8(e.Board.HalfMoveCounter)/2+63-int8(e.Board.FullMoveCounter)/4)
 	e.AgeHistory()
 	done, ok := false, true
 	wg.Add(1)

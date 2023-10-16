@@ -7,3 +7,4 @@
 /*.pprof
 /build
 /*.bin
+/test_suite/testdata/fuzz/FuzzEntry/*

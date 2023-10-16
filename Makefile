@@ -25,3 +25,6 @@ test-perft:
 
 test-mate:
 	go test -run=TestMate -v -timeout 0 ./test_suite/
+
+test-entry:
+	go test -fuzz=FuzzEntry -v -timeout 0 ./test_suite/
