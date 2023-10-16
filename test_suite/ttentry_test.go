@@ -1,14 +1,15 @@
 package testsuite
 
 import (
+	"testing"
+
 	"github.com/likeawizard/tofiks/pkg/board"
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func FuzzEntry(f *testing.F) {
-	f.Fuzz(func(t *testing.T, move uint16, depth int8, eType uint8, age int8, score int32) {
+	f.Fuzz(func(t *testing.T, move uint16, depth int8, eType uint8, age int8, score int16) {
 		if eType > 2 || depth < 0 || age < 0 {
 			t.Skip()
 		}

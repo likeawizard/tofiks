@@ -6,9 +6,13 @@ func NewBoard(position string) *Board {
 	b := Board{}
 	switch position {
 	case "startpos", "":
-		b.ImportFEN(startingFEN)
+		if err := b.ImportFEN(startingFEN); err != nil {
+			panic(err)
+		}
 	default:
-		b.ImportFEN(position)
+		if err := b.ImportFEN(position); err != nil {
+			panic(err)
+		}
 	}
 	return &b
 }

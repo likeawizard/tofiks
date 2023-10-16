@@ -36,7 +36,7 @@ type TTable struct {
 	size          uint64
 }
 
-// LSB 0..15 move, 16..22 depth 23..24 type 25..31 unused 32..63 score MSB.
+// LSB 0..15 move, 16..22 depth 23..24 type 25..31 unused 48..63 score MSB.
 type EntryData uint64
 
 const (
@@ -44,14 +44,14 @@ const (
 	type_mask   = (1 << 2) - 1
 	depth_mask  = (1 << 7) - 1
 	age_mask    = (1 << 7) - 1
-	score_mask  = (1 << 32) - 1
+	score_mask  = (1 << 16) - 1
 	depth_shift = 16
 	type_shift  = 23
 	age_shift   = 25
-	score_shift = 32
+	score_shift = 48
 )
 
-func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int32) EntryData {
+func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int16) EntryData {
 	return EntryData(move) |
 		EntryData(depth)<<depth_shift |
 		EntryData(eType)<<type_shift |
@@ -59,11 +59,11 @@ func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int3
 		EntryData(score)<<score_shift
 }
 
-func (ed EntryData) Get() (board.Move, int8, EntryType, int32) {
+func (ed EntryData) Get() (board.Move, int8, EntryType, int16) {
 	return board.Move(ed & move_mask),
 		int8((ed >> depth_shift) & depth_mask),
 		EntryType((ed >> type_shift) & type_mask),
-		int32(ed >> score_shift)
+		int16(ed >> score_shift)
 }
 
 func (ed EntryData) Depth() int8 {
@@ -74,8 +74,8 @@ func (ed EntryData) Move() board.Move {
 	return board.Move(ed & move_mask)
 }
 
-func (ed EntryData) Score() int32 {
-	return int32(ed >> score_shift)
+func (ed EntryData) Score() int16 {
+	return int16(ed >> score_shift)
 }
 
 func (ed EntryData) Type() EntryType {
@@ -83,7 +83,7 @@ func (ed EntryData) Type() EntryType {
 }
 
 func (ed EntryData) Age() int8 {
-	return int8((ed >> age_shift) & age_mask)
+	return int8(ed >> age_shift)
 }
 
 type SearchEntry struct {
@@ -113,7 +113,7 @@ func (tt *TTable) Hashfull() uint64 {
 	return (tt.newWrite * 1000) / tt.size
 }
 
-func (tt *TTable) Store(hash uint64, entryType EntryType, eval int32, depth int8, move board.Move) {
+func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth int8, move board.Move) {
 	idx := hash % tt.size
 	entry := tt.entries[idx].data
 	if entry == 0 {
@@ -148,15 +148,15 @@ func (tt *TTable) Clear() {
 	}
 }
 
-func (ed *EntryData) GetScore(depth, ply int8, alpha, beta int32) (int32, bool) {
+func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
 	ttType, eval := ed.Type(), ed.Score()
 
 	if eval > CheckmateThreshold {
-		eval -= int32(ply)
+		eval -= int16(ply)
 	}
 
 	if eval < -CheckmateThreshold {
-		eval += int32(ply)
+		eval += int16(ply)
 	}
 
 	switch {

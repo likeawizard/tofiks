@@ -43,7 +43,10 @@ func TestTempoLoss(t *testing.T) {
 	var b board.Board
 	moves := "e8e7 e1f2 e7e8 f2e2 e8e7 e2e1 e7e8"
 
-	b.ImportFEN("rnbqkbnr/pppp1ppp/4p3/8/8/4PP2/PPPP2PP/RNBQKBNR b - - 0 2")
+	err := b.ImportFEN("rnbqkbnr/pppp1ppp/4p3/8/8/4PP2/PPPP2PP/RNBQKBNR b - - 0 2")
+	if err != nil {
+		t.Fatalf("Failed to import FEN: %s", err)
+	}
 	seed := b.Hash
 	b.PlayMovesUCI(moves)
 

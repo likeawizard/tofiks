@@ -7,7 +7,10 @@ import (
 
 func Perft(fen string, depth int) (int64, time.Duration) {
 	b := &Board{}
-	b.ImportFEN(fen)
+	err := b.ImportFEN(fen)
+	if err != nil {
+		panic(err)
+	}
 	start := time.Now()
 	leafs := traverse(b, depth)
 	return leafs, time.Since(start)

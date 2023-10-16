@@ -11,13 +11,13 @@ import (
 
 const (
 	// Mate score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
-	CheckmateScore int32 = 90000
+	CheckmateScore int16 = 8192
 	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval.
-	CheckmateThreshold = CheckmateScore - 1000
+	CheckmateThreshold = CheckmateScore - 1024
 	Inf                = 2 * CheckmateScore
 )
 
-func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int32, nmp bool, side int32) int32 {
+func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -68,7 +68,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 		legalMoves := 0
 		selectMove := e.GetMoveSelector(pvMove, all, pvOrder, ply)
 
-		value := int32(0)
+		value := int16(0)
 		entryType := TT_UPPER
 		bestVal := -Inf
 		var currMove, bestMove board.Move
@@ -142,7 +142,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 
 		if legalMoves == 0 {
 			if inCheck {
-				return int32(ply) - CheckmateScore
+				return int16(ply) - CheckmateScore
 			} else {
 				return 0
 			}
@@ -152,14 +152,14 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 	}
 }
 
-func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int32) int32 {
+func (e *EvalEngine) quiescence(ctx context.Context, alpha, beta, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
 		e.Stats.qNodes++
-		eval := side * int32(e.GetEvaluation(e.Board))
+		eval := side * int16(e.GetEvaluation(e.Board))
 
 		if !e.Board.InCheck && eval >= beta {
 			return beta
@@ -211,10 +211,10 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 	e.MateFound = false
 	var wg sync.WaitGroup
 	var best, ponder board.Move
-	var eval int32
+	var eval int16
 	var line []board.Move
 	start := time.Now()
-	color := int32(1)
+	color := int16(1)
 	alpha, beta := -Inf, Inf
 	if e.Board.Side != board.WHITE {
 		color = -color
@@ -231,8 +231,7 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 			}
 
 			e.Stats.Start()
-			// stopHelpers := e.StartHelpers(ctx, d, 3)
-			pv := []board.Move{}
+			var pv []board.Move
 			pv = append(pv, line...)
 			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 
@@ -241,7 +240,6 @@ func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (bo
 				eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 			}
 			alpha, beta = eval-50, eval+100
-			// stopHelpers()
 
 			select {
 			case <-ctx.Done():
