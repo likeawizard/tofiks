@@ -118,7 +118,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 			}
 
 			if value >= beta {
-				if !e.Board.IsCapture(currMove) {
+				if !currMove.IsCapture() {
 					e.AddKillerMove(ply, currMove)
 					e.IncrementHistory(depth, currMove)
 				}

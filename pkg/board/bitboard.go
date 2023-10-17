@@ -217,7 +217,7 @@ func (b *Board) GetUnmake() func() {
 // Make a legal move in position and update board state - castling rights, en passant, move count, side to move etc. Returns a function to take back the move made.
 func (b *Board) MakeMove(move Move) func() {
 	umove := b.GetUnmake()
-	isCapture := b.IsCapture(move)
+	isCapture := move.IsCapture()
 	piece := b.Piece(move)
 	if isCapture || piece == PAWNS {
 		b.HalfMoveCounter = 0
@@ -329,11 +329,15 @@ func (b *Board) MakeNullMove() func() {
 
 // Attempt to play a UCI move in position. Returns unmake closure and ok.
 func (b *Board) MoveUCI(uciMove string) (func(), bool) {
-	all := b.MoveGenLegal()
-
+	all := b.PseudoMoveGen()
 	for _, move := range all {
 		if uciMove == move.String() {
-			return b.MakeMove(move), true
+			umove := b.MakeMove(move)
+			if b.IsChecked(b.Side ^ 1) {
+				umove()
+				return nil, false
+			}
+			return umove, true
 		}
 	}
 	return nil, false

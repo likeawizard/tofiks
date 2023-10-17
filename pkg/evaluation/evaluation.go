@@ -66,7 +66,7 @@ func (e *EvalEngine) IncrementHistory(depth int8, move board.Move) {
 }
 
 func (e *EvalEngine) DecrementHistory(move board.Move) {
-	if !e.Board.IsCapture(move) {
+	if move.IsCapture() {
 		from, to := move.FromTo()
 		if e.History[e.Board.Side][from][to] > 0 {
 			e.History[e.Board.Side][from][to]--
@@ -133,7 +133,7 @@ func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board
 			scores[i] = capScore + 200
 		case moves[i] == hashMove:
 			scores[i] = capScore + 100
-		case e.Board.IsCapture(moves[i]):
+		case moves[i].IsCapture():
 			scores[i] = capScore + e.MvvLva(moves[i])
 		case moves[i] == e.KillerMoves[ply][0]:
 			scores[i] = capScore - 5

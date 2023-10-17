@@ -44,11 +44,6 @@ func (b *Board) Piece(move Move) int {
 	return 0
 }
 
-// Check if destination square is occupied and implies capture.
-func (b *Board) IsCapture(move Move) bool {
-	return SquareBitboards[move.To()]&b.Occupancy[BOTH] != 0 || move.IsEnPassant()
-}
-
 func (b *Board) IsCastling(move Move, piece int) bool {
 	if piece != KINGS {
 		return false
