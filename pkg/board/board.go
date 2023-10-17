@@ -32,38 +32,6 @@ func (b *Board) Copy() *Board {
 	return &cp
 }
 
-// Get the type of piece moved.
-func (b *Board) Piece(move Move) int {
-	from := SquareBitboards[move.From()]
-	for bb := PAWNS; bb <= KINGS; bb++ {
-		if b.Pieces[0][bb]&from != 0 || b.Pieces[1][bb]&from != 0 {
-			return bb
-		}
-	}
-
-	return 0
-}
-
-func (b *Board) IsCastling(move Move, piece int) bool {
-	if piece != KINGS {
-		return false
-	}
-	switch move {
-	case WCastleKing, WCastleQueen, BCastleKing, BCastleQueen:
-		return true
-	default:
-		return false
-	}
-}
-
-func (b *Board) IsDouble(move Move, piece int) bool {
-	if piece != PAWNS {
-		return false
-	}
-	from, to := move.FromTo()
-	return (from/8 == 1 || from/8 == 6) && (to/8 == 3 || to/8 == 4)
-}
-
 func (b *Board) updateCastlingRights(move Move) {
 	if b.CastlingRights == 0 {
 		return

@@ -65,8 +65,7 @@ func (b *Board) SeedHash() uint64 {
 	return hash
 }
 
-// Incrementally update Zborist hash after a move
-// TODO: optimize - remove use of expensive PieceAtSquare function.
+// Incrementally update Zborist hash after a move.
 func (b *Board) ZobristSimpleMove(move Move, piece int) {
 	from, to := move.From(), move.To()
 	b.Hash ^= pieceKeys[b.Side][piece][to]
@@ -75,7 +74,7 @@ func (b *Board) ZobristSimpleMove(move Move, piece int) {
 
 func (b *Board) ZobristCapture(move Move, piece int) {
 	from, to := move.From(), move.To()
-	_, _, capturedPiece := b.PieceAtSquare(to)
+	capturedPiece := b.PieceAtSquare(to)
 	b.Hash ^= pieceKeys[b.Side^1][capturedPiece][to]
 	b.Hash ^= pieceKeys[b.Side][piece][to]
 	b.Hash ^= pieceKeys[b.Side][piece][from]

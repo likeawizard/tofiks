@@ -218,7 +218,7 @@ func (b *Board) GetUnmake() func() {
 func (b *Board) MakeMove(move Move) func() {
 	umove := b.GetUnmake()
 	isCapture := move.IsCapture()
-	piece := b.Piece(move)
+	piece := int(move.Piece())
 	if isCapture || piece == PAWNS {
 		b.HalfMoveCounter = 0
 	} else {
@@ -244,11 +244,11 @@ func (b *Board) MakeMove(move Move) func() {
 		b.EnPassantTarget = -1
 		b.ZobristCapture(move, piece)
 		b.RemoveCaptured(int(move.To()))
-	case b.IsCastling(move, piece):
+	case move.IsCastling():
 		b.EnPassantTarget = -1
 		b.ZobristSimpleMove(move, piece)
 		b.CompleteCastling(move)
-	case b.IsDouble(move, piece):
+	case move.IsDouble():
 		b.ZobristSimpleMove(move, piece)
 		b.EnPassantTarget = (move.To() + move.From()) / 2
 		b.ZobristEnPassant(b.EnPassantTarget)
@@ -390,16 +390,16 @@ func (b *Board) CompleteCastling(move Move) {
 }
 
 // Get the piece at square as a collection of values: found, color, piece.
-func (b *Board) PieceAtSquare(sq Square) (bool, int, int) {
+func (b *Board) PieceAtSquare(sq Square) int {
 	for color := WHITE; color <= BLACK; color++ {
 		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
 			if SquareBitboards[sq]&b.Pieces[color][pieceType] != 0 {
-				return true, color, pieceType
+				return pieceType
 			}
 		}
 	}
 
-	return false, 0, 6
+	return 6
 }
 
 // Replace a pawn on the 8th/1st rank with the promotion piece.
