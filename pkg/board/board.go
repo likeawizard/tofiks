@@ -32,14 +32,6 @@ func (b *Board) Copy() *Board {
 	return &cp
 }
 
-func (b *Board) IsDouble(move Move, piece int) bool {
-	if piece != PAWNS {
-		return false
-	}
-	from, to := move.FromTo()
-	return (from/8 == 1 || from/8 == 6) && (to/8 == 3 || to/8 == 4)
-}
-
 func (b *Board) updateCastlingRights(move Move) {
 	if b.CastlingRights == 0 {
 		return

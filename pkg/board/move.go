@@ -23,7 +23,7 @@ var (
 // 0..63 to a8 to h1 mapping.
 type Square int
 
-// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18..20 Piece 20..31 unused MSB.
+// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 unused MSB.
 type Move uint32
 
 func SquareFromString(s string) Square {
@@ -51,8 +51,9 @@ const (
 	IsEnpassant = 1 << 15
 	IsCapture   = 1 << 16
 	IsCastling  = 1 << 17
+	IsDouble    = 1 << 18
 	PieceMask   = 1<<3 - 1
-	PieceShift  = 18
+	PieceShift  = 19
 )
 
 func MoveFromString(s string) Move {
@@ -95,6 +96,10 @@ func (m Move) IsCapture() bool {
 
 func (m Move) IsCastling() bool {
 	return m&IsCastling != 0
+}
+
+func (m Move) IsDouble() bool {
+	return m&IsDouble != 0
 }
 
 func (m Move) Piece() uint8 {

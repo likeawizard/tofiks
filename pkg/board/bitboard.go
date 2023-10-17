@@ -248,7 +248,7 @@ func (b *Board) MakeMove(move Move) func() {
 		b.EnPassantTarget = -1
 		b.ZobristSimpleMove(move, piece)
 		b.CompleteCastling(move)
-	case b.IsDouble(move, piece):
+	case move.IsDouble():
 		b.ZobristSimpleMove(move, piece)
 		b.EnPassantTarget = (move.To() + move.From()) / 2
 		b.ZobristEnPassant(b.EnPassantTarget)
