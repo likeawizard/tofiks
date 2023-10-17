@@ -13,7 +13,7 @@ func (b *Board) PseudoMoveGen() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | PAWNS<<PieceShift)
 
 				if from >= A7 && from <= H7 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
@@ -23,7 +23,7 @@ func (b *Board) PseudoMoveGen() []Move {
 			}
 			to = from - 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 				if from >= A7 && from <= H7 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
 				} else {
@@ -32,11 +32,11 @@ func (b *Board) PseudoMoveGen() []Move {
 			}
 			to = from - 16
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from-8]) == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(from|to<<toShift))
+				moves = append(moves, Move(from|to<<toShift|PAWNS<<PieceShift))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture | PAWNS<<PieceShift
 				moves = append(moves, move)
 			}
 		}
@@ -48,7 +48,7 @@ func (b *Board) PseudoMoveGen() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | PAWNS<<PieceShift)
 
 				if from >= A2 && from <= H2 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
@@ -58,7 +58,7 @@ func (b *Board) PseudoMoveGen() []Move {
 			}
 			to = from + 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 				if from >= A2 && from <= H2 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
 				} else {
@@ -67,11 +67,11 @@ func (b *Board) PseudoMoveGen() []Move {
 			}
 			to = from + 16
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from+8]) == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(from|to<<toShift))
+				moves = append(moves, Move(from|to<<toShift|PAWNS<<PieceShift))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture | PAWNS<<PieceShift
 				moves = append(moves, move)
 			}
 		}
@@ -87,12 +87,12 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | KNIGHTS<<PieceShift)
 			moves = append(moves, move)
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | KNIGHTS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -105,12 +105,12 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | BISHOPS<<PieceShift)
 			moves = append(moves, move)
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | BISHOPS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -123,12 +123,12 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | ROOKS<<PieceShift)
 			moves = append(moves, move)
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | ROOKS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -141,12 +141,12 @@ func (b *Board) PseudoMoveGen() []Move {
 		quiets = attacks &^ enemies
 		for caps > 0 {
 			to = caps.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | QUEENS<<PieceShift)
 			moves = append(moves, move)
 		}
 		for quiets > 0 {
 			to = quiets.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | QUEENS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -167,10 +167,10 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | PAWNS<<PieceShift)
 
 				if from >= A7 && from <= H7 {
-					moves = append(moves, move|QUEENS<<promoShift)
+					moves = append(moves, move|QUEENS<<promoShift|PAWNS<<PieceShift)
 				} else {
 					moves = append(moves, move)
 				}
@@ -178,11 +178,11 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 
 			to = from - 8
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(from|to<<toShift)|QUEENS<<promoShift)
+				moves = append(moves, Move(from|to<<toShift)|QUEENS<<promoShift|PAWNS<<PieceShift)
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture | PAWNS<<PieceShift
 				moves = append(moves, move)
 			}
 		}
@@ -194,10 +194,10 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE]
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | PAWNS<<PieceShift)
 
 				if from >= A2 && from <= H2 {
-					moves = append(moves, move|QUEENS<<promoShift)
+					moves = append(moves, move|QUEENS<<promoShift|PAWNS<<PieceShift)
 				} else {
 					moves = append(moves, move)
 				}
@@ -205,11 +205,11 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 
 			to = from + 8
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to] != 0 {
-				moves = append(moves, Move(from|to<<toShift)|QUEENS<<promoShift)
+				moves = append(moves, Move(from|to<<toShift)|QUEENS<<promoShift|PAWNS<<PieceShift)
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | IsCapture | PAWNS<<PieceShift
 				moves = append(moves, move)
 			}
 		}
@@ -221,7 +221,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = KnightAttacks[from] & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | KNIGHTS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -232,7 +232,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetBishopAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | BISHOPS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -243,7 +243,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetRookAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | ROOKS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -254,7 +254,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 		attacks = GetQueenAttacks(from, b.Occupancy[BOTH]) & b.Occupancy[b.Side^1]
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift | IsCapture)
+			move = Move(from | to<<toShift | IsCapture | QUEENS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -263,7 +263,7 @@ func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 	attacks = KingAttacks[king] & b.Occupancy[b.Side^1]
 	for attacks > 0 {
 		to = attacks.PopLS1B()
-		move = Move(king | to<<toShift | IsCapture)
+		move = Move(king | to<<toShift | IsCapture | KINGS<<PieceShift)
 		moves = append(moves, move)
 	}
 
@@ -301,7 +301,7 @@ func (b *Board) MoveGenLegal() []Move {
 			attacks = PawnAttacks[WHITE][from] & b.Occupancy[BLACK] & legalDestinations
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 
 				if from >= A7 && from <= H7 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
@@ -311,7 +311,7 @@ func (b *Board) MoveGenLegal() []Move {
 			}
 			to = from - 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 				if from >= A7 && from <= H7 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
 				} else {
@@ -320,11 +320,11 @@ func (b *Board) MoveGenLegal() []Move {
 			}
 			to = from - 16
 			if from >= A2 && from <= H2 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from-8]) == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				moves = append(moves, Move(from|to<<toShift))
+				moves = append(moves, Move(from|to<<toShift|PAWNS<<PieceShift))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[WHITE][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | PAWNS<<PieceShift
 				umake := b.MakeMove(move)
 				if !b.IsChecked(b.Side ^ 1) {
 					moves = append(moves, move)
@@ -348,7 +348,7 @@ func (b *Board) MoveGenLegal() []Move {
 			attacks = PawnAttacks[BLACK][from] & b.Occupancy[WHITE] & legalDestinations
 			for attacks > 0 {
 				to = attacks.PopLS1B()
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 
 				if from >= A2 && from <= H2 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
@@ -358,7 +358,7 @@ func (b *Board) MoveGenLegal() []Move {
 			}
 			to = from + 8
 			if to >= 0 && b.Occupancy[BOTH]&SquareBitboards[to] == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | PAWNS<<PieceShift)
 				if from >= A2 && from <= H2 {
 					moves = append(moves, move|QUEENS<<promoShift, move|KNIGHTS<<promoShift, move|ROOKS<<promoShift, move|BISHOPS<<promoShift)
 				} else {
@@ -367,11 +367,11 @@ func (b *Board) MoveGenLegal() []Move {
 			}
 			to = from + 16
 			if from >= A7 && from <= H7 && b.Occupancy[BOTH]&(SquareBitboards[to]|SquareBitboards[from+8]) == 0 && SquareBitboards[to]&legalDestinations != 0 {
-				moves = append(moves, Move(from|to<<toShift))
+				moves = append(moves, Move(from|to<<toShift|PAWNS<<PieceShift))
 			}
 
 			if b.EnPassantTarget > 0 && PawnAttacks[BLACK][from]&SquareBitboards[b.EnPassantTarget] != 0 {
-				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant
+				move = Move(from|int(b.EnPassantTarget)<<toShift) | IsEnpassant | PAWNS<<PieceShift
 				umake := b.MakeMove(move)
 				if !b.IsChecked(b.Side ^ 1) {
 					moves = append(moves, move)
@@ -393,7 +393,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | KNIGHTS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -410,7 +410,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | BISHOPS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -427,7 +427,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | ROOKS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -444,7 +444,7 @@ func (b *Board) MoveGenLegal() []Move {
 		}
 		for attacks > 0 {
 			to = attacks.PopLS1B()
-			move = Move(from | to<<toShift)
+			move = Move(from | to<<toShift | QUEENS<<PieceShift)
 			moves = append(moves, move)
 		}
 	}
@@ -475,15 +475,14 @@ func (b *Board) MoveGenKing() []Move {
 			quiets = attacks &^ enemies
 			for caps > 0 {
 				to = caps.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | KINGS<<PieceShift)
 				moves = append(moves, move)
 			}
 			for quiets > 0 {
 				to = quiets.PopLS1B()
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | KINGS<<PieceShift)
 				moves = append(moves, move)
 			}
-
 		}
 
 		if !isInCheck {
@@ -505,12 +504,12 @@ func (b *Board) MoveGenKing() []Move {
 			quiets = attacks &^ enemies
 			for caps > 0 {
 				to = caps.PopLS1B()
-				move = Move(from | to<<toShift | IsCapture)
+				move = Move(from | to<<toShift | IsCapture | KINGS<<PieceShift)
 				moves = append(moves, move)
 			}
 			for quiets > 0 {
 				to = quiets.PopLS1B()
-				move = Move(from | to<<toShift)
+				move = Move(from | to<<toShift | KINGS<<PieceShift)
 				moves = append(moves, move)
 			}
 		}

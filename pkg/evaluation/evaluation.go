@@ -191,9 +191,9 @@ var mvvlva = [7][6]int{
 // Estimate the potential strength of the move for move ordering.
 func (e *EvalEngine) MvvLva(move board.Move) int {
 	var victim int
-	attacker := e.Board.Piece(move)
+	attacker := move.Piece()
 	// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
-	_, _, victim = e.Board.PieceAtSquare(move.To())
+	victim = e.Board.PieceAtSquare(move.To())
 	return mvvlva[victim][attacker]
 }
 

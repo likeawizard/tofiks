@@ -7,10 +7,10 @@ import (
 
 var (
 	// Castling moves. Used for recognizing castling and moving king during castling.
-	WCastleKing  = MoveFromString("e1g1")
-	WCastleQueen = MoveFromString("e1c1")
-	BCastleKing  = MoveFromString("e8g8")
-	BCastleQueen = MoveFromString("e8c8")
+	WCastleKing  = MoveFromString("e1g1") | IsCastling | KINGS<<PieceShift
+	WCastleQueen = MoveFromString("e1c1") | IsCastling | KINGS<<PieceShift
+	BCastleKing  = MoveFromString("e8g8") | IsCastling | KINGS<<PieceShift
+	BCastleQueen = MoveFromString("e8c8") | IsCastling | KINGS<<PieceShift
 
 	// Complimentary castling moves. Used during castling to reposition rook.
 	WCastleKingRook  = MoveFromString("h1f1")
@@ -23,7 +23,7 @@ var (
 // 0..63 to a8 to h1 mapping.
 type Square int
 
-// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17..31 unused MSB.
+// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18..20 Piece 20..31 unused MSB.
 type Move uint32
 
 func SquareFromString(s string) Square {
@@ -50,6 +50,9 @@ const (
 
 	IsEnpassant = 1 << 15
 	IsCapture   = 1 << 16
+	IsCastling  = 1 << 17
+	PieceMask   = 1<<3 - 1
+	PieceShift  = 18
 )
 
 func MoveFromString(s string) Move {
@@ -88,6 +91,14 @@ func (m Move) IsEnPassant() bool {
 
 func (m Move) IsCapture() bool {
 	return m&IsCapture != 0
+}
+
+func (m Move) IsCastling() bool {
+	return m&IsCastling != 0
+}
+
+func (m Move) Piece() uint8 {
+	return uint8(m>>PieceShift) & PieceMask
 }
 
 func (m Move) String() string {
