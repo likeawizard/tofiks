@@ -68,8 +68,8 @@ var (
 )
 
 const (
-	MajorDiag BBoard = 9314046665258451585
-	MinorDiag BBoard = 4946458877011600706
+	MajorDiag BBoard = 0x8142241818244281
+	MinorDiag BBoard = 0x42a55a3c3c5aa542
 )
 
 func init() {
