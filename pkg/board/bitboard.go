@@ -22,6 +22,10 @@ func (bb BBoard) String() string {
 	return s
 }
 
+func (bb BBoard) Flip() BBoard {
+	return BBoard(bits.ReverseBytes64(uint64(bb)))
+}
+
 // Get the bit at position.
 func (bb *BBoard) Get(sq int) BBoard {
 	return *bb >> sq & 1

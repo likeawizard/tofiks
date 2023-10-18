@@ -2,6 +2,8 @@
 # golangci options
 run:
   timeout: 3m
+  skip-dirs:
+    - cmd/playground
 output:
   format: colored-line-number
   print-issued-lines: true

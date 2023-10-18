@@ -15,6 +15,15 @@ func NewBoard(position string) *Board {
 	return &b
 }
 
+func (b *Board) Flip() {
+	b.Side ^= 1
+	for pieces := PAWNS; pieces <= KINGS; pieces++ {
+		b.Pieces[WHITE][pieces], b.Pieces[BLACK][pieces] = b.Pieces[BLACK][pieces].Flip(), b.Pieces[WHITE][pieces].Flip()
+	}
+	b.Occupancy[WHITE], b.Occupancy[BLACK] = b.Occupancy[BLACK].Flip(), b.Occupancy[WHITE].Flip()
+	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
+}
+
 func (b *Board) Copy() *Board {
 	cp := Board{
 		Hash:            b.Hash,
