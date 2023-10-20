@@ -21,16 +21,6 @@ const (
 	W_MOVE    int = 2
 	W_CAPTURE int = 4
 
-	// Knight.
-	W_N_C22       int = 30
-	W_N_C44       int = 20
-	W_N_INNER_RIM int = -5
-	W_N_OUTER_RIM int = -20
-
-	// Bishop.
-	W_B_MAJD int = 20
-	W_B_MIND int = 10
-
 	// Pawn.
 	W_P_PASSED    int = 10
 	W_P_PROTECTED int = 15
@@ -102,9 +92,7 @@ func bishopPairEval(b *board.Board, side int) int {
 
 func bishopEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
-	return bishopPairEval(b, side) + moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
-		(board.SquareBitboards[sq]&board.MajorDiag).Count()*W_B_MAJD +
-		(board.SquareBitboards[sq]&board.MinorDiag).Count()*W_B_MIND
+	return bishopPairEval(b, side) + moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {
