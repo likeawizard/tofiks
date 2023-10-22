@@ -96,8 +96,7 @@ func (e *EvalEngine) RemovePly() {
 	e.Ply--
 }
 
-// Draw by 3-fold repetition.
-// Detect if the current position has been encountered already twice before.
+// IsDrawByRepetition checks if the current position has been seen before.
 func (e *EvalEngine) IsDrawByRepetition() bool {
 	// e.Ply is the index the next move should be stored at
 	// Ply - 1 is the current position
@@ -105,13 +104,9 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	// history depth: the halfmove counter is reset on pawn moves and captures and increased otherwise
 	// no equal position can be found beyond this point.
 	historyDepth := max(0, e.Ply-2-int(e.Board.HalfMoveCounter))
-	count := 0
 	for ply := e.Ply - 3; ply >= historyDepth; ply -= 2 {
 		if e.Board.Hash == e.Plys[ply] {
-			count++
-			if count > 1 {
-				return true
-			}
+			return true
 		}
 	}
 
@@ -197,6 +192,7 @@ func (e *EvalEngine) MvvLva(move board.Move) int {
 	return mvvlva[victim][attacker]
 }
 
+// PlayMovesUCI plays a list of moves in UCI format and updates game history.
 func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
 	moveSlice := strings.Fields(uciMoves)
 	e.Ply = 0
