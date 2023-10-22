@@ -1,5 +1,5 @@
 # Tofiks UCI chess engine - Yes, I am a dog and, yes, I play chess. Get over it!
-![Tofiks](resources/tofiks.png)
+![Tofiks](resources/tofiks_logo.jpeg)
 ## Installation
 Latest stable version 64-bit binaries can be found in the release section.
 ### Compile yourself
