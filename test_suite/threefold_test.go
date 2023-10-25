@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"regexp"
 	"strconv"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/likeawizard/tofiks/pkg/board"
+	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestThreefoldRepetition(t *testing.T) {
@@ -29,7 +30,7 @@ func TestThreefoldRepetition(t *testing.T) {
 
 func TestForceThreeFoldRepetition(t *testing.T) {
 	captureScore := regexp.MustCompile(`cp (?P<cp>-?\d+)`)
-	var score = 1
+	score := 1
 	var err error
 	for _, testPos := range forceThreeFoldPositions {
 		t.Run(fmt.Sprintf("Position %d", testPos.number), func(t *testing.T) {

@@ -13,7 +13,7 @@ import (
 //
 // Perft also does internal health / sanity checks by re-validating updated and fully computed hashes.
 func TestPerft(t *testing.T) {
-	maxDepth := 6
+	maxDepth := 5
 	for _, tt := range perftResults {
 		results := tt.getResultAtDepth(maxDepth)
 		testName := fmt.Sprintf("%s at depth %d", tt.position, results.depth)

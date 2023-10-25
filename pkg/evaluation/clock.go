@@ -18,7 +18,7 @@ type Clock struct {
 	Infinite  bool
 }
 
-func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.CancelFunc) {
+func (c *Clock) GetContext(fmCounter int, side int8) (context.Context, context.CancelFunc) {
 	clock := c.GetMovetime(fmCounter, side)
 	switch {
 	case c.Infinite || clock == time.Duration(0):
@@ -28,7 +28,7 @@ func (c *Clock) GetContext(fmCounter, side int) (context.Context, context.Cancel
 	}
 }
 
-func (c *Clock) GetMovetime(fmCounter, side int) time.Duration {
+func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
 	c.Movestogo = max(40-fmCounter, 10)
 	switch {
 	case c.Movetime > 0:

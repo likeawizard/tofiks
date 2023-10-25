@@ -79,45 +79,22 @@ func convertPolyToUCI(b *board.Board, polyMove string) string {
 	case "e1h1":
 		if b.Pieces[board.WHITE][board.KINGS].LS1B() == board.E1 {
 			return "e1g1"
-		} else {
-			return polyMove
 		}
 	case "e1a1":
 		if b.Pieces[board.WHITE][board.KINGS].LS1B() == board.E1 {
 			return "e1c1"
-		} else {
-			return polyMove
 		}
 	case "e8h8":
 		if b.Pieces[board.BLACK][board.KINGS].LS1B() == board.E8 {
 			return "e8g8"
-		} else {
-			return polyMove
 		}
 	case "e8a8":
 		if b.Pieces[board.BLACK][board.KINGS].LS1B() == board.E8 {
 			return "e8c8"
-		} else {
-			return polyMove
 		}
-	default:
-		return polyMove
 	}
-}
 
-// Prune book moves that are illegal in current position. Moves in book could be corrupted and castling has different notation.
-func pruneIllegal(b *board.Board, polyMoves []polyEntry) []engineMove {
-	moves := b.MoveGenLegal()
-	legal := make([]engineMove, 0)
-	for _, pMove := range polyMoves {
-		pMove.move = convertPolyToUCI(b, pMove.move)
-		for _, move := range moves {
-			if pMove.move == move.String() {
-				legal = append(legal, engineMove{move: move, weight: pMove.weight})
-			}
-		}
-	}
-	return legal
+	return polyMove
 }
 
 // Get best scoring book move.
@@ -151,8 +128,18 @@ func GetWeighted(b *board.Board) board.Move {
 }
 
 func getBookMoves(b *board.Board) []engineMove {
-	moves := BookMoves[PolyZobrist(b)]
-	return pruneIllegal(b, moves)
+	polyMoves := BookMoves[PolyZobrist(b)]
+	moves := b.PseudoMoveGen()
+	engineMoves := make([]engineMove, 0)
+	for _, pMove := range polyMoves {
+		pMove.move = convertPolyToUCI(b, pMove.move)
+		for _, move := range moves {
+			if pMove.move == move.String() {
+				engineMoves = append(engineMoves, engineMove{move: move, weight: pMove.weight})
+			}
+		}
+	}
+	return engineMoves
 }
 
 func PrintBookMoves(b *board.Board) {

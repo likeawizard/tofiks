@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// Get a human readable string represantiation of a bitboard.
+// String returns a human-readable string representation of a bitboard.
 func (bb BBoard) String() string {
 	s := ""
 	for r := 0; r < 8; r++ {
@@ -155,44 +155,26 @@ func (b *Board) GetChecksBB(side int) (BBoard, bool) {
 }
 
 // Determine if a square is attacked by the opposing side.
-func (b *Board) IsAttacked(sq, side int, occ BBoard) bool {
-	var isAttacked bool
-
-	if PawnAttacks[side][sq]&b.Pieces[side^1][PAWNS] != 0 {
-		return true
-	}
-
-	if KnightAttacks[sq]&b.Pieces[side^1][KNIGHTS] != 0 {
-		return true
-	}
-
-	if KingAttacks[sq]&b.Pieces[side^1][KINGS] != 0 {
-		return true
-	}
-
-	if GetBishopAttacks(sq, occ)&(b.Pieces[side^1][BISHOPS]|b.Pieces[side^1][QUEENS]) != 0 {
-		return true
-	}
-
-	if GetRookAttacks(sq, occ)&(b.Pieces[side^1][ROOKS]|b.Pieces[side^1][QUEENS]) != 0 {
-		return true
-	}
-
-	return isAttacked
+func (b *Board) IsAttacked(sq int, side int8, occ BBoard) bool {
+	return PawnAttacks[side][sq]&b.Pieces[side^1][PAWNS] != 0 ||
+		KnightAttacks[sq]&b.Pieces[side^1][KNIGHTS] != 0 ||
+		KingAttacks[sq]&b.Pieces[side^1][KINGS] != 0 ||
+		GetBishopAttacks(sq, occ)&(b.Pieces[side^1][BISHOPS]|b.Pieces[side^1][QUEENS]) != 0 ||
+		GetRookAttacks(sq, occ)&(b.Pieces[side^1][ROOKS]|b.Pieces[side^1][QUEENS]) != 0
 }
 
 // Determine if the king for the given side is in check.
-func (b *Board) IsChecked(side int) bool {
-	king := b.Pieces[side][KINGS].LS1B()
-
-	return b.IsAttacked(king, side, b.Occupancy[BOTH])
+func (b *Board) IsChecked(side int8) bool {
+	return b.IsAttacked(b.Pieces[side][KINGS].LS1B(), side, b.Occupancy[BOTH])
 }
 
 // Get a bitboard of all the squares attacked by the opposition.
-func (b *Board) AttackedSquares(side int, occ BBoard) BBoard {
+func (b *Board) AttackedSquares(side int8, mask, occ BBoard) BBoard {
 	attacked := BBoard(0)
-
-	for sq := 0; sq < 64; sq++ {
+	m := mask
+	var sq int
+	for m > 0 {
+		sq = m.PopLS1B()
 		if b.IsAttacked(sq, side, occ) {
 			attacked |= SquareBitboards[sq]
 		}

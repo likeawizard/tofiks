@@ -1,9 +1,9 @@
 package testsuite
 
 type drawByThreefold struct {
-	number int
 	fen    string
 	moves  string
+	number int
 }
 
 var drawByThreefoldPositions = []drawByThreefold{

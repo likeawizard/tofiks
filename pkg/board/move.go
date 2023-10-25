@@ -21,7 +21,7 @@ var (
 
 // 0..7 a8 to h8
 // 0..63 to a8 to h1 mapping.
-type Square int
+type Square int16
 
 // LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 unused MSB.
 type Move uint32

@@ -31,9 +31,9 @@ func (b *Board) ExportFEN() string {
 		epString = b.EnPassantTarget.String()
 	}
 
-	sideToMove := WhiteToMove
+	sideToMove := 'w'
 	if b.Side == BLACK {
-		sideToMove = BlackToMove
+		sideToMove = 'b'
 	}
 
 	fen += fmt.Sprintf(" %c %s %s %d %d", sideToMove, castlingRights, epString, b.HalfMoveCounter, b.FullMoveCounter)
@@ -51,7 +51,7 @@ func (b *Board) ImportFEN(fen string) error {
 	var err error
 	b.parsePieces(position)
 
-	if sideToMove[0] == WhiteToMove {
+	if sideToMove[0] == 'w' {
 		b.Side = WHITE
 	} else {
 		b.Side = BLACK
