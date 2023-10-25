@@ -212,17 +212,7 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 	if !allowPonder || ponder == 0 {
 		fmt.Printf("bestmove %v\n", move)
 	} else {
-		umove := e.Board.MakeMove(move)
-		defer umove()
-		// TODO: cleanup, verify ponder move if legal, has returned illegal moves
-		moves := e.Board.MoveGenLegal()
-		for _, m := range moves {
-			if m == ponder {
-				fmt.Printf("bestmove %v ponder %v\n", move, ponder)
-				return
-			}
-		}
-		fmt.Printf("bestmove %v\n", move)
+		fmt.Printf("bestmove %v ponder %v\n", move, ponder)
 	}
 }
 

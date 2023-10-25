@@ -18,8 +18,8 @@ func Perft(fen string, depth int) (int64, time.Duration) {
 
 func traverse(b *Board, depth int) int64 {
 	num := int64(0)
-	if depth == 1 {
-		return int64(len(b.MoveGenLegal()))
+	if depth == 0 {
+		return 1
 	} else {
 		all := b.PseudoMoveGen()
 		for i := 0; i < len(all); i++ {

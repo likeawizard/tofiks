@@ -19,44 +19,14 @@ type Board struct {
 	Hash            uint64
 	Pieces          [2][6]BBoard
 	Occupancy       [3]BBoard
-	Side            int
 	Phase           int
 	EnPassantTarget Square
 	HalfMoveCounter uint8
 	FullMoveCounter uint8
+	Side            int8
 	CastlingRights  CastlingRights
 	InCheck         bool
 }
-
-type PieceSet struct {
-	Kings   BBoard
-	Pawns   BBoard
-	Knights BBoard
-	Bishops BBoard
-	Rooks   BBoard
-	Queens  BBoard
-}
-
-const (
-	empty uint8 = iota
-	P
-	B
-	N
-	R
-	Q
-	K
-	p
-	b
-	n
-	r
-	q
-	k
-)
-
-const (
-	WhiteToMove byte = 'w'
-	BlackToMove byte = 'b'
-)
 
 type CastlingRights byte
 
