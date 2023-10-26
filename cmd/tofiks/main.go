@@ -6,6 +6,7 @@ import (
 
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
 	"github.com/likeawizard/tofiks/pkg/uci"
+	_ "go.uber.org/automaxprocs"
 )
 
 func main() {

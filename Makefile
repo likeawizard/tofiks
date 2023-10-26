@@ -28,3 +28,6 @@ test-mate:
 
 test-entry:
 	go test -fuzz=FuzzEntry -v -timeout 0 ./test_suite/
+
+run-bench:
+	go test -run=BenchmarkMake -bench=. -benchtime=10s -benchmem -cpu=1,2,4,12 ./test_suite/
