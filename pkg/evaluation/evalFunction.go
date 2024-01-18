@@ -18,8 +18,12 @@ var PiecePawnBonus = [6][9]int{
 
 const (
 	// Mobility related weights.
-	W_MOVE    int = 2
-	W_CAPTURE int = 4
+	MOVE_QUEEN      = 1
+	MOVE_ROOK       = 2
+	MOVE_BISHOP     = 3
+	MOVE_KNIGHT     = 5
+	MOVE_KING       = -5
+	W_CAPTURE   int = 4
 
 	// Pawn.
 	W_P_PASSED    int = 10
@@ -53,7 +57,7 @@ func pawnEval(b *board.Board, sq board.Square, side int) int {
 
 func queenEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
-	return moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_MOVE
+	return moves.Count()*MOVE_QUEEN + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 // TODO: combine all pawn functions in one with multi value return
@@ -80,7 +84,7 @@ func IsPassed(b *board.Board, sq board.Square, side int) bool {
 
 func knightEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
-	return moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	return moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func bishopPairEval(b *board.Board, side int) int {
@@ -92,7 +96,7 @@ func bishopPairEval(b *board.Board, side int) int {
 
 func bishopEval(b *board.Board, sq board.Square, side int) int {
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
-	return bishopPairEval(b, side) + moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	return bishopPairEval(b, side) + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {
@@ -149,12 +153,13 @@ func getKingActivity(b *board.Board, king board.Square) (kingActivity int) {
 }
 
 func kingEval(b *board.Board, king board.Square, side int) int {
-	return (getKingSafety(b, king, side)*(256-b.Phase) + getKingActivity(b, king)*b.Phase) / 256
+	moves := board.KingAttacks[king] & ^b.Occupancy[side]
+	return ((getKingSafety(b, king, side)+moves.Count()*MOVE_KING)*(256-b.Phase) + (getKingActivity(b, king)-moves.Count()*MOVE_KING)*b.Phase) / 256
 }
 
 // Evaluation for rooks - connected & (semi)open files.
 func rookEval(b *board.Board, sq board.Square, side int) (rookScore int) {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
-	rookScore = moves.Count()*W_MOVE + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	rookScore = moves.Count()*MOVE_ROOK + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 	return
 }
