@@ -31,3 +31,17 @@ test-entry:
 
 run-bench:
 	go test -run=BenchmarkMake -bench=. -benchtime=10s -benchmem -cpu=1,2,4,12 ./test_suite/
+
+cutechess:
+	@-rm games.pgn
+	cutechess-cli -engine conf=tofiks -engine conf=tofiks-1.2 -each proto=uci tc=1+0.1 -games 2 -rounds 5000 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -pgnout games.pgn -recover
+
+remove-dup:
+	@echo "Removing duplicates"
+	@gawk -i inplace '!seen[$0]++' texel_data.txt
+	@echo "Randomizing position order"
+	@shuf -o texel_data.txt texel_data.txt
+
+make run-texel:
+	GOAMD64=${GOAMD64VERSION} go build -o texel cmd/texel/main.go
+	./texel -f "rand.txt" -c 8 -i 100 -lim 100000 > texel_out.txt
