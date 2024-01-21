@@ -204,21 +204,20 @@ func optimize(entries []entry, vec [params]float64) {
 	log.Println("Initial Error:", evaluator.E())
 	for iter := 0; iter < maxIter; iter++ {
 		now := time.Now()
-		ApplyWeights(bestVec)
+		ApplyWeights(&bestVec)
 		currE = evaluator.E()
 		for i := 0; i < paramSpace; i++ {
-			up := bestVec
-			up[i] += step
-			ApplyWeights(up)
+			bestVec[i] += step
+			ApplyWeights(&bestVec)
 			eUp = evaluator.E()
 			grad[i] = 100000 * step * (currE - eUp) / currE
+			bestVec[i] -= step
 		}
-		newVec := bestVec
+
 		for i := 0; i < paramSpace; i++ {
-			newVec[i] += grad[i]
+			bestVec[i] += grad[i]
 		}
-		bestVec = newVec
-		ApplyWeights(bestVec)
+		ApplyWeights(&bestVec)
 		log.Printf("%d/%d Error: %f (%v)\n", iter, maxIter, evaluator.E(), time.Since(now))
 	}
 	PrintWeights(bestVec)
@@ -252,7 +251,7 @@ func ToVector() [params]float64 {
 	return vec
 }
 
-func ApplyWeights(vec [params]float64) {
+func ApplyWeights(vec *[params]float64) {
 	stage := -1
 	piece := -1
 	for i, v := range vec {
