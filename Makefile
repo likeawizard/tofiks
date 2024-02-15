@@ -36,6 +36,9 @@ cutechess:
 	@-rm games.pgn
 	cutechess-cli -engine conf=tofiks -engine conf=tofiks-1.2 -each proto=uci tc=1+0.1 -games 2 -rounds 5000 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -pgnout games.pgn -recover
 
+pgo-cutechess:
+	cutechess-cli -engine conf=tofiks arg=-pgo -engine conf=tofiksProd -each proto=uci tc=30+1 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
+
 remove-dup:
 	@echo "Removing duplicates"
 	@gawk -i inplace '!seen[$0]++' texel_data.txt
