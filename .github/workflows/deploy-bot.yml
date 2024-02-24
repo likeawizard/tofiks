@@ -14,9 +14,4 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             cd tofiks
-            git pull
-            make build
-            systemctl stop tofiks
-            cp tofiks ~/lichess-bot/engines/tofiks
-            systemctl start tofiks
-            exit
+            ./scripts/deploy.sh
