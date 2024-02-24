@@ -1,0 +1,22 @@
+name: Deploy
+on: workflow_dispatch
+jobs:
+  deploy:
+    name: hetzner-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lichess Bot on Hetzner
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd tofiks
+            git pull
+            make build
+            systemctl stop tofiks
+            cp tofiks ~/lichess-bot/engines/tofiks
+            systemctl start tofiks
+            exit
