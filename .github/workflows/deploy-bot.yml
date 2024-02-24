@@ -12,10 +12,13 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
+          script_stop: true
           script: |
             cd tofiks
+            git checkout .
+            git checkout master
             git pull
-            make build
+            /usr/local/go/bin/go build -o tofiks cmd/tofiks/main.go
             systemctl stop tofiks
             cp tofiks ~/lichess-bot/engines/tofiks
             systemctl start tofiks
