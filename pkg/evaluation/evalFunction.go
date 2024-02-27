@@ -83,8 +83,13 @@ func IsPassed(b *board.Board, sq board.Square, side int) bool {
 }
 
 func knightEval(b *board.Board, sq board.Square, side int) int {
+	var eval int
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
-	return moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+		eval = OutpostsScores[side][board.KNIGHTS][sq]
+	}
+	return eval + moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func bishopPairEval(b *board.Board, side int) int {
@@ -95,8 +100,13 @@ func bishopPairEval(b *board.Board, side int) int {
 }
 
 func bishopEval(b *board.Board, sq board.Square, side int) int {
+	var eval int
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
-	return bishopPairEval(b, side) + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+		eval = OutpostsScores[side][board.BISHOPS][sq]
+	}
+	return eval + bishopPairEval(b, side) + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {

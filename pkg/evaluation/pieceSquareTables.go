@@ -19,12 +19,21 @@ func InitPSTs() {
 			}
 		}
 	}
+	OutpostsScores[board.WHITE][board.KNIGHTS] = knightOutposts
+	OutpostsScores[board.WHITE][board.BISHOPS] = bishopOutposts
+	for piece := board.PAWNS; piece <= board.KINGS; piece++ {
+		for sq := 0; sq < 64; sq++ {
+			OutpostsScores[board.BLACK][piece][sq] = OutpostsScores[board.WHITE][piece][invert(sq)]
+		}
+	}
 }
 
 var PST = [2][2][6][64]int{
 	{{pawnPST, bishopPST, knightPST, rookPST, queenPST, kingPST}},
 	{{pawnEGPST, bishopEGPST, knightEGPST, rookEGPST, queenEGPST, kingEGPST}},
 }
+
+var OutpostsScores [2][6][64]int
 
 var pawnPST = [64]int{
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -155,5 +164,27 @@ var kingEGPST = [64]int{
 	0, 2, 7, 10, 10, 7, 2, 0,
 	0, 2, 6, 7, 7, 6, 2, 0,
 	0, 1, 2, 2, 2, 2, 1, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+}
+
+var knightOutposts = [64]int{
+	0, 3, 5, 5, 5, 6, 3, 0,
+	0, 10, 18, 22, 24, 20, 12, 0,
+	0, 7, 12, 20, 22, 15, 9, 0,
+	0, 5, 11, 17, 19, 13, 7, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+}
+
+var bishopOutposts = [64]int{
+	0, 5, 5, 5, 5, 5, 5, 0,
+	0, 0, 7, 8, 8, 7, 0, 0,
+	0, 0, 5, 10, 10, 5, 0, 0,
+	0, 0, 3, 7, 7, 3, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 }

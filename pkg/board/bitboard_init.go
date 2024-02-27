@@ -8,31 +8,27 @@ import (
 )
 
 var (
-	SquareBitboards   [64]BBoard
+	SquareBitboards [64]BBoard
+
+	// Piece attack bitboards.
 	PawnAttacks       [2][64]BBoard
 	KnightAttacks     [64]BBoard
+	BishopAttackMasks [64]BBoard
+	RookAttackMasks   [64]BBoard
 	KingAttacks       [64]BBoard
-	KingSafetyMask    [2][64]BBoard
+
+	// Evaluation bitboard masks.
+	KingSafetyMask [2][64]BBoard
+	PassedPawns    [2][64]BBoard
+	IsolatedPawns  [64]BBoard
+	DoubledPawns   [64]BBoard
+	Outposts       [2][64]BBoard
+
+	// Magic bitboard masks.
 	BishopOccBitCount [64]int
 	RookOccBitCount   [64]int
-	BishopMagics      = [64]BBoard{
-		0x20010400808600, 0xa008010410820000, 0x1004440082038008, 0x904040098084800,
-		0x600c052000520541, 0x4002010420402022, 0x11040104400480, 0x200104104202080,
-		0x1200210204080080, 0x6c18600204e20682, 0x2202004200e0, 0x100044404810840,
-		0x400220211108110, 0x20002011009000c, 0xa00200a2084210, 0x202008098011000,
-		0xc40002004019206, 0x116042040804c500, 0x419002080a80200a, 0x4000844000800,
-		0x404b080a04800, 0x4608080482012002, 0x44040500a0880841, 0x2002100909050d00,
-		0x8404004030a400, 0x90709004040080, 0x11444043040d0204, 0x8080100202020,
-		0x801001181004000, 0x4140822002021000, 0x102089092009006, 0x540a042100540203,
-		0x50100409482820, 0x8010880900041004, 0x230100500414, 0x200800050810,
-		0x8294064010040100, 0x9010100220044404, 0x154202022004008e, 0x9420220008401,
-		0x71080840110401, 0x2000a40420400201, 0x802619048001004, 0x209280a058000500,
-		0x2004044810100a00, 0xa0208d000804300, 0x638a80d000684, 0x1910401000080,
-		0x800420210400200, 0x4404410090100, 0x8020808400880000, 0x400081042120c21,
-		0x4009001022120001, 0x4902220802082000, 0x410841000820290, 0x820020401002440,
-		0x800420041084000, 0x10818c05a000, 0x301804213d000, 0x800040018208801,
-		0x1b80000004104405, 0x2500214084184884, 0x1000628801050400, 0x8040229e24002080,
-	}
+	BishopAttacks     [64][4096]BBoard
+	RookAttacks       [64][4096]BBoard
 )
 
 var RookMagics = [64]BBoard{
@@ -54,23 +50,24 @@ var RookMagics = [64]BBoard{
 	0x283000800100205, 0x2008810010402, 0x490102200880104, 0x800010920940042,
 }
 
-var (
-	BishopAttackMasks [64]BBoard
-	RookAttackMasks   [64]BBoard
-	BishopAttacks     [64][4096]BBoard
-	RookAttacks       [64][4096]BBoard
-)
-
-var (
-	PassedPawns   [2][64]BBoard
-	IsolatedPawns [64]BBoard
-	DoubledPawns  [64]BBoard
-)
-
-const (
-	MajorDiag BBoard = 0x8142241818244281
-	MinorDiag BBoard = 0x42a55a3c3c5aa542
-)
+var BishopMagics = [64]BBoard{
+	0x20010400808600, 0xa008010410820000, 0x1004440082038008, 0x904040098084800,
+	0x600c052000520541, 0x4002010420402022, 0x11040104400480, 0x200104104202080,
+	0x1200210204080080, 0x6c18600204e20682, 0x2202004200e0, 0x100044404810840,
+	0x400220211108110, 0x20002011009000c, 0xa00200a2084210, 0x202008098011000,
+	0xc40002004019206, 0x116042040804c500, 0x419002080a80200a, 0x4000844000800,
+	0x404b080a04800, 0x4608080482012002, 0x44040500a0880841, 0x2002100909050d00,
+	0x8404004030a400, 0x90709004040080, 0x11444043040d0204, 0x8080100202020,
+	0x801001181004000, 0x4140822002021000, 0x102089092009006, 0x540a042100540203,
+	0x50100409482820, 0x8010880900041004, 0x230100500414, 0x200800050810,
+	0x8294064010040100, 0x9010100220044404, 0x154202022004008e, 0x9420220008401,
+	0x71080840110401, 0x2000a40420400201, 0x802619048001004, 0x209280a058000500,
+	0x2004044810100a00, 0xa0208d000804300, 0x638a80d000684, 0x1910401000080,
+	0x800420210400200, 0x4404410090100, 0x8020808400880000, 0x400081042120c21,
+	0x4009001022120001, 0x4902220802082000, 0x410841000820290, 0x820020401002440,
+	0x800420041084000, 0x10818c05a000, 0x301804213d000, 0x800040018208801,
+	0x1b80000004104405, 0x2500214084184884, 0x1000628801050400, 0x8040229e24002080,
+}
 
 func init() {
 	InitSquares()
@@ -79,7 +76,7 @@ func init() {
 	InitKnightAttacks()
 	InitKingAttacks()
 	InitKingSafetyMasks()
-	InitPawnStrucutreMasks()
+	InitPawnStructureMasks()
 	InitSliders()
 }
 
@@ -89,7 +86,7 @@ func InitSquares() {
 	}
 }
 
-// Initialize pawn attack lookup table.
+// InitPawnAttacks initialize pawn attack lookup table.
 func InitPawnAttacks() {
 	pawnAttack := func(sq int, isWhite bool) BBoard {
 		var piece, attacks BBoard
@@ -119,8 +116,8 @@ func InitPawnAttacks() {
 	}
 }
 
-func InitPawnStrucutreMasks() {
-	isloatedMask := func(sq int) BBoard {
+func InitPawnStructureMasks() {
+	isolatedMask := func(sq int) BBoard {
 		file := sq % 8
 		switch file {
 		case 0:
@@ -214,15 +211,65 @@ func InitPawnStrucutreMasks() {
 		return mask & ^behindMask(rank, color)
 	}
 
+	outpostMask := func(sq, color int) BBoard {
+		rank := sq / 8
+		mask := IsolatedPawns[sq]
+		behindMask := func(rank, color int) BBoard {
+			if color == WHITE {
+				switch rank {
+				case 0:
+					return ^BBoard(0)
+				case 1:
+					return Rank1 | Rank2 | Rank3 | Rank4 | Rank5 | Rank6 | Rank7
+				case 2:
+					return Rank1 | Rank2 | Rank3 | Rank4 | Rank5 | Rank6
+				case 3:
+					return Rank1 | Rank2 | Rank3 | Rank4 | Rank5
+				case 4:
+					return Rank1 | Rank2 | Rank3 | Rank4
+				case 5:
+					return Rank1 | Rank2 | Rank3
+				case 6:
+					return Rank1 | Rank2
+				default:
+					return Rank1
+				}
+			} else {
+				switch rank {
+				case 0:
+					return Rank8
+				case 1:
+					return Rank8 | Rank7
+				case 2:
+					return Rank8 | Rank7 | Rank6
+				case 3:
+					return Rank8 | Rank7 | Rank6 | Rank5
+				case 4:
+					return Rank8 | Rank7 | Rank6 | Rank5 | Rank4
+				case 5:
+					return Rank8 | Rank7 | Rank6 | Rank5 | Rank4 | Rank3
+				case 6:
+					return Rank8 | Rank7 | Rank6 | Rank5 | Rank4 | Rank3 | Rank2
+				default:
+					return ^BBoard(0)
+				}
+			}
+		}
+
+		return mask & ^behindMask(rank, color)
+	}
+
 	for sq := 0; sq < 64; sq++ {
-		IsolatedPawns[sq] = isloatedMask(sq)
+		IsolatedPawns[sq] = isolatedMask(sq)
 		DoubledPawns[sq] = doubledMask(sq)
 		PassedPawns[WHITE][sq] = passedMask(sq, WHITE)
 		PassedPawns[BLACK][sq] = passedMask(sq, BLACK)
+		Outposts[WHITE][sq] = outpostMask(sq, WHITE)
+		Outposts[BLACK][sq] = outpostMask(sq, BLACK)
 	}
 }
 
-// Initialize Knight attack lookup table.
+// InitKnightAttacks initialize Knight attack lookup table.
 func InitKnightAttacks() {
 	knightAttack := func(sq int) BBoard {
 		var piece, attacks BBoard
@@ -255,7 +302,7 @@ func InitKnightAttacks() {
 	}
 }
 
-// Initialize King move lookup table.
+// InitKingAttacks initialize King move lookup table.
 func InitKingAttacks() {
 	kingAttack := func(sq int) BBoard {
 		var piece, attacks BBoard
@@ -283,7 +330,7 @@ func InitKingAttacks() {
 	}
 }
 
-// King safety masks ar similar to KingAttacks but do not cover squares behind the king. Only pieces in front of the kind attribute to safety.
+// InitKingSafetyMasks king safety masks ar similar to KingAttacks but do not cover squares behind the king. Only pieces in front of the kind attribute to safety.
 func InitKingSafetyMasks() {
 	safetyMask := func(sq int, side int) BBoard {
 		var piece, attacks BBoard
