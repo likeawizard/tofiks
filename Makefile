@@ -37,10 +37,13 @@ run-bench:
 
 cutechess:
 	@-rm games.pgn
-	cutechess-cli -engine conf=tofiks -engine conf=tofiks-1.2 -each proto=uci tc=1+0.1 -games 2 -rounds 5000 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -pgnout games.pgn -recover
+	cutechess-cli -engine conf=tofiks -engine conf=tofiks-1.2 -each proto=uci tc=1+0.1 timemargin=50 -games 2 -rounds 5000 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -pgnout games.pgn -recover
+
+test-cutechess: build
+	cutechess-cli -engine conf=tofiks -engine conf=tofiksProd -each proto=uci tc=0.5+0.05 timemargin=50 -games 2 -rounds 400 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
 
 pgo-cutechess:
-	cutechess-cli -engine conf=tofiks arg=-pgo -engine conf=tofiksProd -each proto=uci tc=30+1 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
+	cutechess-cli -engine conf=tofiks arg=-pgo -engine conf=tofiksProd -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
 
 remove-dup:
 	@echo "Removing duplicates"
