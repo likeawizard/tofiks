@@ -5,12 +5,31 @@ import (
 	"strconv"
 )
 
+const (
+	// Masks and shifts for Move encoding.
+	fromMask   = 1<<6 - 1
+	fromShift  = 0
+	toMask     = 1<<6 - 1
+	toShift    = 6
+	fromToMask = 1<<12 - 1
+	promoMask  = 1<<3 - 1
+	promoShift = 12
+	pieceMask  = 1<<3 - 1
+	pieceShift = 19
+
+	// Move flags.
+	IsEnpassant = 1 << 15
+	IsCapture   = 1 << 16
+	IsCastling  = 1 << 17
+	IsDouble    = 1 << 18
+)
+
 var (
 	// Castling moves. Used for recognizing castling and moving king during castling.
-	WCastleKing  = MoveFromString("e1g1") | IsCastling | KINGS<<PieceShift
-	WCastleQueen = MoveFromString("e1c1") | IsCastling | KINGS<<PieceShift
-	BCastleKing  = MoveFromString("e8g8") | IsCastling | KINGS<<PieceShift
-	BCastleQueen = MoveFromString("e8c8") | IsCastling | KINGS<<PieceShift
+	WCastleKing  = MoveFromString("e1g1") | IsCastling | KINGS<<pieceShift
+	WCastleQueen = MoveFromString("e1c1") | IsCastling | KINGS<<pieceShift
+	BCastleKing  = MoveFromString("e8g8") | IsCastling | KINGS<<pieceShift
+	BCastleQueen = MoveFromString("e8c8") | IsCastling | KINGS<<pieceShift
 
 	// Complimentary castling moves. Used during castling to reposition rook.
 	WCastleKingRook  = MoveFromString("h1f1")
@@ -19,12 +38,16 @@ var (
 	BCastleQueenRook = MoveFromString("a8d8")
 )
 
-// 0..7 a8 to h8
-// 0..63 to a8 to h1 mapping.
-type Square int16
+type (
+	// Square is a 0..63 representation of a chess board square.
+	// 0..7 a8 to h8
+	// 0..63 to a8 to h1 mapping.
+	Square int16
 
-// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 unused MSB.
-type Move uint32
+	// Move is holds bit encoded move data.
+	// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 unused MSB.
+	Move uint32
+)
 
 func SquareFromString(s string) Square {
 	file := int(s[0] - 'a')
@@ -38,23 +61,6 @@ func (s Square) String() string {
 	file := s % 8
 	return fmt.Sprintf("%c%d", file+'a', rank)
 }
-
-const (
-	fromMask   = 1<<6 - 1
-	fromShift  = 0
-	toMask     = 1<<6 - 1
-	toShift    = 6
-	fromToMask = 1<<12 - 1
-	promoMask  = 1<<3 - 1
-	promoShift = 12
-
-	IsEnpassant = 1 << 15
-	IsCapture   = 1 << 16
-	IsCastling  = 1 << 17
-	IsDouble    = 1 << 18
-	PieceMask   = 1<<3 - 1
-	PieceShift  = 19
-)
 
 func MoveFromString(s string) Move {
 	from := SquareFromString(s[:2])
@@ -103,7 +109,7 @@ func (m Move) IsDouble() bool {
 }
 
 func (m Move) Piece() uint8 {
-	return uint8(m>>PieceShift) & PieceMask
+	return uint8(m>>pieceShift) & pieceMask
 }
 
 func (m Move) String() string {

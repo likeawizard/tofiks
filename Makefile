@@ -42,7 +42,7 @@ cutechess:
 test-cutechess: build
 	cutechess-cli -engine conf=tofiks -engine conf=tofiksProd -each proto=uci tc=0.5+0.05 timemargin=50 -games 2 -rounds 400 -concurrency 4 -repeat -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
 
-pgo-cutechess:
+pgo-cutechess: build
 	cutechess-cli -engine conf=tofiks arg=-pgo -engine conf=tofiksProd -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
 
 remove-dup:
