@@ -5,25 +5,25 @@ import (
 	"time"
 )
 
-type EvalStats struct {
+type Stats struct {
 	start  time.Time
 	nodes  int
 	qNodes int
 	evals  int
 }
 
-func (es *EvalStats) Start() {
+func (es *Stats) Start() {
 	es.Clear()
 	es.start = time.Now()
 }
 
-func (es *EvalStats) Clear() {
+func (es *Stats) Clear() {
 	es.nodes = 0
 	es.qNodes = 0
 	es.evals = 0
 }
 
-func (es *EvalStats) String() string {
+func (es *Stats) String() string {
 	total := es.nodes + es.qNodes
 	duration := int(time.Since(es.start).Microseconds())
 	if total == 0 || duration == 0 {

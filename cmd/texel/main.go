@@ -45,11 +45,11 @@ func main() {
 
 type Evaluator struct {
 	entries []entry
-	engines []*eval.EvalEngine
+	engines []*eval.Engine
 }
 
 func NewEvaluator(entries []entry, c int) *Evaluator {
-	engines := make([]*eval.EvalEngine, c)
+	engines := make([]*eval.Engine, c)
 	for i := 0; i < c; i++ {
 		engines[i] = eval.NewEvalEngine()
 	}
@@ -75,7 +75,7 @@ func (e *Evaluator) E() float64 {
 	wg := sync.WaitGroup{}
 	for i := 0; i < GoRoutines; i++ {
 		wg.Add(1)
-		go func(engine *eval.EvalEngine) {
+		go func(engine *eval.Engine) {
 			defer wg.Done()
 			for entry := range in {
 				engine.Board = board.NewBoard(entry.fen)

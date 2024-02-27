@@ -9,35 +9,35 @@ import (
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
 )
 
-func (c *Go) Exec(e *eval.EvalEngine) bool {
+func (c *Go) Exec(e *eval.Engine) bool {
 	// Check if internal state is ready - should be done by gui
 	e.WG.Wait()
-	if !c.isPerft {
-		e.Clock.Wtime = c.wtime
-		e.Clock.Winc = c.winc
-		e.Clock.Btime = c.btime
-		e.Clock.Binc = c.binc
-		e.Clock.Movestogo = c.movestogo
-		e.Clock.Movetime = c.movetime
-		e.Clock.Infinite = c.infinite
-		ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
-		depth := c.depth
-		if depth == 0 {
-			depth = 50
-		}
-		e.Stop = cancel
-		defer cancel()
-		move, ponder := e.GetMove(ctx, depth, c.infinite)
-		e.ReportMove(move, ponder, e.Ponder)
-
-		return true
-	} else {
+	if c.isPerft {
 		e.Board.PerftDebug(c.depth)
 		return true
 	}
+
+	e.Clock.Wtime = c.wtime
+	e.Clock.Winc = c.winc
+	e.Clock.Btime = c.btime
+	e.Clock.Binc = c.binc
+	e.Clock.Movestogo = c.movestogo
+	e.Clock.Movetime = c.movetime
+	e.Clock.Infinite = c.infinite
+	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
+	depth := c.depth
+	if depth == 0 {
+		depth = 50
+	}
+	e.Stop = cancel
+	defer cancel()
+	move, ponder := e.GetMove(ctx, depth, c.infinite)
+	e.ReportMove(move, ponder, e.Ponder)
+
+	return true
 }
 
-func (c *Stop) Exec(e *eval.EvalEngine) bool {
+func (c *Stop) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
 	if e.Stop != nil {
 		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
@@ -49,25 +49,25 @@ func (c *Stop) Exec(e *eval.EvalEngine) bool {
 	return true
 }
 
-func (c *Quit) Exec(e *eval.EvalEngine) bool {
+func (c *Quit) Exec(_ *eval.Engine) bool {
 	return true
 }
 
-func (c *Position) Exec(e *eval.EvalEngine) bool {
+func (c *Position) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
 	e.Board = board.NewBoard(c.pos)
 	return e.PlayMovesUCI(c.moves)
 }
 
-func (c *IsReady) Exec(e *eval.EvalEngine) bool {
+func (c *IsReady) Exec(e *eval.Engine) bool {
 	e.WG.Wait()
 	fmt.Println("readyok")
 	return true
 }
 
-func (c *UCI) Exec(e *eval.EvalEngine) bool {
+func (c *UCI) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
-	availOpts := []UCIOpt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
+	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
 	fmt.Println("id name Tofiks v1.3.0")
 	fmt.Println("id author Aturs Priede")
 	for _, opt := range availOpts {
@@ -77,13 +77,13 @@ func (c *UCI) Exec(e *eval.EvalEngine) bool {
 	return true
 }
 
-func (c *SetOption) Exec(e *eval.EvalEngine) bool {
+func (c *SetOption) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
 	c.option.Set(e)
 	return true
 }
 
-func (c *NewGame) Exec(e *eval.EvalEngine) bool {
+func (c *NewGame) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
 	e.TTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
@@ -92,7 +92,7 @@ func (c *NewGame) Exec(e *eval.EvalEngine) bool {
 	return true
 }
 
-func (o *Hash) Set(e *eval.EvalEngine) {
+func (o *Hash) Set(e *eval.Engine) {
 	e.TTable = eval.NewTTable(o.size)
 }
 
@@ -100,7 +100,7 @@ func (o *Hash) Info() {
 	fmt.Println("option name Hash type spin default 64 min 1 max 256")
 }
 
-func (o *OwnBook) Set(e *eval.EvalEngine) {
+func (o *OwnBook) Set(e *eval.Engine) {
 	e.OwnBook = o.enable
 }
 
@@ -110,7 +110,7 @@ func (o *OwnBook) Info() {
 	}
 }
 
-func (o *Ponder) Set(e *eval.EvalEngine) {
+func (o *Ponder) Set(e *eval.Engine) {
 	e.Ponder = o.enable
 }
 
@@ -118,7 +118,7 @@ func (o *Ponder) Info() {
 	fmt.Println("option name Ponder type check default false")
 }
 
-func (o *Clear) Set(e *eval.EvalEngine) {
+func (o *Clear) Set(e *eval.Engine) {
 	e.TTable.Clear()
 }
 
@@ -126,7 +126,7 @@ func (o *Clear) Info() {
 	fmt.Println("option name Clear Hash type button")
 }
 
-func (o *MoveOverhead) Set(e *eval.EvalEngine) {
+func (o *MoveOverhead) Set(e *eval.Engine) {
 	e.Clock.Overhead = o.delay
 }
 

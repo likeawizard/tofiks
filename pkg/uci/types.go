@@ -17,8 +17,8 @@ const (
 	C_NEW_GAME   = "ucinewgame"
 )
 
-type UCICmd interface {
-	Exec(*eval.EvalEngine) bool
+type Cmd interface {
+	Exec(*eval.Engine) bool
 }
 
 type UCI struct{}
@@ -49,14 +49,14 @@ type Go struct {
 }
 
 type SetOption struct {
-	option UCIOpt
+	option Opt
 }
 
 type NewGame struct{}
 
-type UCIOpt interface {
+type Opt interface {
 	Info()
-	Set(e *eval.EvalEngine)
+	Set(e *eval.Engine)
 }
 
 type Hash struct {

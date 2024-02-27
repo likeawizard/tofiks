@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// Parse uci command and return executable UCICmd on successful parse or nil.
-func ParseUCI(uciCmd string) UCICmd {
+// Parse uci command and return executable Cmd on successful parse or nil.
+func ParseUCI(uciCmd string) Cmd {
 	cmdRE := regexp.MustCompile(`(?P<cmd>^\w+)\s?(?P<args>.*)`)
 	if !cmdRE.MatchString(uciCmd) {
 		return nil

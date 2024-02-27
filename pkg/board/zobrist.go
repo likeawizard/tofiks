@@ -21,8 +21,7 @@ func init() {
 				pieceKeys[color][pieceType][sq] = rand.Uint64()
 			}
 		}
-		for i := 1; i <= 12; i++ {
-		}
+
 		enPassantKeys[sq] = rand.Uint64()
 	}
 

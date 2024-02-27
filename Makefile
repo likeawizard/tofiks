@@ -51,6 +51,12 @@ remove-dup:
 	@echo "Randomizing position order"
 	@shuf -o texel_data.txt texel_data.txt
 
-make run-texel:
+run-texel:
 	GOAMD64=${GOAMD64VERSION} go build -o texel cmd/texel/main.go
 	./texel -f "rand.txt" -c 8 -i 100 -lim 100000 > texel_out.txt
+
+lint:
+	golangci-lint run
+
+lint-fix:
+	golangci-lint run --fix

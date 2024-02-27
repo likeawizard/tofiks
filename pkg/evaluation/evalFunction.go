@@ -54,12 +54,12 @@ func IsIsolated(b *board.Board, sq board.Square, side int) bool {
 	return b.Pieces[side][board.PAWNS]&board.IsolatedPawns[sq] == 0
 }
 
-// Has no opponent opposing pawns in front (same or neighbor files)
+// Has no opponent opposing pawns in front (same or neighbor files).
 func IsPassed(b *board.Board, sq board.Square, side int) bool {
 	return b.Pieces[side][board.PAWNS]&board.PassedPawns[side][sq] == 0
 }
 
-func (e *EvalEngine) GetEvaluation(b *board.Board) int {
+func (e *Engine) GetEvaluation(b *board.Board) int {
 	e.Stats.evals++
 	var eval, pieceEval int
 
@@ -130,6 +130,7 @@ func pawnEval(b *board.Board, sq board.Square, side int) int {
 
 	return value
 }
+
 func knightEval(b *board.Board, sq board.Square, side int) int {
 	var eval int
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
