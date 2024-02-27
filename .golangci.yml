@@ -24,6 +24,31 @@ linters-settings:
   govet:
     enable:
       - fieldalignment
+  revive:
+    ignore-generated-header: false
+    severity: warning
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+#      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
 linters:
   enable:
     # Enable by default, see more in https://golangci-lint.run/usage/linters/#enabled-by-default-linters
@@ -41,9 +66,8 @@ linters:
     # - gocognit
     # - gocyclo
     - gofmt
-    # - revive
+    - revive
     - gofumpt
-    # - forbidigo
     - asciicheck
     - dogsled
     - exportloopref
@@ -55,7 +79,6 @@ linters:
     - nakedret
     - nolintlint
     - rowserrcheck
-    # - stylecheck
     - unconvert
     - unparam
     - whitespace

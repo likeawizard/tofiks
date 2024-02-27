@@ -18,11 +18,11 @@ type (
 	HistoryHeuristic [2][64][64]int
 )
 
-type EvalEngine struct {
+type Engine struct {
 	TTable      *TTable
 	Stop        context.CancelFunc
 	Board       *board.Board
-	Stats       EvalStats
+	Stats       Stats
 	History     HistoryHeuristic
 	Plys        [512]uint64
 	Clock       Clock
@@ -45,40 +45,39 @@ var mvvlva = [7][6]int{
 	{0, 0, 0, 0, 0, 0},       // no piece.
 }
 
-func NewEvalEngine() *EvalEngine {
-	return &EvalEngine{
+func NewEvalEngine() *Engine {
+	return &Engine{
 		Board:  board.NewBoard(board.StartPos),
 		TTable: NewTTable(64),
 	}
 }
 
 // Returns the best move and best opponent response - ponder.
-func (e *EvalEngine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
+func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	if e.OwnBook && book.InBook(e.Board) {
 		move := book.GetWeighted(e.Board)
 		return move, 0
-	} else {
-		best, ponder, _ = e.IDSearch(ctx, depth, infinite)
 	}
+	best, ponder, _ = e.IDSearch(ctx, depth, infinite)
 
 	return best, ponder
 }
 
-func (e *EvalEngine) AddKillerMove(ply int8, move board.Move) {
+func (e *Engine) AddKillerMove(ply int8, move board.Move) {
 	if move != e.KillerMoves[ply][0] {
 		e.KillerMoves[ply][1] = e.KillerMoves[ply][0]
 		e.KillerMoves[ply][0] = move
 	}
 }
 
-func (e *EvalEngine) IncrementHistory(depth int8, move board.Move) {
+func (e *Engine) IncrementHistory(depth int8, move board.Move) {
 	d := int(depth)
 	from, to := move.FromTo()
 	e.History[e.Board.Side][from][to] += d * d
 }
 
-func (e *EvalEngine) DecrementHistory(move board.Move) {
+func (e *Engine) DecrementHistory(move board.Move) {
 	if move.IsCapture() {
 		from, to := move.FromTo()
 		if e.History[e.Board.Side][from][to] > 0 {
@@ -87,12 +86,12 @@ func (e *EvalEngine) DecrementHistory(move board.Move) {
 	}
 }
 
-func (e *EvalEngine) GetHistory(move board.Move) int {
+func (e *Engine) GetHistory(move board.Move) int {
 	from, to := move.FromTo()
 	return e.History[e.Board.Side][from][to]
 }
 
-func (e *EvalEngine) AgeHistory() {
+func (e *Engine) AgeHistory() {
 	for from := 0; from < 64; from++ {
 		for to := 0; to < 64; to++ {
 			e.History[e.Board.Side][from][to] /= 2
@@ -100,17 +99,17 @@ func (e *EvalEngine) AgeHistory() {
 	}
 }
 
-func (e *EvalEngine) AddPly() {
+func (e *Engine) AddPly() {
 	e.Plys[e.Ply] = e.Board.Hash
 	e.Ply++
 }
 
-func (e *EvalEngine) RemovePly() {
+func (e *Engine) RemovePly() {
 	e.Ply--
 }
 
 // IsDrawByRepetition checks if the current position has been seen before.
-func (e *EvalEngine) IsDrawByRepetition() bool {
+func (e *Engine) IsDrawByRepetition() bool {
 	// e.Ply is the index the next move should be stored at
 	// Ply - 1 is the current position
 	// So start checking at Ply - 3 skipping opponent's move
@@ -127,7 +126,7 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 }
 
 // Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic.
-func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) MoveSelector {
+func (e *Engine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) MoveSelector {
 	moveCount := len(moves)
 	scores := make([]int, moveCount)
 	lenPV := int8(len(pvOrder))
@@ -161,7 +160,7 @@ func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board
 	}
 }
 
-func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
+func (e *Engine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
 	moveCount := len(moves)
 	scores := make([]int, moveCount)
 
@@ -183,12 +182,12 @@ func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
 }
 
 // Estimate the potential strength of the move for move ordering.
-func (e *EvalEngine) MvvLva(move board.Move) int {
+func (e *Engine) MvvLva(move board.Move) int {
 	return mvvlva[e.Board.PieceAtSquare(move.To())][move.Piece()]
 }
 
 // PlayMovesUCI plays a list of moves in UCI format and updates game history.
-func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
+func (e *Engine) PlayMovesUCI(uciMoves string) bool {
 	moveSlice := strings.Fields(uciMoves)
 	e.Ply = 0
 
@@ -203,7 +202,7 @@ func (e *EvalEngine) PlayMovesUCI(uciMoves string) bool {
 	return true
 }
 
-func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
+func (e *Engine) ReportMove(move, ponder board.Move, allowPonder bool) {
 	if !allowPonder || ponder == 0 {
 		fmt.Printf("bestmove %v\n", move)
 	} else {
@@ -212,7 +211,7 @@ func (e *EvalEngine) ReportMove(move, ponder board.Move, allowPonder bool) {
 }
 
 // Display centipawn score. If the eval is in the checkmate score threshold convert to mate score.
-func (e *EvalEngine) ConvertEvalToScore(eval int16) string {
+func (e *Engine) ConvertEvalToScore(eval int16) string {
 	if eval < -CheckmateThreshold {
 		mateDist := -CheckmateScore - eval
 		mateDist = mateDist/2 + mateDist%2

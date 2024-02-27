@@ -31,8 +31,6 @@ type (
 	}
 )
 
-const ()
-
 func (et EntryType) String() string {
 	switch et {
 	case TT_EXACT:
@@ -47,12 +45,12 @@ func (et EntryType) String() string {
 }
 
 const (
-	// Enum values for EntryType
+	// Enum values for EntryType.
 	TT_UPPER EntryType = iota
 	TT_LOWER
 	TT_EXACT
 
-	// Mask and shift values for EntryData
+	// Mask and shift values for EntryData.
 	move_mask   = (1 << 32) - 1
 	type_mask   = (1 << 2) - 1
 	depth_mask  = (1 << 7) - 1
@@ -73,6 +71,10 @@ func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int1
 }
 
 func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
+	if ed.Depth() < depth {
+		return 0, false
+	}
+
 	ttType, eval := ed.Type(), ed.Score()
 
 	if eval > CheckmateThreshold {

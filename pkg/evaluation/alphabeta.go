@@ -18,7 +18,7 @@ const (
 	Inf = 2 * CheckmateScore
 )
 
-func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
+func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -126,9 +126,8 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 
 				entryType = TT_LOWER
 				break
-			} else {
-				e.DecrementHistory(currMove)
 			}
+			e.DecrementHistory(currMove)
 
 			if value > alpha {
 				entryType = TT_EXACT
@@ -136,24 +135,22 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 				alpha = value
 				*line = []board.Move{currMove}
 				*line = append(*line, pv...)
-			} else {
-				e.DecrementHistory(currMove)
 			}
 		}
 
 		if legalMoves == 0 {
 			if inCheck {
 				return int16(ply) - CheckmateScore
-			} else {
-				return 0
 			}
+
+			return 0
 		}
 		e.TTable.Store(e.Board.Hash, entryType, bestVal, depth, bestMove)
 		return bestVal
 	}
 }
 
-func (e *EvalEngine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 {
+func (e *Engine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -208,7 +205,7 @@ func (e *EvalEngine) Quiescence(ctx context.Context, alpha, beta, side int16) in
 }
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
-func (e *EvalEngine) IDSearch(ctx context.Context, depth int, infinite bool) (board.Move, board.Move, bool) {
+func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.Move, board.Move, bool) {
 	e.MateFound = false
 	var wg sync.WaitGroup
 	var best, ponder board.Move
