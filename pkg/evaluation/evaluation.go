@@ -10,31 +10,44 @@ import (
 	"github.com/likeawizard/tofiks/pkg/book"
 )
 
+// capScore is as a move ordering offset to prioritize captures over other move ordering heuristics.
+const capScore int = 1 << 24
+
 type (
-	PickBookMove     func(*board.Board) board.Move
+	MoveSelector     func(k int) board.Move
 	HistoryHeuristic [2][64][64]int
 )
 
 type EvalEngine struct {
-	Board       *board.Board
 	TTable      *TTable
-	WG          sync.WaitGroup
-	Stats       EvalStats
-	Ponder      bool
-	OwnBook     bool
-	MateFound   bool
-	KillerMoves [100][2]board.Move
-	History     HistoryHeuristic
-	Ply         int
-	Plys        [512]uint64
-	SearchDepth int
-	Clock       Clock
 	Stop        context.CancelFunc
+	Board       *board.Board
+	Stats       EvalStats
+	History     HistoryHeuristic
+	Plys        [512]uint64
+	Clock       Clock
+	WG          sync.WaitGroup
+	Ply         int
+	SearchDepth int
+	KillerMoves [100][2]board.Move
+	MateFound   bool
+	OwnBook     bool
+	Ponder      bool
+}
+
+var mvvlva = [7][6]int{
+	{10, 9, 8, 7, 6, 5},      // pawn victim.
+	{30, 29, 28, 27, 26, 25}, // bishop victim.
+	{20, 19, 18, 17, 16, 15}, // knight victim.
+	{40, 39, 38, 37, 36, 35}, // rook victim.
+	{50, 49, 48, 47, 46, 45}, // queen victim.
+	{0, 0, 0, 0, 0, 0},       // king victim.
+	{0, 0, 0, 0, 0, 0},       // no piece.
 }
 
 func NewEvalEngine() *EvalEngine {
 	return &EvalEngine{
-		Board:  board.NewBoard("startpos"),
+		Board:  board.NewBoard(board.StartPos),
 		TTable: NewTTable(64),
 	}
 }
@@ -113,10 +126,6 @@ func (e *EvalEngine) IsDrawByRepetition() bool {
 	return false
 }
 
-const capScore int = 1 << 24
-
-type MoveSelector func(k int) board.Move
-
 // Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic.
 func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) MoveSelector {
 	moveCount := len(moves)
@@ -141,8 +150,7 @@ func (e *EvalEngine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board
 
 	return func(k int) board.Move {
 		maxIndex := k
-		n := len(moves)
-		for i := k; i < n; i++ {
+		for i := k; i < moveCount; i++ {
 			if scores[i] > scores[maxIndex] {
 				maxIndex = i
 			}
@@ -163,8 +171,7 @@ func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
 
 	return func(k int) board.Move {
 		maxIndex := k
-		n := len(moves)
-		for i := k; i < n; i++ {
+		for i := k; i < moveCount; i++ {
 			if scores[i] > scores[maxIndex] {
 				maxIndex = i
 			}
@@ -175,21 +182,9 @@ func (e *EvalEngine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
 	}
 }
 
-var mvvlva = [7][6]int{
-	{10, 9, 8, 7, 6, 5},
-	{30, 29, 28, 27, 26, 25},
-	{20, 19, 18, 17, 16, 15},
-	{40, 39, 38, 37, 36, 35},
-	{50, 49, 48, 47, 46, 45},
-}
-
 // Estimate the potential strength of the move for move ordering.
 func (e *EvalEngine) MvvLva(move board.Move) int {
-	var victim int
-	attacker := move.Piece()
-	// Note: for EP captures pieceAtSquare will fail but return 0 which is still pawn
-	victim = e.Board.PieceAtSquare(move.To())
-	return mvvlva[victim][attacker]
+	return mvvlva[e.Board.PieceAtSquare(move.To())][move.Piece()]
 }
 
 // PlayMovesUCI plays a list of moves in UCI format and updates game history.

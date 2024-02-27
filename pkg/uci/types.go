@@ -5,14 +5,6 @@ import (
 )
 
 const (
-	STATUS_UNAVIALABELE int = iota
-	STATUS_IDLE
-	SATUS_BUSY
-)
-
-type UCI_CMD string
-
-const (
 	C_UCI = "uci"
 	// C_DEBUG      = "debug" // on | off.
 	C_IS_READY   = "isready"
@@ -24,12 +16,6 @@ const (
 	C_QUIT       = "quit"
 	C_NEW_GAME   = "ucinewgame"
 )
-
-type UCIOpts struct {
-	Hash    int
-	Ponder  bool
-	OwnBook bool
-}
 
 type UCICmd interface {
 	Exec(*eval.EvalEngine) bool

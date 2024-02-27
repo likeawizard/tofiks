@@ -3,8 +3,8 @@ package board
 func NewBoard(position string) *Board {
 	b := Board{}
 	switch position {
-	case "startpos", "":
-		if err := b.ImportFEN(startingFEN); err != nil {
+	case StartPos, "":
+		if err := b.ImportFEN(StartingFEN); err != nil {
 			panic(err)
 		}
 	default:

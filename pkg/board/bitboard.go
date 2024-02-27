@@ -215,7 +215,7 @@ func (b *Board) MakeMove(move Move) func() {
 		b.ZobristEnPassant(b.EnPassantTarget)
 	}
 
-	bitboard := b.GetBitBoard(piece)
+	bitboard := &b.Pieces[b.Side][piece]
 
 	switch {
 	case move.IsEnPassant():
@@ -343,11 +343,6 @@ func (b *Board) PlayMovesUCI(uciMoves string) bool {
 	return true
 }
 
-// Return a pointer to the bitboard of the piece moved.
-func (b *Board) GetBitBoard(piece int) *BBoard {
-	return &b.Pieces[b.Side][piece]
-}
-
 // Remove a piece captured by a move from the opposing bitboard.
 func (b *Board) RemoveCaptured(sq int) {
 	b.Occupancy[b.Side^1].Clear(sq)
@@ -385,7 +380,7 @@ func (b *Board) PieceAtSquare(sq Square) int {
 		}
 	}
 
-	return 6
+	return NO_PIECE
 }
 
 // Replace a pawn on the 8th/1st rank with the promotion piece.
@@ -411,7 +406,7 @@ func (b *Board) IsPawnOnly() bool {
 
 // Determine if there is a draw by insufficient material
 // This determines theoretical possibility of mate. Not KvKNN, which still can be achieved as a 'help mate'.
-func (b *Board) InsufficentMaterial() bool {
+func (b *Board) InsufficientMaterial() bool {
 	isLight := func(s int) bool {
 		return ((s/8)+(s%8))%2 == 0
 	}

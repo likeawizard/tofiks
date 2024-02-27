@@ -4,17 +4,23 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-var PieceWeights = [6]int{100, 325, 325, 500, 975, 10000}
+var (
+	// PieceWeights represents the base value of each piece.
+	PieceWeights = [6]int{100, 325, 325, 500, 975, 10000}
 
-// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board.
-var PiecePawnBonus = [6][9]int{
-	{},
-	{},
-	{-25, -19, -13, -6, 0, 6, 13, 19, 25},
-	{50, 37, 25, 12, 0, -12, -25, -37, -50},
-	{},
-	{},
-}
+	// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board.
+	PiecePawnBonus = [6][9]int{
+		{},
+		{},
+		{-25, -19, -13, -6, 0, 6, 13, 19, 25},
+		{50, 37, 25, 12, 0, -12, -25, -37, -50},
+		{},
+		{},
+	}
+
+	// pieceEvals contains the evaluation functions for each piece type.
+	pieceEvals = [6]pieceEvalFn{pawnEval, bishopEval, knightEval, rookEval, queenEval, kingEval}
+)
 
 const (
 	// Mobility related weights.
@@ -25,7 +31,7 @@ const (
 	MOVE_KING       = -5
 	W_CAPTURE   int = 4
 
-	// Pawn.
+	// Pawn structure weights.
 	W_P_PASSED    int = 10
 	W_P_PROTECTED int = 15
 	W_P_DOUBLED   int = -15
@@ -34,39 +40,11 @@ const (
 
 type pieceEvalFn func(*board.Board, board.Square, int) int
 
-var pieceEvals = [6]pieceEvalFn{pawnEval, bishopEval, knightEval, rookEval, queenEval, kingEval}
-
-func pawnEval(b *board.Board, sq board.Square, side int) int {
-	value := 0
-	if IsProtected(b, sq, side) {
-		value += W_P_PROTECTED
-	}
-	if IsDoubled(b, sq, side) {
-		value += W_P_DOUBLED
-	}
-
-	if IsIsolated(b, sq, side) {
-		value += W_P_ISOLATED
-	}
-	if IsPassed(b, sq, side) {
-		value += W_P_PASSED
-	}
-
-	return value
-}
-
-func queenEval(b *board.Board, sq board.Square, side int) int {
-	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
-	return moves.Count()*MOVE_QUEEN + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
-}
-
-// TODO: combine all pawn functions in one with multi value return
 // Piece protected a pawn.
 func IsProtected(b *board.Board, sq board.Square, side int) bool {
 	return board.PawnAttacks[side^1][sq]^b.Pieces[side][board.PAWNS] != 0
 }
 
-// TODO: create a lookup table for files to avoid branching.
 func IsDoubled(b *board.Board, sq board.Square, side int) bool {
 	return b.Pieces[side][board.PAWNS]&board.DoubledPawns[sq] != 0
 }
@@ -77,36 +55,8 @@ func IsIsolated(b *board.Board, sq board.Square, side int) bool {
 }
 
 // Has no opponent opposing pawns in front (same or neighbor files)
-// TODO: stub.
 func IsPassed(b *board.Board, sq board.Square, side int) bool {
 	return b.Pieces[side][board.PAWNS]&board.PassedPawns[side][sq] == 0
-}
-
-func knightEval(b *board.Board, sq board.Square, side int) int {
-	var eval int
-	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
-	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
-		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
-		eval = OutpostsScores[side][board.KNIGHTS][sq]
-	}
-	return eval + moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
-}
-
-func bishopPairEval(b *board.Board, side int) int {
-	if b.Pieces[side][board.BISHOPS].Count() > 1 {
-		return 50
-	}
-	return 0
-}
-
-func bishopEval(b *board.Board, sq board.Square, side int) int {
-	var eval int
-	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
-	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
-		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
-		eval = OutpostsScores[side][board.BISHOPS][sq]
-	}
-	return eval + bishopPairEval(b, side) + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 func (e *EvalEngine) GetEvaluation(b *board.Board) int {
@@ -162,9 +112,46 @@ func getKingActivity(b *board.Board, king board.Square) (kingActivity int) {
 	return
 }
 
-func kingEval(b *board.Board, king board.Square, side int) int {
-	moves := board.KingAttacks[king] & ^b.Occupancy[side]
-	return ((getKingSafety(b, king, side)+moves.Count()*MOVE_KING)*(256-b.Phase) + (getKingActivity(b, king)-moves.Count()*MOVE_KING)*b.Phase) / 256
+func pawnEval(b *board.Board, sq board.Square, side int) int {
+	var value int
+	if IsProtected(b, sq, side) {
+		value = W_P_PROTECTED
+	}
+	if IsDoubled(b, sq, side) {
+		value += W_P_DOUBLED
+	}
+
+	if IsIsolated(b, sq, side) {
+		value += W_P_ISOLATED
+	}
+	if IsPassed(b, sq, side) {
+		value += W_P_PASSED
+	}
+
+	return value
+}
+func knightEval(b *board.Board, sq board.Square, side int) int {
+	var eval int
+	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+		eval = OutpostsScores[side][board.KNIGHTS][sq]
+	}
+	return eval + moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+}
+
+func bishopEval(b *board.Board, sq board.Square, side int) int {
+	var eval int
+	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
+
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+		eval = OutpostsScores[side][board.BISHOPS][sq]
+	}
+	if b.Pieces[side][board.BISHOPS].Count() > 1 {
+		eval += 50
+	}
+	return eval + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
 
 // Evaluation for rooks - connected & (semi)open files.
@@ -172,4 +159,14 @@ func rookEval(b *board.Board, sq board.Square, side int) (rookScore int) {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
 	rookScore = moves.Count()*MOVE_ROOK + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 	return
+}
+
+func queenEval(b *board.Board, sq board.Square, side int) int {
+	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
+	return moves.Count()*MOVE_QUEEN + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+}
+
+func kingEval(b *board.Board, king board.Square, side int) int {
+	moves := board.KingAttacks[king] & ^b.Occupancy[side]
+	return ((getKingSafety(b, king, side)+moves.Count()*MOVE_KING)*(256-b.Phase) + (getKingActivity(b, king)-moves.Count()*MOVE_KING)*b.Phase) / 256
 }

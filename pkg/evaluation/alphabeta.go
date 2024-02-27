@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	// Mate score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
+	// CheckmateScore score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
 	CheckmateScore int16 = 8192
-	// ply adjusted adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval.
+	// CheckmateThreshold ply adjusted mates scores should not exceed this value and anything above this should be considered a mate instead of normal eval.
 	CheckmateThreshold = CheckmateScore - 1024
-	Inf                = 2 * CheckmateScore
+	// Inf should be an unachievable score treated as infinity.
+	Inf = 2 * CheckmateScore
 )
 
 func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
@@ -37,7 +38,7 @@ func (e *EvalEngine) PVS(ctx context.Context, pvOrder []board.Move, line *[]boar
 
 		e.Stats.nodes++
 
-		if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficentMaterial() || e.IsDrawByRepetition()) {
+		if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficientMaterial() || e.IsDrawByRepetition()) {
 			return 0
 		}
 

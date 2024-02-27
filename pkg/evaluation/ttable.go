@@ -6,13 +6,32 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-type EntryType uint8
+type (
+	// EntryType is a enum type for the type of entry in the transposition table- exact, upper or lower bound.
+	EntryType uint8
 
-const (
-	TT_UPPER EntryType = iota
-	TT_LOWER
-	TT_EXACT
+	// EntryData holds bit encoded data for transposition table entry.
+	// LSB 0..31 move, 32..38 depth 39..40 type 41..47 age 48..63 score MSB.
+	EntryData uint64
+
+	// SearchEntry is a struct for storing the key and data in the transposition table.
+	SearchEntry struct {
+		key  uint64
+		data EntryData
+	}
+
+	// TTable is a transposition table used for storing search results.
+	TTable struct {
+		entries       []SearchEntry
+		age           int8
+		newWrite      uint64
+		overWrite     uint64
+		rejectedWrite uint64
+		size          uint64
+	}
 )
+
+const ()
 
 func (et EntryType) String() string {
 	switch et {
@@ -27,19 +46,13 @@ func (et EntryType) String() string {
 	}
 }
 
-type TTable struct {
-	entries       []SearchEntry
-	age           int8
-	newWrite      uint64
-	overWrite     uint64
-	rejectedWrite uint64
-	size          uint64
-}
-
-// LSB 0..31 move, 32..38 depth 39..40 type 41..47 age 48..63 score MSB.
-type EntryData uint64
-
 const (
+	// Enum values for EntryType
+	TT_UPPER EntryType = iota
+	TT_LOWER
+	TT_EXACT
+
+	// Mask and shift values for EntryData
 	move_mask   = (1 << 32) - 1
 	type_mask   = (1 << 2) - 1
 	depth_mask  = (1 << 7) - 1
@@ -57,6 +70,29 @@ func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int1
 		EntryData(eType)<<type_shift |
 		EntryData(age)<<age_shift |
 		EntryData(score)<<score_shift
+}
+
+func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
+	ttType, eval := ed.Type(), ed.Score()
+
+	if eval > CheckmateThreshold {
+		eval -= int16(ply)
+	}
+
+	if eval < -CheckmateThreshold {
+		eval += int16(ply)
+	}
+
+	switch {
+	case ttType == TT_EXACT:
+		return eval, true
+	case ttType == TT_UPPER && eval <= alpha:
+		return alpha, true
+	case ttType == TT_LOWER && eval >= beta:
+		return beta, true
+	}
+
+	return eval, false
 }
 
 func (ed EntryData) Get() (board.Move, int8, EntryType, int16) {
@@ -84,11 +120,6 @@ func (ed EntryData) Type() EntryType {
 
 func (ed EntryData) Age() int8 {
 	return int8((ed >> age_shift) & age_mask)
-}
-
-type SearchEntry struct {
-	key  uint64
-	data EntryData
 }
 
 func NewTTable(sizeInMb int) *TTable {
@@ -146,27 +177,4 @@ func (tt *TTable) Clear() {
 		tt.entries[i].key = 0
 		tt.entries[i].data = 0
 	}
-}
-
-func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
-	ttType, eval := ed.Type(), ed.Score()
-
-	if eval > CheckmateThreshold {
-		eval -= int16(ply)
-	}
-
-	if eval < -CheckmateThreshold {
-		eval += int16(ply)
-	}
-
-	switch {
-	case ttType == TT_EXACT:
-		return eval, true
-	case ttType == TT_UPPER && eval <= alpha:
-		return alpha, true
-	case ttType == TT_LOWER && eval >= beta:
-		return beta, true
-	}
-
-	return eval, false
 }
