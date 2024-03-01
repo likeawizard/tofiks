@@ -150,7 +150,7 @@ func bishopEval(b *board.Board, sq board.Square, side int) int {
 		eval = OutpostsScores[side][board.BISHOPS][sq]
 	}
 	if b.Pieces[side][board.BISHOPS].Count() > 1 {
-		eval += 50
+		eval += 35
 	}
 	return eval + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
 }
