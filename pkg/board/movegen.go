@@ -193,7 +193,7 @@ func (b *Board) PseudoMoveGen() []Move {
 func (b *Board) PseudoCaptureAndQueenPromoGen() []Move {
 	var from, to int
 	var pieces, attacks BBoard
-	var moves []Move
+	moves := make([]Move, 0, 16)
 	var move Move
 
 	if b.Side == 0 {

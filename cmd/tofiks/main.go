@@ -9,12 +9,15 @@ import (
 
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
 	"github.com/likeawizard/tofiks/pkg/uci"
+	"github.com/pkg/profile"
 	_ "go.uber.org/automaxprocs"
 )
 
 func main() {
 	enableProfile := false
+	enableMemProf := false
 	flag.BoolVar(&enableProfile, "pgo", false, "Enable CPU profiling")
+	flag.BoolVar(&enableMemProf, "memprof", false, "Enable memory profiling")
 	flag.Parse()
 	if enableProfile {
 		f, err := os.Create("cmd/tofiks/default.pgo")
@@ -29,6 +32,10 @@ func main() {
 			return
 		}
 		defer pprof.StopCPUProfile()
+	}
+
+	if enableMemProf {
+		defer profile.Start(profile.MemProfile, profile.ProfilePath("cmd/tofiks/")).Stop()
 	}
 	e := eval.NewEvalEngine()
 
