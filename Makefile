@@ -29,11 +29,11 @@ test-perft:
 test-mate:
 	go test -run=TestMate -v -timeout 0 ./test_suite/
 
-test-entry:
-	go test -fuzz=FuzzEntry -v -timeout 0 ./test_suite/
+fuzz-entry:
+	go test -run=- -fuzz=FuzzEntry -v ./test_suite/
 
 run-bench:
-	go test -run=BenchmarkMake -bench=. -benchtime=10s -benchmem -cpu=1,2,4,12 ./test_suite/
+	go test -bench=. -count=20 -benchmem -cpu=1,2,4,12 ./test_suite/ > new.bench
 
 cutechess:
 	@-rm games.pgn
@@ -44,6 +44,9 @@ test-cutechess: build
 
 pgo-cutechess: build
 	cutechess-cli -engine conf=tofiks arg=-pgo -engine conf=tofiksProd -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
+
+memprof-cutechess: build
+	cutechess-cli -engine conf=tofiks arg=-memprof -engine conf=tofiksProd -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=10 -recover
 
 remove-dup:
 	@echo "Removing duplicates"
