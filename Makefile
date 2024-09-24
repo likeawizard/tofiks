@@ -1,7 +1,7 @@
 GOAMD64VERSION=v3
 
 build-tofiks:
-	GOAMD64=${GOAMD64VERSION} go build -o tofiks cmd/tofiks/main.go
+	GOAMD64=${GOAMD64VERSION} go build -gcflags=-B -o tofiks cmd/tofiks/main.go
 
 build-linux:
 	GOAMD64=${GOAMD64VERSION} GOOS=linux go build -o tofiks cmd/tofiks/main.go
