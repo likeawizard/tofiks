@@ -31,6 +31,12 @@ const (
 	MOVE_KING       = -5
 	W_CAPTURE   int = 4
 
+	// King threat weights. How much a piece contributes to the king safety evaluation.
+	QUEEN_THREAT  = 10
+	ROOK_THREAT   = 6
+	BISHOP_THREAT = 4
+	KNIGHT_THREAT = 6
+
 	// Pawn structure weights.
 	W_P_PASSED    int = 10
 	W_P_PROTECTED int = 15
@@ -38,7 +44,7 @@ const (
 	W_P_ISOLATED  int = -20
 )
 
-type pieceEvalFn func(*board.Board, board.Square, int) int
+type pieceEvalFn func(*board.Board, board.Square, int, board.BBoard) int
 
 // Piece protected a pawn.
 func IsProtected(b *board.Board, sq board.Square, side int) bool {
@@ -61,22 +67,30 @@ func IsPassed(b *board.Board, sq board.Square, side int) bool {
 
 func (e *Engine) GetEvaluation(b *board.Board) int {
 	e.Stats.evals++
-	var eval, pieceEval int
+	var (
+		eval      int
+		pieceEval int
+		side      = -1
+		numPawns  int
+		pieces    board.BBoard
+		oppKing   board.BBoard
+	)
 
 	// TODO: ensure no move gen is dependent on b.IsWhite internally
-	side := -1
 	for color := board.WHITE; color <= board.BLACK; color++ {
 		side *= -1
-		numPawns := b.Pieces[color][board.PAWNS].Count()
+		oppKing = board.KingAttacks[board.Square(b.Pieces[color^1][board.KINGS].LS1B())]
+
+		numPawns = b.Pieces[color][board.PAWNS].Count()
 		for pieceType := board.PAWNS; pieceType <= board.KINGS; pieceType++ {
-			pieces := b.Pieces[color][pieceType]
+			pieces = b.Pieces[color][pieceType]
 			for pieces > 0 {
 				piece := pieces.PopLS1B()
 				pieceEval = PieceWeights[pieceType]
 				// Tapered eval - more bias towards PST in the opening and more bias to individual eval functions towards the endgame
 				pieceEval += (PST[0][color][pieceType][piece]*(256-b.Phase)+
 					(PST[1][color][pieceType][piece]+PiecePawnBonus[pieceType][numPawns])*b.Phase)/256 +
-					pieceEvals[pieceType](b, board.Square(piece), color)
+					pieceEvals[pieceType](b, board.Square(piece), color, oppKing)
 				eval += side * pieceEval
 			}
 		}
@@ -91,7 +105,7 @@ func distCenter(sq board.Square) int {
 	return max(3-c/8, c/8-4) + max(3-c%8, c%8-4)
 }
 
-func distSqares(us, them board.Square) int {
+func distSquares(us, them board.Square) int {
 	u, t := int(us), int(them)
 	return max((u-t)/8, (t-u)/8) + max((u-t)%8, (t-u)%8)
 }
@@ -106,13 +120,12 @@ func getKingSafety(b *board.Board, king board.Square, side int) (kingSafety int)
 	return
 }
 
-func getKingActivity(b *board.Board, king board.Square) (kingActivity int) {
-	oppKing := b.Pieces[b.Side^1][board.KINGS].LS1B()
-	kingActivity = -(distCenter(king) + distSqares(king, board.Square(oppKing)))
+func getKingActivity(b *board.Board, king board.Square, side int) (kingActivity int) {
+	kingActivity = -(distCenter(king) + distSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B())))
 	return
 }
 
-func pawnEval(b *board.Board, sq board.Square, side int) int {
+func pawnEval(b *board.Board, sq board.Square, side int, _ board.BBoard) int {
 	var value int
 	if IsProtected(b, sq, side) {
 		value = W_P_PROTECTED
@@ -131,17 +144,19 @@ func pawnEval(b *board.Board, sq board.Square, side int) int {
 	return value
 }
 
-func knightEval(b *board.Board, sq board.Square, side int) int {
+func knightEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {
 	var eval int
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
 	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
 		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
 		eval = OutpostsScores[side][board.KNIGHTS][sq]
 	}
-	return eval + moves.Count()*MOVE_KNIGHT + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	return eval + moves.Count()*MOVE_KNIGHT +
+		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
+		(moves&oppKing).Count()*KNIGHT_THREAT
 }
 
-func bishopEval(b *board.Board, sq board.Square, side int) int {
+func bishopEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {
 	var eval int
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
 
@@ -152,22 +167,27 @@ func bishopEval(b *board.Board, sq board.Square, side int) int {
 	if b.Pieces[side][board.BISHOPS].Count() > 1 {
 		eval += 35
 	}
-	return eval + moves.Count()*MOVE_BISHOP + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	return eval + moves.Count()*MOVE_BISHOP +
+		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
+		(moves&oppKing).Count()*BISHOP_THREAT
 }
 
 // Evaluation for rooks - connected & (semi)open files.
-func rookEval(b *board.Board, sq board.Square, side int) (rookScore int) {
+func rookEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
-	rookScore = moves.Count()*MOVE_ROOK + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
-	return
+	return moves.Count()*MOVE_ROOK +
+		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
+		(moves&oppKing).Count()*ROOK_THREAT
 }
 
-func queenEval(b *board.Board, sq board.Square, side int) int {
+func queenEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {
 	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
-	return moves.Count()*MOVE_QUEEN + (moves&b.Occupancy[side^1]).Count()*W_CAPTURE
+	return moves.Count()*MOVE_QUEEN +
+		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
+		(moves&oppKing).Count()*QUEEN_THREAT
 }
 
-func kingEval(b *board.Board, king board.Square, side int) int {
+func kingEval(b *board.Board, king board.Square, side int, _ board.BBoard) int {
 	moves := board.KingAttacks[king] & ^b.Occupancy[side]
-	return ((getKingSafety(b, king, side)+moves.Count()*MOVE_KING)*(256-b.Phase) + (getKingActivity(b, king)-moves.Count()*MOVE_KING)*b.Phase) / 256
+	return ((getKingSafety(b, king, side)+moves.Count()*MOVE_KING)*(256-b.Phase) + (getKingActivity(b, king, side)-moves.Count()*MOVE_KING)*b.Phase) / 256
 }
