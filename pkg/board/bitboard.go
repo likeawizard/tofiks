@@ -185,18 +185,28 @@ func (b *Board) AttackedSquares(side int8, mask, occ BBoard) BBoard {
 
 // Generate a function to return the board state the it's current state.
 func (b *Board) GetUnmake() func() {
-	cp := b.Copy()
+	var (
+		hash            = b.Hash
+		pieces          = b.Pieces
+		occupancy       = b.Occupancy
+		side            = b.Side
+		inCheck         = b.InCheck
+		castlingRights  = b.CastlingRights
+		enPassantTarget = b.EnPassantTarget
+		halfMoveCounter = b.HalfMoveCounter
+		fullMoveCounter = b.FullMoveCounter
+	)
+
 	return func() {
-		b.Hash = cp.Hash
-		b.Pieces = cp.Pieces
-		b.Occupancy = cp.Occupancy
-		b.Side = cp.Side
-		b.Phase = cp.Phase
-		b.InCheck = cp.InCheck
-		b.CastlingRights = cp.CastlingRights
-		b.EnPassantTarget = cp.EnPassantTarget
-		b.HalfMoveCounter = cp.HalfMoveCounter
-		b.FullMoveCounter = cp.FullMoveCounter
+		b.Hash = hash
+		b.Pieces = pieces
+		b.Occupancy = occupancy
+		b.Side = side
+		b.InCheck = inCheck
+		b.CastlingRights = castlingRights
+		b.EnPassantTarget = enPassantTarget
+		b.HalfMoveCounter = halfMoveCounter
+		b.FullMoveCounter = fullMoveCounter
 	}
 }
 
@@ -260,7 +270,6 @@ func (b *Board) MakeMove(move Move) func() {
 		b.FullMoveCounter++
 	}
 
-	b.Phase = b.GetGamePhase()
 	b.ZobristSideToMove()
 	b.Side ^= 1
 	b.InCheck = b.IsChecked(b.Side)
