@@ -2,10 +2,10 @@
 # golangci options
 run:
   timeout: 3m
-  skip-dirs:
+issues:
+  exclude-dirs:
     - cmd/playground
 output:
-  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   uniq-by-line: true
@@ -70,7 +70,7 @@ linters:
     - gofumpt
     - asciicheck
     - dogsled
-    - exportloopref
+    - copyloopvar
     - errcheck
     - gocritic
     - goimports

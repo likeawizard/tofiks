@@ -20,6 +20,17 @@ var (
 
 	// pieceEvals contains the evaluation functions for each piece type.
 	pieceEvals = [6]pieceEvalFn{pawnEval, bishopEval, knightEval, rookEval, queenEval, kingEval}
+
+	dist = [64]int{
+		4, 3, 3, 3, 3, 3, 3, 4,
+		3, 3, 2, 2, 2, 2, 3, 3,
+		3, 2, 2, 1, 1, 2, 2, 3,
+		3, 2, 1, 0, 0, 1, 2, 3,
+		3, 2, 1, 0, 0, 1, 2, 3,
+		3, 2, 2, 1, 1, 2, 2, 3,
+		3, 3, 2, 2, 2, 2, 3, 3,
+		4, 3, 3, 3, 3, 3, 3, 4,
+	}
 )
 
 const (
@@ -67,31 +78,30 @@ func IsPassed(b *board.Board, sq board.Square, side int) bool {
 
 func (e *Engine) GetEvaluation(b *board.Board) int {
 	e.Stats.evals++
+	e.Board.Phase = e.Board.GetGamePhase()
+
 	var (
-		eval      int
-		pieceEval int
-		side      = -1
-		numPawns  int
-		pieces    board.BBoard
-		oppKing   board.BBoard
+		eval     int
+		side     = -1
+		numPawns int
+		pieces   board.BBoard
+		piece    int
+		oppKing  board.BBoard
 	)
 
-	// TODO: ensure no move gen is dependent on b.IsWhite internally
 	for color := board.WHITE; color <= board.BLACK; color++ {
 		side *= -1
 		oppKing = board.KingAttacks[board.Square(b.Pieces[color^1][board.KINGS].LS1B())]
-
 		numPawns = b.Pieces[color][board.PAWNS].Count()
+
 		for pieceType := board.PAWNS; pieceType <= board.KINGS; pieceType++ {
 			pieces = b.Pieces[color][pieceType]
 			for pieces > 0 {
-				piece := pieces.PopLS1B()
-				pieceEval = PieceWeights[pieceType]
-				// Tapered eval - more bias towards PST in the opening and more bias to individual eval functions towards the endgame
-				pieceEval += (PST[0][color][pieceType][piece]*(256-b.Phase)+
-					(PST[1][color][pieceType][piece]+PiecePawnBonus[pieceType][numPawns])*b.Phase)/256 +
-					pieceEvals[pieceType](b, board.Square(piece), color, oppKing)
-				eval += side * pieceEval
+				piece = pieces.PopLS1B()
+				eval += side * (PieceWeights[pieceType] +
+					pieceEvals[pieceType](b, board.Square(piece), color, oppKing) +
+					(PST[0][color][pieceType][piece]*(256-b.Phase)+
+						(PST[1][color][pieceType][piece]+PiecePawnBonus[pieceType][numPawns])*b.Phase)/256)
 			}
 		}
 	}
@@ -99,15 +109,19 @@ func (e *Engine) GetEvaluation(b *board.Board) int {
 	return eval
 }
 
-// TODO: try branchless: eliminate min/max and use branchless abs().
 func distCenter(sq board.Square) int {
-	c := int(sq)
-	return max(3-c/8, c/8-4) + max(3-c%8, c%8-4)
+	return dist[sq]
 }
 
 func distSquares(us, them board.Square) int {
+	abs := func(x int) int {
+		if x < 0 {
+			return -x
+		}
+		return x
+	}
 	u, t := int(us), int(them)
-	return max((u-t)/8, (t-u)/8) + max((u-t)%8, (t-u)%8)
+	return abs(u/8-t/8) + abs(u%8-t%8)
 }
 
 // King safety score as a measure of distance from the board center and the number of adjacent enemy pieces and friendly pieces
