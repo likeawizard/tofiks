@@ -16,22 +16,21 @@ func (c *Go) Exec(e *eval.Engine) bool {
 		e.Board.PerftDebug(c.depth)
 		return true
 	}
-
-	e.Clock.Wtime = c.wtime
-	e.Clock.Winc = c.winc
-	e.Clock.Btime = c.btime
-	e.Clock.Binc = c.binc
-	e.Clock.Movestogo = c.movestogo
-	e.Clock.Movetime = c.movetime
-	e.Clock.Infinite = c.infinite
-	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
+	e.Clock = eval.Clock{
+		Wtime:     c.wtime,
+		Btime:     c.btime,
+		Winc:      c.winc,
+		Binc:      c.binc,
+		Overhead:  e.Clock.Overhead,
+		Movetime:  c.movetime,
+		Movestogo: c.movestogo,
+		Infinite:  c.infinite,
+	}
 	depth := c.depth
 	if depth == 0 {
 		depth = 50
 	}
-	e.Stop = cancel
-	defer cancel()
-	move, ponder := e.GetMove(ctx, depth, c.infinite)
+	move, ponder := e.GetMove(depth, c.infinite)
 	e.ReportMove(move, ponder, e.Ponder)
 
 	return true
@@ -44,7 +43,7 @@ func (c *Stop) Exec(e *eval.Engine) bool {
 		if c.ponderhit && !e.MateFound {
 			time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
 		}
-		e.Stop()
+		e.Stop <- struct{}{}
 	}
 	return true
 }

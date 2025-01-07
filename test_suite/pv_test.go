@@ -2,14 +2,12 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
@@ -34,14 +32,16 @@ func TestValidPV(t *testing.T) {
 			e := eval.NewEvalEngine()
 			e.Board = board.NewBoard(testPos)
 			position := e.Board.Copy()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			e.Clock = eval.Clock{
+				Movetime: 1000 * 5,
+			}
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, false)
+				e.IDSearch(50, false)
 			}()
 
 			for lr.Scan() {
@@ -57,7 +57,7 @@ func TestValidPV(t *testing.T) {
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.Stop <- struct{}{}
 			r.Close()
 		})
 	}
