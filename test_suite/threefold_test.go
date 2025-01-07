@@ -2,14 +2,12 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
@@ -40,14 +38,16 @@ func TestForceThreeFoldRepetition(t *testing.T) {
 			e := eval.NewEvalEngine()
 			e.Board = board.NewBoard(testPos.fen)
 			e.PlayMovesUCI(testPos.moves)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			e.Clock = eval.Clock{
+				Movetime: 1000 * 60,
+			}
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, true)
+				e.IDSearch(50, true)
 			}()
 
 			for lr.Scan() {
@@ -60,11 +60,11 @@ func TestForceThreeFoldRepetition(t *testing.T) {
 				score, err = strconv.Atoi(scoreStr)
 				assert.Nil(t, err, "failed to parse cp score: %s", err)
 				if score == 0 {
-					cancel()
+					e.Stop <- struct{}{}
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.Stop <- struct{}{}
 			assert.Equal(t, 0, score)
 			r.Close()
 		})

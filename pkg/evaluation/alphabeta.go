@@ -205,7 +205,17 @@ func (e *Engine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 
 }
 
 // Iterative deepening search. Returns best move, ponder and ok if search succeeded.
-func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.Move, board.Move, bool) {
+func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, bool) {
+	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
+	go func() {
+		select {
+		case <-e.Stop:
+			cancel()
+			return
+		}
+	}()
+	defer cancel()
+
 	e.MateFound = false
 	var wg sync.WaitGroup
 	var best, ponder board.Move

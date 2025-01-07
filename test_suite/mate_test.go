@@ -2,14 +2,12 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	eval "github.com/likeawizard/tofiks/pkg/evaluation"
@@ -29,14 +27,16 @@ func TestMate(t *testing.T) {
 
 			e := eval.NewEvalEngine()
 			e.Board = board.NewBoard(testPos.fen)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			e.Clock = eval.Clock{
+				Movetime: 1000 * 60,
+			}
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, true)
+				e.IDSearch(50, true)
 			}()
 
 			mateInMin := 100
@@ -60,11 +60,11 @@ func TestMate(t *testing.T) {
 					mateInMin = max(mateInMin, mateIn)
 				}
 				if mateInMin == testPos.mateIn {
-					cancel()
+					e.Stop <- struct{}{}
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.Stop <- struct{}{}
 			assert.Equal(t, testPos.mateIn, mateInMin)
 			r.Close()
 		})

@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -20,7 +19,7 @@ type (
 
 type Engine struct {
 	TTable      *TTable
-	Stop        context.CancelFunc
+	Stop        chan struct{}
 	Board       *board.Board
 	Stats       Stats
 	History     HistoryHeuristic
@@ -53,13 +52,13 @@ func NewEvalEngine() *Engine {
 }
 
 // Returns the best move and best opponent response - ponder.
-func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
+func (e *Engine) GetMove(depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	if e.OwnBook && book.InBook(e.Board) {
 		move := book.GetWeighted(e.Board)
 		return move, 0
 	}
-	best, ponder, _ = e.IDSearch(ctx, depth, infinite)
+	best, ponder, _ = e.IDSearch(depth, infinite)
 
 	return best, ponder
 }
