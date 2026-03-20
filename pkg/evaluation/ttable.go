@@ -23,6 +23,7 @@ type (
 	// TTable is a transposition table used for storing search results.
 	TTable struct {
 		entries       []SearchEntry
+		Stats         TTStats
 		age           int8
 		newWrite      uint64
 		overWrite     uint64
@@ -124,26 +125,39 @@ func (ed EntryData) Age() int8 {
 	return int8((ed >> age_shift) & age_mask)
 }
 
+const bucketsPerEntry = 2
+
 func NewTTable(sizeInMb int) *TTable {
 	eSize := int(unsafe.Sizeof(SearchEntry{}))
-	size := (1024 * 1024 * sizeInMb) / eSize
+	totalEntries := (1024 * 1024 * sizeInMb) / eSize
+	// Round down to power of 2 for bucket count so we can use bitwise AND.
+	buckets := uint64(1)
+	for buckets*2 <= uint64(totalEntries/bucketsPerEntry) {
+		buckets *= 2
+	}
 	return &TTable{
-		entries: make([]SearchEntry, size),
-		size:    uint64(size),
+		entries: make([]SearchEntry, buckets*bucketsPerEntry),
+		size:    buckets,
 	}
 }
 
 func (tt *TTable) Probe(hash uint64) (*EntryData, bool) {
-	idx := hash % tt.size
-	entry := tt.entries[idx]
-	if entry.key^uint64(entry.data) == hash {
-		return &entry.data, true
+	tt.Stats.recordProbe()
+	base := (hash & (tt.size - 1)) * bucketsPerEntry
+
+	for i := uint64(0); i < bucketsPerEntry; i++ {
+		e := &tt.entries[base+i]
+		if e.key^uint64(e.data) == hash {
+			tt.Stats.recordHit(e.data.Depth())
+			return &e.data, true
+		}
 	}
+
 	return nil, false
 }
 
 func (tt *TTable) Hashfull() uint64 {
-	return (tt.newWrite * 1000) / tt.size
+	return (tt.newWrite * 1000) / (tt.size * bucketsPerEntry)
 }
 
 func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply int8, move board.Move) {
@@ -154,35 +168,61 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 		eval -= int16(ply)
 	}
 
-	idx := hash % tt.size
-	entry := tt.entries[idx].data
-	if entry == 0 {
-		data := NewEntry(move, depth, entryType, tt.age, eval)
-		tt.entries[idx] = SearchEntry{
-			key:  hash ^ uint64(data),
-			data: data,
-		}
-		tt.newWrite++
-		return
-	} else if entryType == TT_EXACT || entry.Depth()-entry.Age() < depth-tt.age {
-		data := NewEntry(move, depth, entryType, tt.age, eval)
-		// Replace entry for new position or same position with greater depth
-		tt.entries[idx] = SearchEntry{
-			key:  hash ^ uint64(data),
-			data: data,
-		}
-		tt.overWrite++
-		return
+	data := NewEntry(move, depth, entryType, tt.age, eval)
+	newEntry := SearchEntry{
+		key:  hash ^ uint64(data),
+		data: data,
 	}
 
-	tt.rejectedWrite++
+	base := (hash & (tt.size - 1)) * bucketsPerEntry
+
+	// Check for empty or same position in existing buckets.
+	for i := uint64(0); i < bucketsPerEntry; i++ {
+		d := tt.entries[base+i].data
+		if d == 0 {
+			tt.entries[base+i] = newEntry
+			tt.newWrite++
+			tt.Stats.recordNewWrite()
+			return
+		}
+		if tt.entries[base+i].key^uint64(d) == hash {
+			tt.entries[base+i] = newEntry
+			tt.overWrite++
+			tt.Stats.recordOverWrite()
+			return
+		}
+	}
+
+	// All buckets occupied by different positions. Evict the weakest.
+	newScore := int16(depth) + int16(tt.age)
+	weakestScore := int16(tt.entries[base].data.Depth()) + int16(tt.entries[base].data.Age())
+	weakestIdx := base
+
+	for i := uint64(1); i < bucketsPerEntry; i++ {
+		s := int16(tt.entries[base+i].data.Depth()) + int16(tt.entries[base+i].data.Age())
+		if s < weakestScore {
+			weakestScore = s
+			weakestIdx = base + i
+		}
+	}
+
+	if entryType == TT_EXACT || weakestScore < newScore {
+		tt.entries[weakestIdx] = newEntry
+		tt.overWrite++
+		tt.Stats.recordOverWrite()
+	} else {
+		tt.rejectedWrite++
+		tt.Stats.recordRejected()
+	}
 }
 
 func (tt *TTable) Clear() {
 	tt.newWrite = 0
 	tt.overWrite = 0
 	tt.rejectedWrite = 0
-	for i := 0; i < int(tt.size); i++ {
+	tt.Stats.reset()
+	totalEntries := tt.size * bucketsPerEntry
+	for i := uint64(0); i < totalEntries; i++ {
 		tt.entries[i].key = 0
 		tt.entries[i].data = 0
 	}

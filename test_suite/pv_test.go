@@ -47,6 +47,9 @@ func TestValidPV(t *testing.T) {
 			for lr.Scan() {
 				info := lr.Text()
 				m := capturePV.FindStringSubmatch(info)
+				if m == nil {
+					continue
+				}
 				pv := m[capturePV.SubexpIndex("pv")]
 				tmpPos := position.Copy()
 				pvMoves := strings.Fields(pv)

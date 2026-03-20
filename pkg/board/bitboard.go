@@ -168,6 +168,12 @@ func (b *Board) IsChecked(side int8) bool {
 	return b.IsAttacked(b.Pieces[side][KINGS].LS1B(), side, b.Occupancy[BOTH])
 }
 
+// IsPseudoLegal performs a fast sanity check that the move's piece exists on the
+// from-square for the side to move. Catches most type-2 hash collisions in TT probes.
+func (b *Board) IsPseudoLegal(move Move) bool {
+	return SquareBitboards[int(move.From())]&b.Pieces[b.Side][move.Piece()] != 0
+}
+
 // Get a bitboard of all the squares attacked by the opposition.
 func (b *Board) AttackedSquares(side int8, mask, occ BBoard) BBoard {
 	attacked := BBoard(0)

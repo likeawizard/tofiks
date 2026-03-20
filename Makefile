@@ -12,6 +12,9 @@ build-windows:
 clean:
 	go clean
 
+build-debug:
+	GOAMD64=${GOAMD64VERSION} go build -tags debug -gcflags=-B -o debug_tofiks cmd/tofiks/main.go
+
 build: clean build-tofiks
 
 test-suite:
