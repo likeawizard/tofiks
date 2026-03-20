@@ -146,7 +146,14 @@ func (tt *TTable) Hashfull() uint64 {
 	return (tt.newWrite * 1000) / tt.size
 }
 
-func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth int8, move board.Move) {
+func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply int8, move board.Move) {
+	// Normalize mate scores to position-relative distances for correct retrieval at any ply.
+	if eval > CheckmateThreshold {
+		eval += int16(ply)
+	} else if eval < -CheckmateThreshold {
+		eval -= int16(ply)
+	}
+
 	idx := hash % tt.size
 	entry := tt.entries[idx].data
 	if entry == 0 {

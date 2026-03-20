@@ -145,7 +145,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			return 0
 		}
-		e.TTable.Store(e.Board.Hash, entryType, bestVal, depth, bestMove)
+		e.TTable.Store(e.Board.Hash, entryType, bestVal, depth, ply, bestMove)
 		return bestVal
 	}
 }

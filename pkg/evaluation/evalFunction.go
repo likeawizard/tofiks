@@ -131,12 +131,12 @@ func distSquares(us, them board.Square) int {
 func getKingSafety(b *board.Board, king board.Square, side int) (kingSafety int) {
 	kingSafety += 2 * distCenter(king)
 	kingSafety += 5*(board.KingSafetyMask[side][king]&b.Occupancy[side]).Count() - 15*(board.KingAttacks[king]&b.Occupancy[side^1]).Count()
-	return
+	return kingSafety
 }
 
 func getKingActivity(b *board.Board, king board.Square, side int) (kingActivity int) {
 	kingActivity = -(distCenter(king) + distSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B())))
-	return
+	return kingActivity
 }
 
 func pawnEval(b *board.Board, sq board.Square, side int, _ board.BBoard) int {
