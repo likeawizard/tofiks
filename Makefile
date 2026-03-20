@@ -59,7 +59,7 @@ run-texel:
 	./texel -f "rand.txt" -c 8 -i 100 -lim 100000 > texel_out.txt
 
 lint:
-	golangci-lint run
+	go tool golangci-lint run
 
 lint-fix:
-	golangci-lint run --fix
+	go tool golangci-lint run --fix
