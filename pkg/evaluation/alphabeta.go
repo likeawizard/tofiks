@@ -33,7 +33,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 {
-			return e.Quiescence(ctx, alpha, beta, side)
+			return e.Quiescence(ctx, ply, alpha, beta, side)
 		}
 
 		e.Stats.nodes++
@@ -44,11 +44,14 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		var pvMove board.Move
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && ply > 0 && entry.Depth() >= depth {
-			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok {
-				*line = []board.Move{entry.Move()}
+			ttMove := entry.Move()
+			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
+				e.TTable.Stats.recordCutoff()
+				*line = []board.Move{ttMove}
 				return eval
 			}
-			pvMove = entry.Move()
+			e.TTable.Stats.recordMoveHit()
+			pvMove = ttMove
 		}
 
 		// Null move pruning.
@@ -150,13 +153,20 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 	}
 }
 
-func (e *Engine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 {
+func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
 		return 0
 	default:
 		e.Stats.qNodes++
+
+		if entry, ok := e.TTable.Probe(e.Board.Hash); ok {
+			if eval, ok := entry.GetScore(0, ply, alpha, beta); ok {
+				return eval
+			}
+		}
+
 		eval := side * int16(e.GetEvaluation(e.Board))
 
 		if !e.Board.InCheck && eval >= beta {
@@ -178,10 +188,12 @@ func (e *Engine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 
 		}
 
 		legalMoves := 0
+		bestVal := eval
+		var bestMove board.Move
+		entryType := TT_UPPER
 
 		selectMove := e.GetMoveSelectorQ(all)
 		var currMove board.Move
-		value := -Inf
 		for i := 0; i < len(all); i++ {
 			currMove = selectMove(i)
 			umove := e.Board.MakeMove(currMove)
@@ -190,17 +202,31 @@ func (e *Engine) Quiescence(ctx context.Context, alpha, beta, side int16) int16 
 				continue
 			}
 			legalMoves++
-			value = max(value, -e.Quiescence(ctx, -beta, -alpha, -side))
+			value := -e.Quiescence(ctx, ply+1, -beta, -alpha, -side)
 			umove()
-			alpha = max(value, alpha)
+
+			if value > bestVal {
+				bestVal = value
+				bestMove = currMove
+			}
+
+			if value > alpha {
+				entryType = TT_EXACT
+				alpha = value
+			}
+
 			if alpha >= beta {
+				entryType = TT_LOWER
 				break
 			}
 		}
+
 		if legalMoves == 0 {
 			return eval
 		}
-		return value
+
+		e.TTable.Store(e.Board.Hash, entryType, bestVal, 0, ply, bestMove)
+		return bestVal
 	}
 }
 
@@ -217,7 +243,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 	if e.Board.Side != board.WHITE {
 		color = -color
 	}
-	e.TTable.age = max(0, int8(e.Board.HalfMoveCounter)/2+63-int8(e.Board.FullMoveCounter)/4)
+	e.TTable.age = 0
 	e.AgeHistory()
 	done, ok := false, true
 	wg.Add(1)
@@ -228,7 +254,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				return
 			}
 
+			e.TTable.age = d
 			e.Stats.Start()
+			e.TTable.Stats.reset()
 			var pv []board.Move
 			pv = append(pv, line...)
 			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
@@ -266,6 +294,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
+				if s := e.TTable.Stats.String(); s != "" {
+					fmt.Printf("info string %s\n", s)
+				}
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
 					e.MateFound = true
 				}

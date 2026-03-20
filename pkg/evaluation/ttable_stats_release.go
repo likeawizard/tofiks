@@ -1,0 +1,16 @@
+//go:build !debug
+
+package eval
+
+// TTStats is a no-op in release builds.
+type TTStats struct{}
+
+func (s *TTStats) recordProbe()     {}
+func (s *TTStats) recordHit(_ int8) {}
+func (s *TTStats) recordCutoff()    {}
+func (s *TTStats) recordMoveHit()   {}
+func (s *TTStats) recordNewWrite()  {}
+func (s *TTStats) recordOverWrite() {}
+func (s *TTStats) recordRejected()  {}
+func (s *TTStats) reset()           {}
+func (s *TTStats) String() string   { return "" }

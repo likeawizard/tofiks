@@ -80,7 +80,7 @@ func (e *Evaluator) E() float64 {
 			for entry := range in {
 				engine.Board = board.NewBoard(entry.fen)
 				engine.Board.Phase = engine.Board.GetGamePhase()
-				score := engine.Quiescence(context.Background(), -eval.Inf, eval.Inf, int16(engine.Board.Side))
+				score := engine.Quiescence(context.Background(), 0, -eval.Inf, eval.Inf, int16(engine.Board.Side))
 				out <- result{score: score, result: entry.result}
 			}
 		}(e.engines[i])
@@ -172,7 +172,7 @@ func E(entries []entry) float64 {
 			for e := range in {
 				engine.Board = board.NewBoard(e.fen)
 				engine.Board.Phase = engine.Board.GetGamePhase()
-				score := engine.Quiescence(context.Background(), -eval.Inf, eval.Inf, int16(engine.Board.Side))
+				score := engine.Quiescence(context.Background(), 0, -eval.Inf, eval.Inf, int16(engine.Board.Side))
 				out <- result{score: score, result: e.result}
 			}
 		}()

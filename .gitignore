@@ -1,6 +1,7 @@
 /.idea/
 /config.yml
 /tofiks
+/debug_tofiks
 /cmd/playground/*
 /weights/weights.yml
 /*.svg
