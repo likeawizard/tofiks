@@ -16,12 +16,17 @@ const (
 	promoShift = 12
 	pieceMask  = 1<<3 - 1
 	pieceShift = 19
+	scoreMask  = 1<<10 - 1
+	scoreShift = 22
 
 	// Move flags.
 	IsEnpassant = 1 << 15
 	IsCapture   = 1 << 16
 	IsCastling  = 1 << 17
 	IsDouble    = 1 << 18
+
+	// Mask covering only move data bits (0..21), excluding score bits.
+	MoveDataMask = 1<<22 - 1
 )
 
 var (
@@ -44,8 +49,8 @@ type (
 	// 0..63 to a8 to h1 mapping.
 	Square int16
 
-	// Move is holds bit encoded move data.
-	// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 unused MSB.
+	// Move holds bit encoded move data.
+	// LSB 0..5 from 6..11 to 12..14 promotion 15 IsEnpassant 16 IsCapture 17 IsCastling 18 IsDouble 19..21 Piece 22..31 score MSB.
 	Move uint32
 )
 
@@ -110,6 +115,14 @@ func (m Move) IsDouble() bool {
 
 func (m Move) Piece() uint8 {
 	return uint8(m>>pieceShift) & pieceMask
+}
+
+func (m Move) SetScore(score int) Move {
+	return m&MoveDataMask | Move(score&scoreMask)<<scoreShift
+}
+
+func (m Move) ClearScore() Move {
+	return m & MoveDataMask
 }
 
 func (m Move) String() string {

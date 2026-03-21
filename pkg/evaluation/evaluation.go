@@ -10,13 +10,17 @@ import (
 	"github.com/likeawizard/tofiks/pkg/book"
 )
 
-// capScore is as a move ordering offset to prioritize captures over other move ordering heuristics.
-const capScore int = 1 << 24
-
-type (
-	MoveSelector     func(k int) board.Move
-	HistoryHeuristic [2][64][64]int
+// Move ordering score tiers (10-bit range 0-1023, embedded in Move bits 22-31).
+const (
+	scorePV      = 1023
+	scoreHash    = 1022
+	scoreCap     = 512 // + mvvlva (5-50)
+	scoreKiller0 = 511
+	scoreKiller1 = 510
+	scoreHistMax = 509
 )
+
+type HistoryHeuristic [2][64][64]int
 
 type Engine struct {
 	TTable      *TTable
@@ -125,60 +129,46 @@ func (e *Engine) IsDrawByRepetition() bool {
 	return false
 }
 
-// Move ordering 1. PV 2. hash move 3. Captures orderd by MVVLVA, 4. killer moves  5. History Heuristic.
-func (e *Engine) GetMoveSelector(hashMove board.Move, moves, pvOrder []board.Move, ply int8) MoveSelector {
-	moveCount := len(moves)
-	scores := make([]int, moveCount)
+// ScoreMoves embeds move ordering scores into the unused bits of each move.
+// Order: 1. PV 2. hash move 3. Captures by MVVLVA 4. killer moves 5. History Heuristic.
+func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, ply int8) {
 	lenPV := int8(len(pvOrder))
 	for i := range moves {
 		switch {
 		case lenPV > ply && pvOrder[ply] == moves[i]:
-			scores[i] = capScore + 200
+			moves[i] = moves[i].SetScore(scorePV)
 		case moves[i] == hashMove:
-			scores[i] = capScore + 100
+			moves[i] = moves[i].SetScore(scoreHash)
 		case moves[i].IsCapture():
-			scores[i] = capScore + e.MvvLva(moves[i])
+			moves[i] = moves[i].SetScore(scoreCap + e.MvvLva(moves[i]))
 		case moves[i] == e.KillerMoves[ply][0]:
-			scores[i] = capScore - 5
+			moves[i] = moves[i].SetScore(scoreKiller0)
 		case moves[i] == e.KillerMoves[ply][1]:
-			scores[i] = capScore - 10
+			moves[i] = moves[i].SetScore(scoreKiller1)
 		default:
-			scores[i] = e.GetHistory(moves[i])
+			moves[i] = moves[i].SetScore(min(e.GetHistory(moves[i]), scoreHistMax))
 		}
-	}
-
-	return func(k int) board.Move {
-		maxIndex := k
-		for i := k; i < moveCount; i++ {
-			if scores[i] > scores[maxIndex] {
-				maxIndex = i
-			}
-		}
-		scores[k], scores[maxIndex] = scores[maxIndex], scores[k]
-		moves[k], moves[maxIndex] = moves[maxIndex], moves[k]
-		return moves[k]
 	}
 }
 
-func (e *Engine) GetMoveSelectorQ(moves []board.Move) MoveSelector {
-	moveCount := len(moves)
-	scores := make([]int, moveCount)
-
+// ScoreMovesQ embeds MVVLVA scores into capture moves for quiescence ordering.
+func (e *Engine) ScoreMovesQ(moves []board.Move) {
 	for i := range moves {
-		scores[i] = e.MvvLva(moves[i])
+		moves[i] = moves[i].SetScore(e.MvvLva(moves[i]))
 	}
+}
 
-	return func(k int) board.Move {
-		maxIndex := k
-		for i := k; i < moveCount; i++ {
-			if scores[i] > scores[maxIndex] {
-				maxIndex = i
-			}
+// SelectMove performs one step of selection sort: finds the highest-scored move
+// from index k onwards and swaps it into position k.
+func SelectMove(moves []board.Move, k int) board.Move {
+	maxIndex := k
+	for i := k + 1; i < len(moves); i++ {
+		if moves[i] > moves[maxIndex] {
+			maxIndex = i
 		}
-		scores[k], scores[maxIndex] = scores[maxIndex], scores[k]
-		moves[k], moves[maxIndex] = moves[maxIndex], moves[k]
-		return moves[k]
 	}
+	moves[k], moves[maxIndex] = moves[maxIndex], moves[k]
+	return moves[k].ClearScore()
 }
 
 // Estimate the potential strength of the move for move ordering.
