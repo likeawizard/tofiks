@@ -52,7 +52,7 @@ const (
 	TT_EXACT
 
 	// Mask and shift values for EntryData.
-	move_mask   = (1 << 32) - 1
+	move_mask   = board.MoveDataMask
 	type_mask   = (1 << 2) - 1
 	depth_mask  = (1 << 7) - 1
 	age_mask    = (1 << 7) - 1

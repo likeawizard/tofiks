@@ -35,6 +35,9 @@ test-mate:
 fuzz-entry:
 	go test -run=- -fuzz=FuzzEntry -v ./test_suite/
 
+bench-search:
+	go test -run=^$$ -bench='Benchmark(PVS|Quiescence|IDSearch)' -benchmem ./test_suite/
+
 run-bench:
 	go test -bench=. -count=20 -benchmem -cpu=1,2,4,12 ./test_suite/ > new.bench
 

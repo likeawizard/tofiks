@@ -70,7 +70,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
-		selectMove := e.GetMoveSelector(pvMove, all, pvOrder, ply)
+		e.ScoreMoves(pvMove, all, pvOrder, ply)
 
 		value := int16(0)
 		entryType := TT_UPPER
@@ -83,7 +83,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		}
 
 		for i := 0; i < moveCount; i++ {
-			currMove = selectMove(i)
+			currMove = SelectMove(all, i)
 			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
@@ -192,10 +192,10 @@ func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int
 		var bestMove board.Move
 		entryType := TT_UPPER
 
-		selectMove := e.GetMoveSelectorQ(all)
+		e.ScoreMovesQ(all)
 		var currMove board.Move
 		for i := 0; i < len(all); i++ {
-			currMove = selectMove(i)
+			currMove = SelectMove(all, i)
 			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
