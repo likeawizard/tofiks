@@ -23,6 +23,7 @@ var (
 	IsolatedPawns  [64]BBoard
 	DoubledPawns   [64]BBoard
 	Outposts       [2][64]BBoard
+	FileMasks      [8]BBoard
 
 	// Magic bitboard masks.
 	BishopOccBitCount [64]int
@@ -258,6 +259,8 @@ func InitPawnStructureMasks() {
 
 		return mask & ^behindMask(rank, color)
 	}
+
+	FileMasks = [8]BBoard{AFile, BFile, CFile, DFile, EFile, FFile, GFile, HFile}
 
 	for sq := 0; sq < 64; sq++ {
 		IsolatedPawns[sq] = isolatedMask(sq)
