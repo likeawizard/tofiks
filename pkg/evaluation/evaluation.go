@@ -17,26 +17,30 @@ const (
 	scoreCap     = 512 // + mvvlva (5-50)
 	scoreKiller0 = 511
 	scoreKiller1 = 510
-	scoreHistMax = 509
+	scoreCounter = 509
+	scoreHistMax = 508
 )
 
 type HistoryHeuristic [2][64][64]int
 
 type Engine struct {
-	TTable      *TTable
-	Stop        context.CancelFunc
-	Board       *board.Board
-	Stats       Stats
-	History     HistoryHeuristic
-	Plys        [512]uint64
-	Clock       Clock
-	WG          sync.WaitGroup
-	Ply         int
-	SearchDepth int
-	KillerMoves [100][2]board.Move
-	MateFound   bool
-	OwnBook     bool
-	Ponder      bool
+	TTable       *TTable
+	Stop         context.CancelFunc
+	Board        *board.Board
+	Stats        Stats
+	MoveOrder    MoveOrderStats
+	History      HistoryHeuristic
+	Plys         [512]uint64
+	Clock        Clock
+	WG           sync.WaitGroup
+	Ply          int
+	SearchDepth  int
+	KillerMoves  [100][2]board.Move
+	CounterMoves [64][64]board.Move
+	PrevMove     [100]board.Move
+	MateFound    bool
+	OwnBook      bool
+	Ponder       bool
 }
 
 var mvvlva = [7][6]int{
@@ -130,9 +134,14 @@ func (e *Engine) IsDrawByRepetition() bool {
 }
 
 // ScoreMoves embeds move ordering scores into the unused bits of each move.
-// Order: 1. PV 2. hash move 3. Captures by MVVLVA 4. killer moves 5. History Heuristic.
+// Order: 1. PV 2. hash move 3. Captures by MVVLVA 4. killer moves 5. countermove 6. History Heuristic.
 func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, ply int8) {
 	lenPV := int8(len(pvOrder))
+	var counterMove board.Move
+	if ply > 0 {
+		from, to := e.PrevMove[ply-1].FromTo()
+		counterMove = e.CounterMoves[from][to]
+	}
 	for i := range moves {
 		switch {
 		case lenPV > ply && pvOrder[ply] == moves[i]:
@@ -145,6 +154,8 @@ func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, pl
 			moves[i] = moves[i].SetScore(scoreKiller0)
 		case moves[i] == e.KillerMoves[ply][1]:
 			moves[i] = moves[i].SetScore(scoreKiller1)
+		case counterMove != 0 && moves[i] == counterMove:
+			moves[i] = moves[i].SetScore(scoreCounter)
 		default:
 			moves[i] = moves[i].SetScore(min(e.GetHistory(moves[i]), scoreHistMax))
 		}

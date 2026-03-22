@@ -70,6 +70,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/6
+			e.PrevMove[ply] = 0
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 			unull()
 			if value >= beta {
@@ -106,6 +107,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 
 			e.AddPly()
+			e.PrevMove[ply] = currMove
 			pv = []board.Move{}
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
@@ -131,9 +133,14 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 
 			if value >= beta {
+				e.MoveOrder.recordFailHigh(legalMoves == 1)
 				if !currMove.IsCapture() {
 					e.AddKillerMove(ply, currMove)
 					e.IncrementHistory(depth, currMove)
+					if ply > 0 {
+						from, to := e.PrevMove[ply-1].FromTo()
+						e.CounterMoves[from][to] = currMove
+					}
 				}
 
 				entryType = TT_LOWER
@@ -266,6 +273,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			e.TTable.age = d
 			e.Stats.Start()
 			e.TTable.Stats.reset()
+			e.MoveOrder.reset()
 			var pv []board.Move
 			pv = append(pv, line...)
 			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
@@ -304,6 +312,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				}
 				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
 				if s := e.TTable.Stats.String(); s != "" {
+					fmt.Printf("info string %s\n", s)
+				}
+				if s := e.MoveOrder.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
