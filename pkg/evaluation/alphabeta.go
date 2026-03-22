@@ -67,6 +67,12 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			pvMove = ttMove
 		}
 
+		// Internal iterative reduction. Without a hash move, move ordering is weaker,
+		// so reduce depth to avoid spending too much time on poorly ordered nodes.
+		if pvMove == 0 && depth > 3 {
+			depth--
+		}
+
 		// Null move pruning.
 		// Do not prune:
 		// - when in check.
@@ -225,6 +231,13 @@ func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int
 		var currMove board.Move
 		for i := 0; i < len(all); i++ {
 			currMove = SelectMove(all, i)
+
+			// SEE pruning: skip losing captures when not in check.
+			if !e.Board.InCheck && currMove.IsCapture() &&
+				e.SEE(currMove.From(), currMove.To()) < 0 {
+				continue
+			}
+
 			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
