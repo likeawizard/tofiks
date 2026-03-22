@@ -42,11 +42,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			return 0
 		}
 
-		// Reverse futility pruning. If static eval is well above beta at shallow depths,
-		// the opponent is unlikely to improve their position enough to drop below beta.
-		if !isPV && !inCheck && depth <= 5 && beta > -CheckmateThreshold && beta < CheckmateThreshold {
-			staticEval := side * int16(e.GetEvaluation(e.Board))
-			if staticEval-100*int16(depth) >= beta {
+		// Static eval for pruning decisions.
+		var staticEval int16
+		canFutility := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
+		if canFutility && depth <= 6 {
+			staticEval = side * int16(e.GetEvaluation(e.Board))
+
+			// Reverse futility pruning. If static eval is well above beta at shallow depths,
+			// the opponent is unlikely to improve their position enough to drop below beta.
+			if depth <= 5 && staticEval-100*int16(depth) >= beta {
 				return staticEval
 			}
 		}
@@ -102,6 +106,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			legalMoves++
 
 			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && currMove.Promotion() == 0 {
+				umove()
+				continue
+			}
+
+			// Futility pruning.
+			if canFutility && depth <= 2 && legalMoves > 1 &&
+				!currMove.IsCapture() && currMove.Promotion() == 0 &&
+				!e.Board.InCheck &&
+				staticEval+150*int16(depth) <= alpha {
 				umove()
 				continue
 			}
