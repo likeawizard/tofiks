@@ -50,6 +50,24 @@ func BenchmarkQuiescence(b *testing.B) {
 	}
 }
 
+func BenchmarkSEE(b *testing.B) {
+	for _, perft := range searchBenchPositions {
+		e := eval.NewEvalEngine()
+		e.Board = board.NewBoard(perft.fen)
+		captures := e.Board.PseudoCaptureAndQueenPromoGen()
+
+		b.Run(perft.position, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				for _, m := range captures {
+					if m.IsCapture() {
+						e.SEE(m.From(), m.To())
+					}
+				}
+			}
+		})
+	}
+}
+
 func BenchmarkIDSearch(b *testing.B) {
 	old := os.Stdout
 	os.Stdout, _ = os.OpenFile(os.DevNull, os.O_WRONLY, 0)
