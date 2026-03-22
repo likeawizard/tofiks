@@ -42,6 +42,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			return 0
 		}
 
+		// Reverse futility pruning. If static eval is well above beta at shallow depths,
+		// the opponent is unlikely to improve their position enough to drop below beta.
+		if !isPV && !inCheck && depth <= 5 && beta > -CheckmateThreshold && beta < CheckmateThreshold {
+			staticEval := side * int16(e.GetEvaluation(e.Board))
+			if staticEval-100*int16(depth) >= beta {
+				return staticEval
+			}
+		}
+
 		var pvMove board.Move
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && ply > 0 && entry.Depth() >= depth {
 			ttMove := entry.Move()
