@@ -18,9 +18,6 @@ var (
 		{},
 	}
 
-	// pieceEvals contains the evaluation functions for each piece type.
-	pieceEvals = [6]pieceEvalFn{pawnEval, bishopEval, knightEval, rookEval, queenEval, kingEval}
-
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
 		3, 3, 2, 2, 2, 2, 3, 3,
@@ -49,13 +46,17 @@ const (
 	KNIGHT_THREAT = 6
 
 	// Pawn structure weights.
-	W_P_PASSED    int = 10
 	W_P_PROTECTED int = 15
 	W_P_DOUBLED   int = -15
 	W_P_ISOLATED  int = -20
+
+	// Rook file bonuses.
+	W_ROOK_OPEN_FILE      = 20
+	W_ROOK_SEMI_OPEN_FILE = 10
 )
 
-type pieceEvalFn func(*board.Board, board.Square, int, board.BBoard) int
+// Passed pawn bonus indexed by rank from the advancing side's perspective (0=back rank, 7=promotion rank).
+var passedPawnBonus = [8]int{0, 5, 10, 20, 40, 70, 120, 0}
 
 // Piece protected a pawn.
 func IsProtected(b *board.Board, sq board.Square, side int) bool {
@@ -98,8 +99,24 @@ func (e *Engine) GetEvaluation(b *board.Board) int {
 			pieces = b.Pieces[color][pieceType]
 			for pieces > 0 {
 				piece = pieces.PopLS1B()
+				sq := board.Square(piece)
+				var pieceEval int
+				switch pieceType {
+				case board.PAWNS:
+					pieceEval = pawnEval(b, sq, color, oppKing)
+				case board.BISHOPS:
+					pieceEval = bishopEval(b, sq, color, oppKing)
+				case board.KNIGHTS:
+					pieceEval = knightEval(b, sq, color, oppKing)
+				case board.ROOKS:
+					pieceEval = rookEval(b, sq, color, oppKing)
+				case board.QUEENS:
+					pieceEval = queenEval(b, sq, color, oppKing)
+				case board.KINGS:
+					pieceEval = kingEval(b, sq, color, oppKing)
+				}
 				eval += side * (PieceWeights[pieceType] +
-					pieceEvals[pieceType](b, board.Square(piece), color, oppKing) +
+					pieceEval +
 					(PST[0][color][pieceType][piece]*(256-b.Phase)+
 						(PST[1][color][pieceType][piece]+PiecePawnBonus[pieceType][numPawns])*b.Phase)/256)
 			}
@@ -152,7 +169,11 @@ func pawnEval(b *board.Board, sq board.Square, side int, _ board.BBoard) int {
 		value += W_P_ISOLATED
 	}
 	if IsPassed(b, sq, side) {
-		value += W_P_PASSED
+		rank := 7 - int(sq)/8
+		if side == board.BLACK {
+			rank = int(sq) / 8
+		}
+		value += passedPawnBonus[rank]
 	}
 
 	return value
@@ -186,12 +207,23 @@ func bishopEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard)
 		(moves&oppKing).Count()*BISHOP_THREAT
 }
 
-// Evaluation for rooks - connected & (semi)open files.
+// Evaluation for rooks - mobility, captures, king threats, and (semi)open files.
 func rookEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
-	return moves.Count()*MOVE_ROOK +
+	eval := moves.Count()*MOVE_ROOK +
 		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +
 		(moves&oppKing).Count()*ROOK_THREAT
+
+	file := board.FileMasks[sq%8]
+	if file&b.Pieces[side][board.PAWNS] == 0 {
+		if file&b.Pieces[side^1][board.PAWNS] == 0 {
+			eval += W_ROOK_OPEN_FILE
+		} else {
+			eval += W_ROOK_SEMI_OPEN_FILE
+		}
+	}
+
+	return eval
 }
 
 func queenEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {

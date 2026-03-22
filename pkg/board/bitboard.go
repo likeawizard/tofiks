@@ -285,20 +285,11 @@ func (b *Board) MakeMove(move Move) func() {
 // Determine the game phase as a sliding factor between opening and endgame
 // https://www.chessprogramming.org/Tapered_Eval#Implementation_example
 func (b *Board) GetGamePhase() int {
-	phase := 24
-
-	for color := WHITE; color <= BLACK; color++ {
-		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
-			switch pieceType {
-			case BISHOPS, KINGS:
-				phase -= b.Pieces[color][pieceType].Count()
-			case ROOKS:
-				phase -= 2 * b.Pieces[color][pieceType].Count()
-			case QUEENS:
-				phase -= 4 * b.Pieces[color][pieceType].Count()
-			}
-		}
-	}
+	phase := 24 -
+		b.Pieces[WHITE][BISHOPS].Count() - b.Pieces[BLACK][BISHOPS].Count() -
+		b.Pieces[WHITE][KINGS].Count() - b.Pieces[BLACK][KINGS].Count() -
+		2*(b.Pieces[WHITE][ROOKS].Count()+b.Pieces[BLACK][ROOKS].Count()) -
+		4*(b.Pieces[WHITE][QUEENS].Count()+b.Pieces[BLACK][QUEENS].Count())
 
 	return (phase * 268) / 24
 }
