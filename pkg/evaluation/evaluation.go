@@ -100,9 +100,11 @@ func (e *Engine) GetHistory(move board.Move) int {
 }
 
 func (e *Engine) AgeHistory() {
-	for from := 0; from < 64; from++ {
-		for to := 0; to < 64; to++ {
-			e.History[e.Board.Side][from][to] /= 2
+	for side := 0; side <= 1; side++ {
+		for from := 0; from < 64; from++ {
+			for to := 0; to < 64; to++ {
+				e.History[side][from][to] /= 2
+			}
 		}
 	}
 }

@@ -60,7 +60,7 @@ var passedPawnBonus = [8]int{0, 5, 10, 20, 40, 70, 120, 0}
 
 // Piece protected a pawn.
 func IsProtected(b *board.Board, sq board.Square, side int) bool {
-	return board.PawnAttacks[side^1][sq]^b.Pieces[side][board.PAWNS] != 0
+	return board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0
 }
 
 func IsDoubled(b *board.Board, sq board.Square, side int) bool {
@@ -74,7 +74,7 @@ func IsIsolated(b *board.Board, sq board.Square, side int) bool {
 
 // Has no opponent opposing pawns in front (same or neighbor files).
 func IsPassed(b *board.Board, sq board.Square, side int) bool {
-	return b.Pieces[side][board.PAWNS]&board.PassedPawns[side][sq] == 0
+	return b.Pieces[side^1][board.PAWNS]&board.PassedPawns[side][sq] == 0
 }
 
 func (e *Engine) GetEvaluation(b *board.Board) int {
