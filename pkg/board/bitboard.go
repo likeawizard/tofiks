@@ -287,7 +287,7 @@ func (b *Board) MakeMove(move Move) func() {
 func (b *Board) GetGamePhase() int {
 	phase := 24 -
 		b.Pieces[WHITE][BISHOPS].Count() - b.Pieces[BLACK][BISHOPS].Count() -
-		b.Pieces[WHITE][KINGS].Count() - b.Pieces[BLACK][KINGS].Count() -
+		b.Pieces[WHITE][KNIGHTS].Count() - b.Pieces[BLACK][KNIGHTS].Count() -
 		2*(b.Pieces[WHITE][ROOKS].Count()+b.Pieces[BLACK][ROOKS].Count()) -
 		4*(b.Pieces[WHITE][QUEENS].Count()+b.Pieces[BLACK][QUEENS].Count())
 
