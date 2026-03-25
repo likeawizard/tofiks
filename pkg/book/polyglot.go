@@ -120,7 +120,7 @@ func GetWeighted(b *board.Board) board.Move {
 
 	r := rand.Intn(counter)
 	for _, bin := range moveBins {
-		if r > bin.min && r <= bin.max {
+		if r >= bin.min && r < bin.max {
 			return bin.move
 		}
 	}
@@ -178,10 +178,6 @@ func LoadBook(path string) int {
 		// }
 		BookMoves[key] = append(BookMoves[key], entry)
 		lines++
-	}
-
-	if err != nil {
-		fmt.Println(err)
 	}
 
 	return lines

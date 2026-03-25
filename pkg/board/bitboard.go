@@ -311,8 +311,8 @@ func (b *Board) MakeNullMove() func() {
 	b.InCheck = b.IsChecked(b.Side)
 	return func() {
 		b.HalfMoveCounter--
-		b.ZobristEnPassant(undo.ep)
 		b.EnPassantTarget = undo.ep
+		b.ZobristEnPassant(undo.ep)
 		b.InCheck = undo.inCheck
 		b.ZobristSideToMove()
 		b.Side ^= 1
