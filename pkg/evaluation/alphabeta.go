@@ -140,7 +140,12 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
 
 				if value > alpha && value < beta {
+					if depthR > 0 {
+						e.Stability.recordLMR(true)
+					}
 					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
+				} else if depthR > 0 {
+					e.Stability.recordLMR(false)
 				}
 			}
 			umove()
@@ -287,6 +292,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 	}
 	e.TTable.age = 0
 	e.AgeHistory()
+	e.Stability.reset()
 	done, ok := false, true
 	wg.Add(1)
 	go func() {
@@ -305,8 +311,11 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 
 			if eval <= alpha || eval >= beta {
+				e.Stability.recordAspiration(true)
 				alpha, beta = -Inf, Inf
 				eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
+			} else {
+				e.Stability.recordAspiration(false)
 			}
 			alpha, beta = eval-50, eval+100
 
@@ -326,6 +335,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 						ponder = line[1]
 					}
 				}
+				e.Stability.recordIteration(best, eval)
 				lineStr := ""
 				for _, m := range line {
 					lineStr += " " + m.String()
@@ -341,6 +351,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					fmt.Printf("info string %s\n", s)
 				}
 				if s := e.MoveOrder.String(); s != "" {
+					fmt.Printf("info string %s\n", s)
+				}
+				if s := e.Stability.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {
