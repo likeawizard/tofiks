@@ -29,6 +29,7 @@ type Engine struct {
 	Board        *board.Board
 	Stats        Stats
 	MoveOrder    MoveOrderStats
+	Stability    SearchStability
 	History      HistoryHeuristic
 	Plys         [512]uint64
 	Clock        Clock
