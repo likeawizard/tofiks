@@ -24,20 +24,21 @@ const (
 type HistoryHeuristic [2][64][64]int
 
 type Engine struct {
-	TTable       *TTable
-	Stop         context.CancelFunc
-	Board        *board.Board
-	Stats        Stats
 	MoveOrder    MoveOrderStats
 	Stability    SearchStability
+	Board        *board.Board
+	TTable       *TTable
+	Stop         context.CancelFunc
+	Stats        Stats
+	TC           TimeControl
 	History      HistoryHeuristic
 	Plys         [512]uint64
 	Clock        Clock
 	WG           sync.WaitGroup
 	Ply          int
 	SearchDepth  int
-	KillerMoves  [100][2]board.Move
 	CounterMoves [64][64]board.Move
+	KillerMoves  [100][2]board.Move
 	PrevMove     [100]board.Move
 	MateFound    bool
 	OwnBook      bool
@@ -68,6 +69,8 @@ func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.M
 		move := book.GetWeighted(e.Board)
 		return move, 0
 	}
+
+	e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 	best, ponder, _ = e.IDSearch(ctx, depth, infinite)
 
 	return best, ponder
