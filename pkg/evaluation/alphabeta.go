@@ -302,6 +302,13 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				return
 			}
 
+			// Don't start a new iteration if it's predicted to not finish in time.
+			if d > 1 && e.TC.ShouldStop() {
+				wg.Done()
+				return
+			}
+
+			e.TC.IterationStarted()
 			e.TTable.age = d
 			e.Stats.Start()
 			e.TTable.Stats.reset()
@@ -312,6 +319,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 
 			if eval <= alpha || eval >= beta {
 				e.Stability.recordAspiration(true)
+				e.TC.AspirationFailed()
 				alpha, beta = -Inf, Inf
 				eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
 			} else {
@@ -335,6 +343,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 						ponder = line[1]
 					}
 				}
+				e.TC.IterationFinished()
 				e.Stability.recordIteration(best, eval)
 				lineStr := ""
 				for _, m := range line {
