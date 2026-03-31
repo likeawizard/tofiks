@@ -9,6 +9,7 @@ type (
 	// Board represents the state of the chess board.
 	Board struct {
 		Hash            uint64
+		PawnHash        uint64
 		Pieces          [2][6]BBoard
 		Occupancy       [3]BBoard
 		Phase           int

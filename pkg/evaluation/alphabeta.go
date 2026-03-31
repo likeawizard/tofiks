@@ -312,6 +312,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			e.TTable.age = d
 			e.Stats.Start()
 			e.TTable.Stats.reset()
+			e.PawnTable.Stats.reset()
 			e.MoveOrder.reset()
 			var pv []board.Move
 			pv = append(pv, line...)
@@ -363,6 +364,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					fmt.Printf("info string %s\n", s)
 				}
 				if s := e.Stability.String(); s != "" {
+					fmt.Printf("info string %s\n", s)
+				}
+				if s := e.PawnTable.Stats.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {

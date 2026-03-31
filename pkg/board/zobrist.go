@@ -33,6 +33,19 @@ func init() {
 	swapSide = rand.Uint64()
 }
 
+// SeedPawnHash calculates a zobrist hash of only the pawn positions.
+func (b *Board) SeedPawnHash() uint64 {
+	var hash uint64
+	for color := WHITE; color <= BLACK; color++ {
+		pieces := b.Pieces[color][PAWNS]
+		for pieces > 0 {
+			sq := pieces.PopLS1B()
+			hash ^= pieceKeys[color][PAWNS][sq]
+		}
+	}
+	return hash
+}
+
 // Calculate Zborist hash of the position.
 func (b *Board) SeedHash() uint64 {
 	hash := seed

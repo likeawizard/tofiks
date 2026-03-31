@@ -86,6 +86,7 @@ func (c *SetOption) Exec(e *eval.Engine) bool {
 func (c *NewGame) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
 	e.TTable.Clear()
+	e.PawnTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
 	e.Plys = [512]uint64{}
 	e.History = eval.HistoryHeuristic{}
@@ -120,6 +121,7 @@ func (o *Ponder) Info() {
 
 func (o *Clear) Set(e *eval.Engine) {
 	e.TTable.Clear()
+	e.PawnTable.Clear()
 }
 
 func (o *Clear) Info() {

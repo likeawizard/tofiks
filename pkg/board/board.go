@@ -22,11 +22,13 @@ func (b *Board) Flip() {
 	}
 	b.Occupancy[WHITE], b.Occupancy[BLACK] = b.Occupancy[BLACK].Flip(), b.Occupancy[WHITE].Flip()
 	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
+	b.PawnHash = b.SeedPawnHash()
 }
 
 func (b *Board) Copy() *Board {
 	cp := Board{
 		Hash:            b.Hash,
+		PawnHash:        b.PawnHash,
 		Pieces:          b.Pieces,
 		Occupancy:       b.Occupancy,
 		Side:            b.Side,
