@@ -193,6 +193,7 @@ func (b *Board) AttackedSquares(side int8, mask, occ BBoard) BBoard {
 func (b *Board) GetUnmake() func() {
 	var (
 		hash            = b.Hash
+		pawnHash        = b.PawnHash
 		pieces          = b.Pieces
 		occupancy       = b.Occupancy
 		side            = b.Side
@@ -205,6 +206,7 @@ func (b *Board) GetUnmake() func() {
 
 	return func() {
 		b.Hash = hash
+		b.PawnHash = pawnHash
 		b.Pieces = pieces
 		b.Occupancy = occupancy
 		b.Side = side
@@ -233,6 +235,8 @@ func (b *Board) MakeMove(move Move) func() {
 
 	bitboard := &b.Pieces[b.Side][piece]
 
+	from, to := move.From(), move.To()
+
 	switch {
 	case move.IsEnPassant():
 		b.ZobristEPCapture(move)
@@ -241,26 +245,42 @@ func (b *Board) MakeMove(move Move) func() {
 		if b.Side == WHITE {
 			direction = -8
 		}
-		b.RemoveCaptured(int(move.To()) - direction)
+		capSq := int(to) - direction
+		b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to] ^ pieceKeys[b.Side^1][PAWNS][capSq]
+		b.RemoveCaptured(capSq)
 	case isCapture:
 		b.EnPassantTarget = -1
+		capturedPiece := b.PieceAtSquare(to)
 		b.ZobristCapture(move, piece)
-		b.RemoveCaptured(int(move.To()))
+		if capturedPiece == PAWNS {
+			b.PawnHash ^= pieceKeys[b.Side^1][PAWNS][to]
+		}
+		if piece == PAWNS {
+			b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		}
+		b.RemoveCaptured(int(to))
 	case move.IsCastling():
 		b.EnPassantTarget = -1
 		b.ZobristSimpleMove(move, piece)
 		b.CompleteCastling(move)
 	case move.IsDouble():
 		b.ZobristSimpleMove(move, piece)
-		b.EnPassantTarget = (move.To() + move.From()) / 2
+		b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		b.EnPassantTarget = (to + from) / 2
 		b.ZobristEnPassant(b.EnPassantTarget)
 	default:
 		b.EnPassantTarget = -1
 		b.ZobristSimpleMove(move, piece)
+		if piece == PAWNS {
+			b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		}
 	}
 	bitboard.Set(int(move.To()))
 	bitboard.Clear(int(move.From()))
 
+	if move.Promotion() != 0 {
+		b.PawnHash ^= pieceKeys[b.Side][PAWNS][to]
+	}
 	b.Promote(move)
 
 	for side := WHITE; side <= BLACK; side++ {

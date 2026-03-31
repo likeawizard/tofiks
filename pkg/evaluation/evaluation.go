@@ -28,6 +28,7 @@ type Engine struct {
 	Stability    SearchStability
 	Board        *board.Board
 	TTable       *TTable
+	PawnTable    *PawnTable
 	Stop         context.CancelFunc
 	Stats        Stats
 	TC           TimeControl
@@ -57,8 +58,9 @@ var mvvlva = [7][6]int{
 
 func NewEvalEngine() *Engine {
 	return &Engine{
-		Board:  board.NewBoard(board.StartPos),
-		TTable: NewTTable(64),
+		Board:     board.NewBoard(board.StartPos),
+		TTable:    NewTTable(64),
+		PawnTable: NewPawnTable(),
 	}
 }
 

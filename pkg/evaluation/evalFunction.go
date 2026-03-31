@@ -46,9 +46,13 @@ const (
 	KNIGHT_THREAT = 6
 
 	// Pawn structure weights.
-	W_P_PROTECTED int = 15
-	W_P_DOUBLED   int = -15
-	W_P_ISOLATED  int = -20
+	W_P_PROTECTED      int = 15
+	W_P_DOUBLED        int = -15
+	W_P_ISOLATED       int = -20
+	W_P_BACKWARD       int = -10
+	W_P_BLOCKED        int = -5
+	W_P_CONNECTED_PASS int = 20
+	W_P_CANDIDATE      int = 8
 
 	// Rook file bonuses.
 	W_ROOK_OPEN_FILE      = 20
@@ -81,8 +85,17 @@ func (e *Engine) GetEvaluation(b *board.Board) int {
 	e.Stats.evals++
 	e.Board.Phase = e.Board.GetGamePhase()
 
+	// Pawn structure evaluation via hash table.
+	var pawnScore int16
+	if cached, ok := e.PawnTable.Probe(b.PawnHash); ok {
+		pawnScore = cached
+	} else {
+		pawnScore = evaluatePawns(b)
+		e.PawnTable.Store(b.PawnHash, pawnScore)
+	}
+
 	var (
-		eval     int
+		eval     = int(pawnScore)
 		side     = -1
 		numPawns int
 		pieces   board.BBoard
@@ -103,7 +116,7 @@ func (e *Engine) GetEvaluation(b *board.Board) int {
 				var pieceEval int
 				switch pieceType {
 				case board.PAWNS:
-					pieceEval = pawnEval(b, sq, color, oppKing)
+					// Structure already evaluated via pawn table.
 				case board.BISHOPS:
 					pieceEval = bishopEval(b, sq, color, oppKing)
 				case board.KNIGHTS:
@@ -154,29 +167,6 @@ func getKingSafety(b *board.Board, king board.Square, side int) (kingSafety int)
 func getKingActivity(b *board.Board, king board.Square, side int) (kingActivity int) {
 	kingActivity = -(distCenter(king) + distSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B())))
 	return kingActivity
-}
-
-func pawnEval(b *board.Board, sq board.Square, side int, _ board.BBoard) int {
-	var value int
-	if IsProtected(b, sq, side) {
-		value = W_P_PROTECTED
-	}
-	if IsDoubled(b, sq, side) {
-		value += W_P_DOUBLED
-	}
-
-	if IsIsolated(b, sq, side) {
-		value += W_P_ISOLATED
-	}
-	if IsPassed(b, sq, side) {
-		rank := 7 - int(sq)/8
-		if side == board.BLACK {
-			rank = int(sq) / 8
-		}
-		value += passedPawnBonus[rank]
-	}
-
-	return value
 }
 
 func knightEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard) int {

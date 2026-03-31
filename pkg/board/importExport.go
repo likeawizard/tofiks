@@ -88,6 +88,7 @@ func (b *Board) ImportFEN(fen string) error {
 	}
 
 	b.Hash = b.SeedHash()
+	b.PawnHash = b.SeedPawnHash()
 
 	return nil
 }

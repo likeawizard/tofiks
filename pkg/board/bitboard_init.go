@@ -24,6 +24,8 @@ var (
 	DoubledPawns   [64]BBoard
 	Outposts       [2][64]BBoard
 	FileMasks      [8]BBoard
+	AdjacentFiles  [8]BBoard
+	FrontSpan      [2][64]BBoard // Squares in front of a pawn on the same file (exclusive).
 
 	// Magic bitboard masks.
 	BishopOccBitCount [64]int
@@ -262,6 +264,18 @@ func InitPawnStructureMasks() {
 
 	FileMasks = [8]BBoard{AFile, BFile, CFile, DFile, EFile, FFile, GFile, HFile}
 
+	for f := 0; f < 8; f++ {
+		if f > 0 {
+			AdjacentFiles[f] |= FileMasks[f-1]
+		}
+		if f < 7 {
+			AdjacentFiles[f] |= FileMasks[f+1]
+		}
+	}
+
+	// RankMasks indexed 0..7 where 0 = Rank8 (top), 7 = Rank1 (bottom).
+	rankMasks := [8]BBoard{Rank8, Rank7, Rank6, Rank5, Rank4, Rank3, Rank2, Rank1}
+
 	for sq := 0; sq < 64; sq++ {
 		IsolatedPawns[sq] = isolatedMask(sq)
 		DoubledPawns[sq] = doubledMask(sq)
@@ -269,6 +283,20 @@ func InitPawnStructureMasks() {
 		PassedPawns[BLACK][sq] = passedMask(sq, BLACK)
 		Outposts[WHITE][sq] = outpostMask(sq, WHITE)
 		Outposts[BLACK][sq] = outpostMask(sq, BLACK)
+
+		file := sq % 8
+		rank := sq / 8
+		// FrontSpan: squares ahead on the same file.
+		// White advances toward rank 0 (Rank8), Black toward rank 7 (Rank1).
+		var wSpan, bSpan BBoard
+		for r := 0; r < rank; r++ {
+			wSpan |= rankMasks[r] & FileMasks[file]
+		}
+		for r := rank + 1; r < 8; r++ {
+			bSpan |= rankMasks[r] & FileMasks[file]
+		}
+		FrontSpan[WHITE][sq] = wSpan
+		FrontSpan[BLACK][sq] = bSpan
 	}
 }
 
