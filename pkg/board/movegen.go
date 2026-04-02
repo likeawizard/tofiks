@@ -168,8 +168,9 @@ func (b *Board) PseudoMoveGen() []Move {
 	}
 
 	if !b.InCheck {
+		kingBB := b.Pieces[side][KINGS]
 		if side == WHITE {
-			attackedSquares := b.AttackedSquares(side, F1G1|D1B1|D1C1, b.Occupancy[BOTH]&^pieces)
+			attackedSquares := b.AttackedSquares(side, F1G1|D1B1|D1C1, b.Occupancy[BOTH]&^kingBB)
 			if b.CastlingRights&WOO != 0 && (b.Occupancy[BOTH]|attackedSquares)&F1G1 == 0 {
 				moves = append(moves, WCastleKing)
 			}
@@ -177,7 +178,7 @@ func (b *Board) PseudoMoveGen() []Move {
 				moves = append(moves, WCastleQueen)
 			}
 		} else {
-			attackedSquares := b.AttackedSquares(side, F8G8|D8B8|D8C8, b.Occupancy[BOTH]&^pieces)
+			attackedSquares := b.AttackedSquares(side, F8G8|D8B8|D8C8, b.Occupancy[BOTH]&^kingBB)
 			if b.CastlingRights&BOO != 0 && (b.Occupancy[BOTH]|attackedSquares)&F8G8 == 0 {
 				moves = append(moves, BCastleKing)
 			}
