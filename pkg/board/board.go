@@ -49,42 +49,42 @@ func (b *Board) updateCastlingRights(move Move) {
 	}
 	from, to := move.FromTo()
 
-	switch {
-	case b.CastlingRights&(WOOO|WOO) != 0 && from == WCastleQueen.From():
+	if b.CastlingRights&(WOOO|WOO) != 0 && from == WCastleQueen.From() {
 		if b.CastlingRights&WOO != 0 {
 			b.ZobristCastlingRights(WOO)
 		}
 		if b.CastlingRights&WOOO != 0 {
 			b.ZobristCastlingRights(WOOO)
 		}
+		b.CastlingRights &^= WOOO | WOO
+	}
 
-		b.CastlingRights &^= WOOO
-		b.CastlingRights &^= WOO
-
-	case b.CastlingRights&(BOOO|BOO) != 0 && from == BCastleQueen.From():
+	if b.CastlingRights&(BOOO|BOO) != 0 && from == BCastleQueen.From() {
 		if b.CastlingRights&BOOO != 0 {
 			b.ZobristCastlingRights(BOOO)
 		}
 		if b.CastlingRights&BOO != 0 {
 			b.ZobristCastlingRights(BOO)
 		}
+		b.CastlingRights &^= BOOO | BOO
+	}
 
-		b.CastlingRights &^= BOOO
-		b.CastlingRights &^= BOO
-
-	case b.CastlingRights&WOOO != 0 && (from == WCastleQueenRook.From() || to == WCastleQueenRook.From()):
+	if b.CastlingRights&WOOO != 0 && (from == WCastleQueenRook.From() || to == WCastleQueenRook.From()) {
 		b.ZobristCastlingRights(WOOO)
 		b.CastlingRights &^= WOOO
+	}
 
-	case b.CastlingRights&WOO != 0 && (from == WCastleKingRook.From() || to == WCastleKingRook.From()):
+	if b.CastlingRights&WOO != 0 && (from == WCastleKingRook.From() || to == WCastleKingRook.From()) {
 		b.ZobristCastlingRights(WOO)
 		b.CastlingRights &^= WOO
+	}
 
-	case b.CastlingRights&BOOO != 0 && (from == BCastleQueenRook.From() || to == BCastleQueenRook.From()):
+	if b.CastlingRights&BOOO != 0 && (from == BCastleQueenRook.From() || to == BCastleQueenRook.From()) {
 		b.ZobristCastlingRights(BOOO)
 		b.CastlingRights &^= BOOO
+	}
 
-	case b.CastlingRights&BOO != 0 && (from == BCastleKingRook.From() || to == BCastleKingRook.From()):
+	if b.CastlingRights&BOO != 0 && (from == BCastleKingRook.From() || to == BCastleKingRook.From()) {
 		b.ZobristCastlingRights(BOO)
 		b.CastlingRights &^= BOO
 	}
