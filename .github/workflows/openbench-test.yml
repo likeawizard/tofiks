@@ -1,0 +1,18 @@
+name: OpenBench Test
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  trigger:
+    name: Trigger OpenBench test
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to tofiks-infra
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.INFRA_DISPATCH_PAT }}
+          repository: likeawizard/tofiks-infra
+          event-type: openbench-test
+          client-payload: '{"pr_branch": "${{ github.head_ref }}", "pr_number": "${{ github.event.pull_request.number }}", "pr_sha": "${{ github.event.pull_request.head.sha }}"}'
