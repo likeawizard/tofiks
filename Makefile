@@ -1,10 +1,13 @@
+EXE = tofiks
 GOAMD64VERSION=v3
 FASTCHESS=$(HOME)/fastchess/fastchess
 OPENINGS=$(HOME)/cutechess/Arasan.pgn
 TOFIKS_PROD=$(HOME)/tofiks/tofiks
 
-build-tofiks:
-	GOAMD64=${GOAMD64VERSION} go build -gcflags=-B -o tofiks cmd/tofiks/main.go
+default:
+	GOAMD64=${GOAMD64VERSION} go build -gcflags=-B -o $(EXE) cmd/tofiks/main.go
+
+build-tofiks: default
 
 build-linux:
 	GOAMD64=${GOAMD64VERSION} GOOS=linux go build -o tofiks cmd/tofiks/main.go
