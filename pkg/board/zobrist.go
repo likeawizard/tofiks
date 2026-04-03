@@ -13,24 +13,25 @@ var (
 )
 
 func init() {
-	seed = rand.Uint64()
+	rng := rand.New(rand.NewSource(0x4F4649_4B5321))
+	seed = rng.Uint64()
 	castlingKeys = make(map[CastlingRights]uint64)
 	for sq := 0; sq < 64; sq++ {
 		for color := WHITE; color <= BLACK; color++ {
 			for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
-				pieceKeys[color][pieceType][sq] = rand.Uint64()
+				pieceKeys[color][pieceType][sq] = rng.Uint64()
 			}
 		}
 
-		enPassantKeys[sq] = rand.Uint64()
+		enPassantKeys[sq] = rng.Uint64()
 	}
 
-	castlingKeys[WOO] = rand.Uint64()
-	castlingKeys[WOOO] = rand.Uint64()
-	castlingKeys[BOO] = rand.Uint64()
-	castlingKeys[BOOO] = rand.Uint64()
+	castlingKeys[WOO] = rng.Uint64()
+	castlingKeys[WOOO] = rng.Uint64()
+	castlingKeys[BOO] = rng.Uint64()
+	castlingKeys[BOOO] = rng.Uint64()
 
-	swapSide = rand.Uint64()
+	swapSide = rng.Uint64()
 }
 
 // SeedPawnHash calculates a zobrist hash of only the pawn positions.

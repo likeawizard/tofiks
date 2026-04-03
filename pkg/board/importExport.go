@@ -41,6 +41,7 @@ func (b *Board) ExportFEN() string {
 }
 
 func (b *Board) ImportFEN(fen string) error {
+	*b = Board{}
 	fields := strings.Fields(fen)
 	if len(fields) != 6 {
 		return fmt.Errorf("FEN must contain six fields - '%s'", fen)
