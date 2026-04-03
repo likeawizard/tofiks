@@ -1,5 +1,6 @@
 /.idea/
 /config.yml
+/config.json
 /tofiks
 /debug_tofiks
 /cmd/playground/*
