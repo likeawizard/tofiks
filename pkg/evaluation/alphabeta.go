@@ -3,22 +3,11 @@ package eval
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 )
-
-var lmrTable [64][64]int8
-
-func init() {
-	for depth := 1; depth < 64; depth++ {
-		for moves := 1; moves < 64; moves++ {
-			lmrTable[depth][moves] = int8(0.75 + math.Log(float64(depth))*math.Log(float64(moves))/2.25)
-		}
-	}
-}
 
 const (
 	// CheckmateScore score to be adjusted by the ply that it is found on by subtracting the ply to favor shorter mates.
@@ -145,7 +134,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				depthR := int8(0)
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && board.SquareBitboards[currMove.To()]&e.Board.Occupancy[board.BOTH] == 0 {
-					depthR = lmrTable[min(depth, 63)][min(int8(legalMoves), 63)]
+					depthR = max(2, depth/4) + int8(legalMoves)/8
 				}
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
