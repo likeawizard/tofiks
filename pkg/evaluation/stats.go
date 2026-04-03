@@ -23,6 +23,10 @@ func (es *Stats) Clear() {
 	es.evals = 0
 }
 
+func (es *Stats) TotalNodes() int {
+	return es.nodes + es.qNodes
+}
+
 func (es *Stats) String() string {
 	total := es.nodes + es.qNodes
 	duration := int(time.Since(es.start).Microseconds())
