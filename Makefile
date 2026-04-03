@@ -1,4 +1,7 @@
 GOAMD64VERSION=v3
+FASTCHESS=$(HOME)/fastchess/fastchess
+OPENINGS=$(HOME)/cutechess/Arasan.pgn
+TOFIKS_PROD=$(HOME)/tofiks/tofiks
 
 build-tofiks:
 	GOAMD64=${GOAMD64VERSION} go build -gcflags=-B -o tofiks cmd/tofiks/main.go
@@ -53,6 +56,19 @@ pgo-cutechess: build
 
 memprof-cutechess: build
 	cutechess-cli -engine conf=tofiks arg=-memprof -engine conf=tofiksProd -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=/home/arturs/cutechess/Arasan.pgn format=pgn plies=20 -recover
+
+fastchess: build
+	@-rm games.pgn
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=1+0.1 timemargin=50 -rounds 5000 -concurrency 4 -repeat -openings file=${OPENINGS} format=pgn order=random plies=20 -pgnout file=games.pgn -recover
+
+test-fastchess: build
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.5+0.05 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
+
+pgo-fastchess: build
+	${FASTCHESS} -engine cmd=./tofiks args=-pgo name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=2+0.2 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
+
+memprof-fastchess: build
+	${FASTCHESS} -engine cmd=./tofiks args=-memprof name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
 
 remove-dup:
 	@echo "Removing duplicates"

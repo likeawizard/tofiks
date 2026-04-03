@@ -1,28 +1,17 @@
-name: Deploy
+name: Deploy Bot
 on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
+  push:
+    branches: [master]
+
 jobs:
-  deploy:
-    name: hetzner-deploy
+  trigger-deploy:
+    name: Trigger tofiks-infra deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Lichess Bot on Hetzner
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Dispatch to tofiks-infra
+        uses: peter-evans/repository-dispatch@v3
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.KEY }}
-          port: ${{ secrets.PORT }}
-          script_stop: true
-          script: |
-            cd tofiks
-            git checkout .
-            git checkout master
-            git pull
-            /usr/local/go/bin/go build -o tofiks cmd/tofiks/main.go
-            systemctl stop tofiks
-            cp tofiks ~/lichess-bot/engines/tofiks
-            systemctl start tofiks
-            exit
+          token: ${{ secrets.INFRA_DISPATCH_PAT }}
+          repository: likeawizard/tofiks-infra
+          event-type: deploy
+          client-payload: '{"target": "bot"}'
