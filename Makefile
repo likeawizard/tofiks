@@ -67,6 +67,9 @@ fastchess: build
 test-fastchess: build
 	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.5+0.05 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=0 elo1=10 alpha=0.05 beta=0.05 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
 
+quick-test: build
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.2+0.02 timemargin=50 -rounds 500 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
+
 pgo-fastchess: build
 	${FASTCHESS} -engine cmd=./tofiks args=-pgo name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=2+0.2 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
 

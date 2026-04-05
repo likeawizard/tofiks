@@ -160,7 +160,8 @@ func distSquares(us, them board.Square) int {
 // consider using opponent piece attacks around the king instead of actual pieces. use piece weights for opponent threat levels: a queen near our king should be a larger concern than a bishop.
 func getKingSafety(b *board.Board, king board.Square, side int) (kingSafety int) {
 	kingSafety += 2 * distCenter(king)
-	kingSafety += 5*(board.KingSafetyMask[side][king]&b.Occupancy[side]).Count() - 15*(board.KingAttacks[king]&b.Occupancy[side^1]).Count()
+	pawnShield := (board.KingSafetyMask[side][king] & b.Pieces[side][board.PAWNS]).Count()
+	kingSafety += 20*pawnShield + 5*((board.KingSafetyMask[side][king]&b.Occupancy[side]).Count()-pawnShield) - 18*(board.KingAttacks[king]&b.Occupancy[side^1]).Count()
 	return kingSafety
 }
 
