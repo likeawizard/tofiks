@@ -56,15 +56,35 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		}
 
 		var pvMove board.Move
-		if entry, ok := e.TTable.Probe(e.Board.Hash); ok && ply > 0 && entry.Depth() >= depth {
+		var ttValue int16
+		var ttDepth int8
+		var ttBound EntryType
+		ttHit := false
+		if entry, ok := e.TTable.Probe(e.Board.Hash); ok {
 			ttMove := entry.Move()
-			if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
-				e.TTable.Stats.recordCutoff()
-				*line = []board.Move{ttMove}
-				return eval
+			ttValue = entry.Score()
+			ttDepth = entry.Depth()
+			ttBound = entry.Type()
+			ttHit = true
+
+			// Adjust mate scores for current ply.
+			if ttValue > CheckmateThreshold {
+				ttValue -= int16(ply)
+			} else if ttValue < -CheckmateThreshold {
+				ttValue += int16(ply)
 			}
-			e.TTable.Stats.recordMoveHit()
-			pvMove = ttMove
+
+			if ply > 0 && ttDepth >= depth {
+				if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
+					e.TTable.Stats.recordCutoff()
+					*line = []board.Move{ttMove}
+					return eval
+				}
+			}
+			if e.Board.IsPseudoLegal(ttMove) {
+				e.TTable.Stats.recordMoveHit()
+				pvMove = ttMove
+			}
 		}
 
 		// Internal iterative reduction. Without a hash move, move ordering is weaker,
@@ -88,6 +108,26 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 		}
 
+		// Singular extension: check if the TT move is significantly better than all alternatives.
+		singularExtension := int8(0)
+		if ply > 0 && depth >= 8 && pvMove != 0 && e.ExcludedMove[ply] == 0 &&
+			ttHit && ttDepth >= depth-3 && (ttBound == TT_LOWER || ttBound == TT_EXACT) &&
+			ttValue > -CheckmateThreshold && ttValue < CheckmateThreshold {
+			singularBeta := ttValue - 2*int16(depth)
+			singularDepth := depth / 2
+
+			e.ExcludedMove[ply] = pvMove
+			seValue := e.PVS(ctx, pvOrder, &[]board.Move{}, singularDepth, ply, singularBeta-1, singularBeta, true, side)
+			e.ExcludedMove[ply] = 0
+
+			if seValue < singularBeta {
+				singularExtension = 1
+			} else if seValue >= beta {
+				// Multi-cut: even without the TT move, the position fails high.
+				return beta
+			}
+		}
+
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
 		e.ScoreMoves(pvMove, all, pvOrder, ply)
@@ -104,6 +144,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		for i := 0; i < moveCount; i++ {
 			currMove = SelectMove(all, i)
+			// Skip the excluded move during singular extension verification search.
+			if currMove == e.ExcludedMove[ply] {
+				continue
+			}
 			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
@@ -125,11 +169,17 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				continue
 			}
 
+			// Apply singular extension to the TT move.
+			ext := int8(0)
+			if currMove == pvMove && singularExtension > 0 {
+				ext = singularExtension
+			}
+
 			e.AddPly()
 			e.PrevMove[ply] = currMove
 			pv = []board.Move{}
 			if legalMoves == 1 {
-				value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
+				value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -beta, -alpha, true, -side)
 			} else {
 				depthR := int8(0)
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
