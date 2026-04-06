@@ -41,6 +41,49 @@ func (e *Engine) SEE(fromSq, toSq board.Square) int {
 	return gain[0]
 }
 
+// SeeGe returns true if the SEE of the move is >= threshold.
+// Short-circuits as soon as the outcome is determined, avoiding full evaluation.
+func (e *Engine) SeeGe(fromSq, toSq board.Square, threshold int) bool {
+	b := e.Board
+	var gain [32]int
+	depth := 0
+	side := b.Side
+
+	occ := b.Occupancy[board.BOTH]
+
+	attackerPiece := e.pieceOnSquare(fromSq, side)
+	gain[0] = seeValues[b.PieceAtSquare(toSq)]
+
+	// Early exit: if initial capture already fails the threshold even
+	// without any recapture, the exchange cannot meet it.
+	if gain[0] < threshold {
+		return false
+	}
+
+	for {
+		depth++
+		gain[depth] = seeValues[attackerPiece] - gain[depth-1]
+
+		if max(-gain[depth-1], gain[depth]) < 0 {
+			break
+		}
+
+		occ &^= board.SquareBitboards[fromSq]
+		side ^= 1
+
+		attackerPiece, fromSq = e.leastValuableAttacker(toSq, side, occ)
+		if attackerPiece == board.NO_PIECE {
+			break
+		}
+	}
+
+	for depth--; depth > 0; depth-- {
+		gain[depth-1] = -max(-gain[depth-1], gain[depth])
+	}
+
+	return gain[0] >= threshold
+}
+
 func (e *Engine) pieceOnSquare(sq board.Square, side int8) int {
 	bb := board.SquareBitboards[sq]
 	for piece := board.PAWNS; piece <= board.KINGS; piece++ {
