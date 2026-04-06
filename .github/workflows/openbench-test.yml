@@ -4,11 +4,27 @@ on:
     types: [opened, synchronize, ready_for_review, labeled]
 
 jobs:
-  trigger:
-    name: Trigger OpenBench test
+  checks:
+    name: Pre-dispatch checks
     if: >-
       !github.event.pull_request.draft &&
       contains(github.event.pull_request.labels.*.name, 'run-bench')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: Short Tests
+        run: make test-short
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.11.3
+
+  trigger:
+    name: Trigger OpenBench test
+    needs: checks
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch to tofiks-infra

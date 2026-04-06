@@ -131,6 +131,8 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		all := e.Board.PseudoMoveGen()
 		legalMoves := 0
 		e.ScoreMoves(pvMove, all, pvOrder, ply)
+		var triedCaptures [32]CaptureInfo
+		nTriedCaptures := 0
 
 		value := int16(0)
 		entryType := TT_UPPER
@@ -170,9 +172,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 
 			// SEE pruning: skip losing captures at shallow depths.
+			// Capture history adjusts the threshold: good history makes pruning harder.
 			if !isPV && !inCheck && legalMoves > 1 && depth <= 8 &&
 				currMove.IsCapture() && currMove.Promotion() == 0 &&
-				!e.SeeGe(currMove.From(), currMove.To(), -20*int(depth)*int(depth)) {
+				!e.SeeGe(currMove.From(), currMove.To(), -20*int(depth)*int(depth)-int(e.GetCaptureHistory(currMove))/10) {
 				umove()
 				continue
 			}
@@ -216,7 +219,14 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			if value >= beta {
 				e.MoveOrder.recordFailHigh(legalMoves == 1)
-				if !currMove.IsCapture() {
+				if currMove.IsCapture() {
+					// Capture history: bonus for the cutoff capture, malus for all prior tried captures.
+					bonus := min16(int16(depth)*int16(depth), captHistMax)
+					e.updateCaptureHistoryByInfo(e.captureInfo(currMove), bonus)
+					for j := 0; j < nTriedCaptures; j++ {
+						e.updateCaptureHistoryByInfo(triedCaptures[j], -bonus)
+					}
+				} else {
 					e.AddKillerMove(ply, currMove)
 					e.IncrementHistory(depth, currMove)
 					if ply > 0 {
@@ -229,6 +239,11 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				break
 			}
 			e.DecrementHistory(currMove)
+
+			if currMove.IsCapture() && nTriedCaptures < 32 {
+				triedCaptures[nTriedCaptures] = e.captureInfo(currMove)
+				nTriedCaptures++
+			}
 
 			if value > alpha {
 				entryType = TT_EXACT

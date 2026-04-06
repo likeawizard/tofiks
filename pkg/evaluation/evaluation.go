@@ -23,6 +23,11 @@ const (
 
 type HistoryHeuristic [2][64][64]int
 
+// CaptureHistoryTable indexed by [side][piece][toSquare][capturedPieceType].
+type CaptureHistoryTable [2][6][64][7]int16
+
+const captHistMax int16 = 10000
+
 type Engine struct {
 	MoveOrder    MoveOrderStats
 	Stability    SearchStability
@@ -33,6 +38,7 @@ type Engine struct {
 	Stats        Stats
 	TC           TimeControl
 	History      HistoryHeuristic
+	CaptureHist  CaptureHistoryTable
 	Plys         [512]uint64
 	Clock        Clock
 	WG           sync.WaitGroup
@@ -106,11 +112,68 @@ func (e *Engine) GetHistory(move board.Move) int {
 	return e.History[e.Board.Side][from][to]
 }
 
+// CaptureInfo packs capture identity into 13 bits of a uint16:
+//
+//	bit 12:     side (0-1)
+//	bits 9-11:  piece (0-5)
+//	bits 3-8:   to square (0-63)
+//	bits 0-2:   captured piece type (0-6)
+type CaptureInfo uint16
+
+func newCaptureInfo(side int8, piece int, to board.Square, captured int) CaptureInfo {
+	return CaptureInfo(side)<<12 | CaptureInfo(piece)<<9 | CaptureInfo(to)<<3 | CaptureInfo(captured)
+}
+
+func (ci CaptureInfo) side() int8    { return int8(ci >> 12 & 1) }
+func (ci CaptureInfo) piece() int    { return int(ci >> 9 & 7) }
+func (ci CaptureInfo) to() int       { return int(ci >> 3 & 63) }
+func (ci CaptureInfo) captured() int { return int(ci & 7) }
+
+func (e *Engine) GetCaptureHistory(move board.Move) int16 {
+	return e.CaptureHist[e.Board.Side][move.Piece()][move.To()][e.Board.PieceAtSquare(move.To())]
+}
+
+func (e *Engine) captureInfo(move board.Move) CaptureInfo {
+	return newCaptureInfo(
+		e.Board.Side,
+		int(move.Piece()),
+		move.To(),
+		e.Board.PieceAtSquare(move.To()),
+	)
+}
+
+func (e *Engine) updateCaptureHistoryByInfo(ci CaptureInfo, bonus int16) {
+	entry := &e.CaptureHist[ci.side()][ci.piece()][ci.to()][ci.captured()]
+	// Gravity formula: self-dampening update.
+	*entry += bonus - *entry*abs16(bonus)/captHistMax
+}
+
+func min16(a, b int16) int16 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func abs16(x int16) int16 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func (e *Engine) AgeHistory() {
 	for side := 0; side <= 1; side++ {
 		for from := 0; from < 64; from++ {
 			for to := 0; to < 64; to++ {
 				e.History[side][from][to] /= 2
+			}
+		}
+		for piece := 0; piece < 6; piece++ {
+			for sq := 0; sq < 64; sq++ {
+				for capt := 0; capt < 7; capt++ {
+					e.CaptureHist[side][piece][sq][capt] /= 2
+				}
 			}
 		}
 	}
@@ -158,7 +221,8 @@ func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, pl
 		case moves[i] == hashMove:
 			moves[i] = moves[i].SetScore(scoreHash)
 		case moves[i].IsCapture():
-			moves[i] = moves[i].SetScore(scoreCap + e.MvvLva(moves[i]))
+			captH := int(e.GetCaptureHistory(moves[i])) / 500
+			moves[i] = moves[i].SetScore(max(0, min(scoreCap+e.MvvLva(moves[i])+captH, scoreHash-1)))
 		case moves[i] == e.KillerMoves[ply][0]:
 			moves[i] = moves[i].SetScore(scoreKiller0)
 		case moves[i] == e.KillerMoves[ply][1]:
