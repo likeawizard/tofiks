@@ -90,6 +90,7 @@ func (b *Board) ImportFEN(fen string) error {
 
 	b.Hash = b.SeedHash()
 	b.PawnHash = b.SeedPawnHash()
+	b.InCheck = b.IsChecked(b.Side)
 
 	return nil
 }
