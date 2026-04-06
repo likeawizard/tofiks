@@ -169,6 +169,14 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				continue
 			}
 
+			// SEE pruning: skip losing captures at shallow depths.
+			if !isPV && !inCheck && legalMoves > 1 && depth <= 8 &&
+				currMove.IsCapture() && currMove.Promotion() == 0 &&
+				!e.SeeGe(currMove.From(), currMove.To(), -20*int(depth)*int(depth)) {
+				umove()
+				continue
+			}
+
 			// Apply singular extension to the TT move.
 			ext := int8(0)
 			if currMove == pvMove && singularExtension > 0 {
@@ -289,7 +297,7 @@ func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int
 
 			// SEE pruning: skip losing captures when not in check.
 			if !e.Board.InCheck && currMove.IsCapture() &&
-				e.SEE(currMove.From(), currMove.To()) < 0 {
+				!e.SeeGe(currMove.From(), currMove.To(), 0) {
 				continue
 			}
 
