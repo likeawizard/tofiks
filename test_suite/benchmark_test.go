@@ -32,8 +32,8 @@ func BenchmarkMakeUnmake(b *testing.B) {
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for i := range moves {
-					umove := brd.MakeMove(moves[i])
-					umove()
+					brd.MakeMove(moves[i])
+					brd.UnmakeMove()
 				}
 			}
 		})

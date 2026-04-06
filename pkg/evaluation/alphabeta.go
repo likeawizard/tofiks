@@ -98,11 +98,11 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		// - when in check.
 		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
 		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
-			unull := e.Board.MakeNullMove()
+			e.Board.MakeNullMove()
 			R := 3 + depth/6
 			e.PrevMove[ply] = 0
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
-			unull()
+			e.Board.UnmakeNullMove()
 			if value >= beta {
 				return beta
 			}
@@ -148,15 +148,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			if currMove == e.ExcludedMove[ply] {
 				continue
 			}
-			umove := e.Board.MakeMove(currMove)
+			e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
-				umove()
+				e.Board.UnmakeMove()
 				continue
 			}
 			legalMoves++
 
 			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && currMove.Promotion() == 0 {
-				umove()
+				e.Board.UnmakeMove()
 				continue
 			}
 
@@ -165,7 +165,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				!e.Board.InCheck &&
 				staticEval+150*int16(depth) <= alpha {
-				umove()
+				e.Board.UnmakeMove()
 				continue
 			}
 
@@ -198,7 +198,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 					e.Stability.recordLMR(false)
 				}
 			}
-			umove()
+			e.Board.UnmakeMove()
 			e.RemovePly()
 
 			if value > bestVal {
@@ -293,14 +293,14 @@ func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int
 				continue
 			}
 
-			umove := e.Board.MakeMove(currMove)
+			e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
-				umove()
+				e.Board.UnmakeMove()
 				continue
 			}
 			legalMoves++
 			value := -e.Quiescence(ctx, ply+1, -beta, -alpha, -side)
-			umove()
+			e.Board.UnmakeMove()
 
 			if value > bestVal {
 				bestVal = value

@@ -189,38 +189,42 @@ func (b *Board) AttackedSquares(side int8, mask, occ BBoard) BBoard {
 	return attacked
 }
 
-// Generate a function to return the board state the it's current state.
-func (b *Board) GetUnmake() func() {
-	var (
-		hash            = b.Hash
-		pawnHash        = b.PawnHash
-		pieces          = b.Pieces
-		occupancy       = b.Occupancy
-		side            = b.Side
-		inCheck         = b.InCheck
-		castlingRights  = b.CastlingRights
-		enPassantTarget = b.EnPassantTarget
-		halfMoveCounter = b.HalfMoveCounter
-		fullMoveCounter = b.FullMoveCounter
-	)
-
-	return func() {
-		b.Hash = hash
-		b.PawnHash = pawnHash
-		b.Pieces = pieces
-		b.Occupancy = occupancy
-		b.Side = side
-		b.InCheck = inCheck
-		b.CastlingRights = castlingRights
-		b.EnPassantTarget = enPassantTarget
-		b.HalfMoveCounter = halfMoveCounter
-		b.FullMoveCounter = fullMoveCounter
-	}
+// saveState saves the current board state to the undo stack.
+func (b *Board) saveState() {
+	u := &b.undoStack[b.undoPly]
+	u.Hash = b.Hash
+	u.PawnHash = b.PawnHash
+	u.Pieces = b.Pieces
+	u.Occupancy = b.Occupancy
+	u.Side = b.Side
+	u.InCheck = b.InCheck
+	u.CastlingRights = b.CastlingRights
+	u.EnPassantTarget = b.EnPassantTarget
+	u.HalfMoveCounter = b.HalfMoveCounter
+	u.FullMoveCounter = b.FullMoveCounter
+	b.undoPly++
 }
 
-// Make a legal move in position and update board state - castling rights, en passant, move count, side to move etc. Returns a function to take back the move made.
-func (b *Board) MakeMove(move Move) func() {
-	umove := b.GetUnmake()
+// restoreState restores the board state from the undo stack.
+func (b *Board) restoreState() {
+	b.undoPly--
+	u := &b.undoStack[b.undoPly]
+	b.Hash = u.Hash
+	b.PawnHash = u.PawnHash
+	b.Pieces = u.Pieces
+	b.Occupancy = u.Occupancy
+	b.Side = u.Side
+	b.InCheck = u.InCheck
+	b.CastlingRights = u.CastlingRights
+	b.EnPassantTarget = u.EnPassantTarget
+	b.HalfMoveCounter = u.HalfMoveCounter
+	b.FullMoveCounter = u.FullMoveCounter
+}
+
+// MakeMove applies a move to the board, updating all state.
+// Call UnmakeMove to restore the previous state.
+func (b *Board) MakeMove(move Move) {
+	b.saveState()
 	isCapture := move.IsCapture()
 	piece := int(move.Piece())
 	if isCapture || piece == PAWNS {
@@ -299,7 +303,11 @@ func (b *Board) MakeMove(move Move) func() {
 	b.ZobristSideToMove()
 	b.Side ^= 1
 	b.InCheck = b.IsChecked(b.Side)
-	return umove
+}
+
+// UnmakeMove restores the board to the state before the last MakeMove call.
+func (b *Board) UnmakeMove() {
+	b.restoreState()
 }
 
 // Determine the game phase as a sliding factor between opening and endgame
@@ -314,14 +322,9 @@ func (b *Board) GetGamePhase() int {
 	return (phase * 268) / 24
 }
 
-func (b *Board) MakeNullMove() func() {
-	type undoNull struct {
-		inCheck bool
-		ep      Square
-	}
-	undo := undoNull{
-		ep: b.EnPassantTarget,
-	}
+// MakeNullMove applies a null move (pass). Call UnmakeNullMove to restore.
+func (b *Board) MakeNullMove() {
+	b.saveState()
 	b.ZobristEnPassant(b.EnPassantTarget)
 	b.EnPassantTarget = -1
 	b.HalfMoveCounter++
@@ -329,39 +332,35 @@ func (b *Board) MakeNullMove() func() {
 	b.ZobristSideToMove()
 	b.Side ^= 1
 	b.InCheck = b.IsChecked(b.Side)
-	return func() {
-		b.HalfMoveCounter--
-		b.EnPassantTarget = undo.ep
-		b.ZobristEnPassant(undo.ep)
-		b.InCheck = undo.inCheck
-		b.ZobristSideToMove()
-		b.Side ^= 1
-	}
 }
 
-// Attempt to play a UCI move in position. Returns unmake closure and ok.
-func (b *Board) MoveUCI(uciMove string) (func(), bool) {
+// UnmakeNullMove restores the board to the state before the last MakeNullMove call.
+func (b *Board) UnmakeNullMove() {
+	b.restoreState()
+}
+
+// MoveUCI attempts to play a UCI move in position. Returns ok.
+func (b *Board) MoveUCI(uciMove string) bool {
 	all := b.PseudoMoveGen()
 	for _, move := range all {
 		if uciMove == move.String() {
-			umove := b.MakeMove(move)
+			b.MakeMove(move)
 			if b.IsChecked(b.Side ^ 1) {
-				umove()
-				return nil, false
+				b.UnmakeMove()
+				return false
 			}
-			return umove, true
+			return true
 		}
 	}
-	return nil, false
+	return false
 }
 
-// Play out a line of UCI moves in succession. Returns success.
+// PlayMovesUCI plays out a line of UCI moves in succession. Returns success.
 func (b *Board) PlayMovesUCI(uciMoves string) bool {
 	moveSlice := strings.Fields(uciMoves)
 
 	for _, uciMove := range moveSlice {
-		_, ok := b.MoveUCI(uciMove)
-		if !ok {
+		if !b.MoveUCI(uciMove) {
 			return false
 		}
 	}

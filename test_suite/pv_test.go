@@ -55,7 +55,7 @@ func TestValidPV(t *testing.T) {
 				pvMoves := strings.Fields(pv)
 
 				for _, uciMove := range pvMoves {
-					_, ok := tmpPos.MoveUCI(uciMove)
+					ok := tmpPos.MoveUCI(uciMove)
 					assert.True(t, ok, "error parsing PV, position '%v' pv: %v on move: %v\n", position.ExportFEN(), info, uciMove)
 				}
 			}

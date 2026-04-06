@@ -202,8 +202,7 @@ func (e *Engine) PlayMovesUCI(uciMoves string) bool {
 	e.Ply = 0
 
 	for _, uciMove := range moveSlice {
-		_, ok := e.Board.MoveUCI(uciMove)
-		if !ok {
+		if !e.Board.MoveUCI(uciMove) {
 			return false
 		}
 		e.AddPly()

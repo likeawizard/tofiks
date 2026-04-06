@@ -1,10 +1,26 @@
 package board
 
+const maxUndoPly = 512
+
 type (
 	// BBoard is a bitboard type.
 	BBoard uint64
 	// CastlingRights is a enum type for various castling rights.
 	CastlingRights byte
+
+	// UndoInfo stores board state needed to unmake a move.
+	UndoInfo struct {
+		Hash            uint64
+		PawnHash        uint64
+		Pieces          [2][6]BBoard
+		Occupancy       [3]BBoard
+		EnPassantTarget Square
+		HalfMoveCounter uint8
+		FullMoveCounter uint8
+		Side            int8
+		CastlingRights  CastlingRights
+		InCheck         bool
+	}
 
 	// Board represents the state of the chess board.
 	Board struct {
@@ -19,6 +35,8 @@ type (
 		Side            int8
 		CastlingRights  CastlingRights
 		InCheck         bool
+		undoStack       [maxUndoPly]UndoInfo
+		undoPly         int
 	}
 )
 
