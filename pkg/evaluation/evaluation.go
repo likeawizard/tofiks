@@ -42,6 +42,7 @@ type Engine struct {
 	KillerMoves  [100][2]board.Move
 	PrevMove     [100]board.Move
 	ExcludedMove [100]board.Move
+	StaticEvals  [100]int16
 	MateFound    bool
 	OwnBook      bool
 	Ponder       bool
