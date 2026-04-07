@@ -44,9 +44,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		// Static eval for pruning decisions.
 		var staticEval int16
-		canFutility := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
-		if canFutility && depth <= 6 {
+		canPrune := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
+		if canPrune {
 			staticEval = side * int16(e.GetEvaluation(e.Board))
+			e.StaticEvals[ply] = staticEval
 
 			// Reverse futility pruning. If static eval is well above beta at shallow depths,
 			// the opponent is unlikely to improve their position enough to drop below beta.
@@ -54,6 +55,9 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				return staticEval
 			}
 		}
+
+		// Improving: is our static eval better than 2 plies ago?
+		improving := canPrune && ply >= 2 && staticEval > e.StaticEvals[ply-2]
 
 		var pvMove board.Move
 		var ttValue int16
@@ -155,13 +159,17 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 			legalMoves++
 
-			if !isPV && !inCheck && depth < ply/2 && legalMoves > 8+(int(depth))*4 && currMove.Promotion() == 0 {
+			// Late move pruning. At shallow depths, skip quiet moves that are ordered late.
+			lmpThreshold := int(5+2*depth*depth) / (2 - boolToInt(improving))
+			if canPrune && depth >= 2 && depth <= 6 && legalMoves > lmpThreshold &&
+				!currMove.IsCapture() && currMove.Promotion() == 0 &&
+				bestVal > -CheckmateThreshold {
 				umove()
 				continue
 			}
 
 			// Futility pruning.
-			if canFutility && depth <= 2 && legalMoves > 1 &&
+			if canPrune && depth <= 2 && legalMoves > 1 &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				!e.Board.InCheck &&
 				staticEval+150*int16(depth) <= alpha {
@@ -433,4 +441,11 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 
 	wg.Wait()
 	return best, ponder, ok
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
