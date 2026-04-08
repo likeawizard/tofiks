@@ -89,7 +89,7 @@ func evaluatePawns(b *board.Board) int16 {
 				if color == board.BLACK {
 					rank = int(sq) / 8
 				}
-				value += int16(passedPawnBonus[rank])
+				value += int16(PassedPawnBonus[rank])
 
 				// Connected passed pawns: passed pawn with a friendly passed pawn on an adjacent file.
 				if board.AdjacentFiles[file] != 0 {
