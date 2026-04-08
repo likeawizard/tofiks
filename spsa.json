@@ -1,0 +1,15 @@
+{
+  "params": [
+    {"name": "NMPBase", "type": "int", "value": 3, "min": 1, "max": 6, "c_end": 0.5, "r_end": 0.002},
+    {"name": "NMPDepthDiv", "type": "int", "value": 6, "min": 2, "max": 12, "c_end": 1.0, "r_end": 0.002},
+    {"name": "RFPMargin", "type": "int", "value": 100, "min": 30, "max": 200, "c_end": 10.0, "r_end": 0.002},
+    {"name": "FPMargin", "type": "int", "value": 150, "min": 50, "max": 300, "c_end": 15.0, "r_end": 0.002}
+  ],
+  "spsa_alpha": 0.602,
+  "spsa_gamma": 0.101,
+  "spsa_A_ratio": 0.1,
+  "spsa_iterations": 500,
+  "spsa_pairs_per": 16,
+  "spsa_reporting_type": "BULK",
+  "spsa_distribution_type": "SINGLE"
+}

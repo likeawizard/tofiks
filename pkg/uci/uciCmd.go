@@ -73,6 +73,11 @@ func (c *UCI) Exec(e *eval.Engine) bool {
 	for _, opt := range availOpts {
 		opt.Info()
 	}
+	// SPSA tunable search parameters.
+	fmt.Printf("option name NMPBase type spin default %d min 1 max 6\n", eval.NMPBase)
+	fmt.Printf("option name NMPDepthDiv type spin default %d min 2 max 12\n", eval.NMPDepthDiv)
+	fmt.Printf("option name RFPMargin type spin default %d min 30 max 200\n", eval.RFPMargin)
+	fmt.Printf("option name FPMargin type spin default %d min 50 max 300\n", eval.FPMargin)
 	fmt.Println("uciok")
 	return true
 }
@@ -134,4 +139,21 @@ func (o *MoveOverhead) Set(e *eval.Engine) {
 
 func (o *MoveOverhead) Info() {
 	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
+}
+
+func (o *SPSAParam) Set(_ *eval.Engine) {
+	switch o.name {
+	case "NMPBase":
+		eval.NMPBase = o.val
+	case "NMPDepthDiv":
+		eval.NMPDepthDiv = o.val
+	case "RFPMargin":
+		eval.RFPMargin = o.val
+	case "FPMargin":
+		eval.FPMargin = o.val
+	}
+}
+
+func (o *SPSAParam) Info() {
+	// no-op: SPSA options are printed separately
 }

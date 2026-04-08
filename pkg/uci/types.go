@@ -76,3 +76,9 @@ type Clear struct{}
 type MoveOverhead struct {
 	delay int
 }
+
+// SPSA tunable search parameters.
+type SPSAParam struct {
+	name string
+	val  int
+}

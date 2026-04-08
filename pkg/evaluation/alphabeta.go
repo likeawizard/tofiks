@@ -18,6 +18,14 @@ const (
 	Inf = 2 * CheckmateScore
 )
 
+// Tunable search parameters (SPSA candidates).
+var (
+	NMPBase     = 3
+	NMPDepthDiv = 6
+	RFPMargin   = 100
+	FPMargin    = 150
+)
+
 func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
 	select {
 	case <-ctx.Done():
@@ -51,7 +59,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			// Reverse futility pruning. If static eval is well above beta at shallow depths,
 			// the opponent is unlikely to improve their position enough to drop below beta.
-			if depth <= 5 && staticEval-100*int16(depth) >= beta {
+			if depth <= 5 && staticEval-int16(RFPMargin)*int16(depth) >= beta {
 				return staticEval
 			}
 		}
@@ -103,7 +111,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
 		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
-			R := 3 + depth/6
+			R := int8(NMPBase) + depth/int8(NMPDepthDiv)
 			e.PrevMove[ply] = 0
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 			unull()
@@ -172,7 +180,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			if canPrune && depth <= 2 && legalMoves > 1 &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				!e.Board.InCheck &&
-				staticEval+150*int16(depth) <= alpha {
+				staticEval+int16(FPMargin)*int16(depth) <= alpha {
 				umove()
 				continue
 			}
