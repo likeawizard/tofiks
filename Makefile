@@ -88,6 +88,10 @@ run-texel:
 	GOAMD64=${GOAMD64VERSION} go build -o texel cmd/texel/main.go
 	./texel -f texel_data.txt -i 1000
 
+spsa-init:
+	@echo '{"params":[{"name":"ExampleParam","type":"int","value":100,"min":50,"max":150,"c_end":10,"r_end":0.002}],"spsa_alpha":0.602,"spsa_gamma":0.101,"spsa_A_ratio":0.1,"spsa_iterations":10000,"spsa_pairs_per":32,"spsa_reporting_type":"BULK","spsa_distribution_type":"SINGLE"}' | jq . > spsa.json
+	@echo "Created spsa.json template — replace ExampleParam with your params"
+
 lint:
 	go tool golangci-lint run
 

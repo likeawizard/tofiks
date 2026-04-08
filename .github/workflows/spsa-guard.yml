@@ -1,0 +1,36 @@
+name: SPSA Guard
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  guard:
+    name: Block SPSA artifacts from master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Block if spsa.json exists
+        run: |
+          if [ -f spsa.json ]; then
+            echo "::error::spsa.json exists. Delete it before merging to master."
+            exit 1
+          fi
+          echo "No spsa.json — OK"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Block if engine exposes tunable UCI options
+        run: |
+          make
+          UCI_OUTPUT=$(echo "uci" | timeout 5 ./tofiks 2>&1 || true)
+          if echo "$UCI_OUTPUT" | grep -qi "spsa\|tunable"; then
+            echo "::error::Engine exposes SPSA/tunable UCI options. Remove them before merging to master."
+            echo "$UCI_OUTPUT" | grep -i "spsa\|tunable"
+            exit 1
+          fi
+          echo "No SPSA UCI options found — OK"

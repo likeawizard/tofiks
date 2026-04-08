@@ -11,6 +11,16 @@ jobs:
       contains(github.event.pull_request.labels.*.name, 'run-bench')
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Skip if spsa.json exists
+        run: |
+          if [ -f spsa.json ]; then
+            echo "::error::spsa.json exists — this is an SPSA branch, not a bench test branch. Remove spsa.json or use the SPSA workflow."
+            exit 1
+          fi
+
       - name: Dispatch to tofiks-infra
         uses: peter-evans/repository-dispatch@v3
         with:
