@@ -1,0 +1,40 @@
+name: OpenBench SPSA Tune
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  trigger:
+    name: Trigger OpenBench SPSA tune
+    if: >-
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+
+      - name: Check for spsa.json
+        id: check
+        run: |
+          if [ ! -f spsa.json ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No spsa.json found — skipping"
+            exit 0
+          fi
+          PARAM_COUNT=$(jq '.params | length' spsa.json)
+          if [ "$PARAM_COUNT" -eq 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "spsa.json has no params — skipping"
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "Found $PARAM_COUNT SPSA params"
+
+      - name: Dispatch to tofiks-infra
+        if: steps.check.outputs.skip != 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.INFRA_DISPATCH_PAT }}
+          repository: likeawizard/tofiks-infra
+          event-type: openbench-spsa
+          client-payload: '{"pr_branch": "${{ github.head_ref }}", "pr_number": "${{ github.event.pull_request.number }}", "pr_sha": "${{ github.event.pull_request.head.sha }}"}'
