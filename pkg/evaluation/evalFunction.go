@@ -6,7 +6,7 @@ import (
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{100, 325, 325, 500, 975, 10000}
+	PieceWeights = [6]int{111, 263, 288, 498, 991, 10000}
 
 	// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board.
 	PiecePawnBonus = [6][9]int{
@@ -30,37 +30,49 @@ var (
 	}
 )
 
-const (
-	// Mobility related weights.
-	MOVE_QUEEN      = 1
-	MOVE_ROOK       = 2
-	MOVE_BISHOP     = 3
-	MOVE_KNIGHT     = 5
-	MOVE_KING       = -5
-	W_CAPTURE   int = 4
+var (
+	// Mobility related weights (texel-tuned).
+	MOVE_QUEEN  = 2
+	MOVE_ROOK   = 3
+	MOVE_BISHOP = 6
+	MOVE_KNIGHT = -2
+	MOVE_KING   = -5
+	W_CAPTURE   = 8
 
-	// King threat weights. How much a piece contributes to the king safety evaluation.
-	QUEEN_THREAT  = 10
-	ROOK_THREAT   = 6
-	BISHOP_THREAT = 4
-	KNIGHT_THREAT = 6
+	// King threat weights (texel-tuned).
+	QUEEN_THREAT  = 16
+	ROOK_THREAT   = 1
+	BISHOP_THREAT = 7
+	KNIGHT_THREAT = 3
 
-	// Pawn structure weights.
-	W_P_PROTECTED      int = 15
-	W_P_DOUBLED        int = -15
-	W_P_ISOLATED       int = -20
-	W_P_BACKWARD       int = -10
-	W_P_BLOCKED        int = -5
-	W_P_CONNECTED_PASS int = 20
-	W_P_CANDIDATE      int = 8
+	// Pawn structure weights (texel-tuned).
+	W_P_PROTECTED      = 10
+	W_P_DOUBLED        = -12
+	W_P_ISOLATED       = -5
+	W_P_BACKWARD       = -1
+	W_P_BLOCKED        = -5
+	W_P_CONNECTED_PASS = 11
+	W_P_CANDIDATE      = 8
 
-	// Rook file bonuses.
-	W_ROOK_OPEN_FILE      = 20
-	W_ROOK_SEMI_OPEN_FILE = 10
+	// Rook file bonuses (texel-tuned).
+	W_ROOK_OPEN_FILE      = 23
+	W_ROOK_SEMI_OPEN_FILE = 17
+
+	// Bishop pair bonus (texel-tuned).
+	W_BISHOP_PAIR = 15
+
+	// King safety (MG) weights (texel-tuned).
+	KS_DIST_CENTER = 24
+	KS_PAWN_SHIELD = 31
+	KS_FRIENDLY    = 8
+
+	// King activity (EG) weights (texel-tuned).
+	KA_DIST_CENTER  = -24
+	KA_DIST_SQUARES = -1
+
+	// Passed pawn bonus (texel-tuned, ranks 1-2 clamped to 0).
+	PassedPawnBonus = [8]int{0, 0, 0, 20, 44, 67, 156, 0}
 )
-
-// Passed pawn bonus indexed by rank from the advancing side's perspective (0=back rank, 7=promotion rank).
-var passedPawnBonus = [8]int{0, 5, 10, 20, 40, 70, 120, 0}
 
 // Piece protected a pawn.
 func IsProtected(b *board.Board, sq board.Square, side int) bool {
@@ -139,11 +151,11 @@ func (e *Engine) GetEvaluation(b *board.Board) int {
 	return eval
 }
 
-func distCenter(sq board.Square) int {
+func DistCenter(sq board.Square) int {
 	return dist[sq]
 }
 
-func distSquares(us, them board.Square) int {
+func DistSquares(us, them board.Square) int {
 	abs := func(x int) int {
 		if x < 0 {
 			return -x
@@ -159,14 +171,14 @@ func distSquares(us, them board.Square) int {
 // use board direction to value own pieces: i.e. a King in front of 3 pawns is not the same as a king behind 3 pawns
 // consider using opponent piece attacks around the king instead of actual pieces. use piece weights for opponent threat levels: a queen near our king should be a larger concern than a bishop.
 func getKingSafety(b *board.Board, king board.Square, side int) (kingSafety int) {
-	kingSafety += 2 * distCenter(king)
+	kingSafety += KS_DIST_CENTER * DistCenter(king)
 	pawnShield := (board.KingSafetyMask[side][king] & b.Pieces[side][board.PAWNS]).Count()
-	kingSafety += 20*pawnShield + 5*((board.KingSafetyMask[side][king]&b.Occupancy[side]).Count()-pawnShield) - 18*(board.KingAttacks[king]&b.Occupancy[side^1]).Count()
+	kingSafety += KS_PAWN_SHIELD*pawnShield + KS_FRIENDLY*((board.KingSafetyMask[side][king]&b.Occupancy[side]).Count()-pawnShield)
 	return kingSafety
 }
 
 func getKingActivity(b *board.Board, king board.Square, side int) (kingActivity int) {
-	kingActivity = -(distCenter(king) + distSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B())))
+	kingActivity = KA_DIST_CENTER*DistCenter(king) + KA_DIST_SQUARES*DistSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B()))
 	return kingActivity
 }
 
@@ -191,7 +203,7 @@ func bishopEval(b *board.Board, sq board.Square, side int, oppKing board.BBoard)
 		eval = OutpostsScores[side][board.BISHOPS][sq]
 	}
 	if b.Pieces[side][board.BISHOPS].Count() > 1 {
-		eval += 35
+		eval += W_BISHOP_PAIR
 	}
 	return eval + moves.Count()*MOVE_BISHOP +
 		(moves&b.Occupancy[side^1]).Count()*W_CAPTURE +

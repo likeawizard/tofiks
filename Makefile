@@ -77,17 +77,32 @@ memprof-fastchess: build
 	${FASTCHESS} -engine cmd=./tofiks args=-memprof name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=pgn order=random plies=20 -recover
 
 remove-dup:
-	@echo "Removing duplicates"
-	@gawk -i inplace '!seen[$0]++' texel_data.txt
+	@echo "Removing duplicates from texel_data.txt"
+	@gawk -i inplace '!seen[$$0]++' texel_data.txt
 	@echo "Randomizing position order"
 	@shuf -o texel_data.txt texel_data.txt
+	@rm -f texel_data.bin
+	@echo "Removed cache (texel_data.bin) — will rebuild on next tune"
 
 run-texel:
 	GOAMD64=${GOAMD64VERSION} go build -o texel cmd/texel/main.go
-	./texel -f "rand.txt" -c 8 -i 100 -lim 100000 > texel_out.txt
+	./texel -f texel_data.txt -i 1000
 
 lint:
 	go tool golangci-lint run
 
 lint-fix:
 	go tool golangci-lint run --fix
+
+texel-data:
+	${FASTCHESS} \
+	-engine cmd=${TOFIKS_PROD} name=tofiks1 \
+	-engine cmd=${TOFIKS_PROD} name=tofiks2 \
+	-openings file=$(HOME)/Downloads/UHO_Lichess_4852_v1.epd format=epd order=random \
+	-each tc=0.2+0.02 option.Hash=64 \
+	-rounds 15000 -repeat \
+	-concurrency 6 \
+	-draw movenumber=40 movecount=8 score=10 \
+	-resign movecount=3 score=600 \
+	-pgnout file=selfplay.pgn notation=uci min=true \
+	-recover
