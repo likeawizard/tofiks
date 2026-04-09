@@ -76,3 +76,11 @@ type Clear struct{}
 type MoveOverhead struct {
 	delay int
 }
+
+type AspLower struct {
+	value int
+}
+
+type AspUpper struct {
+	value int
+}

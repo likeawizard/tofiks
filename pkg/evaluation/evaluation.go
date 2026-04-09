@@ -21,6 +21,11 @@ const (
 	scoreHistMax = 508
 )
 
+var (
+	AspirationLower int16 = 50
+	AspirationUpper int16 = 100
+)
+
 type HistoryHeuristic [2][64][64]int
 
 type Engine struct {

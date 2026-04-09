@@ -67,7 +67,7 @@ func (c *IsReady) Exec(e *eval.Engine) bool {
 
 func (c *UCI) Exec(e *eval.Engine) bool {
 	defer e.WG.Done()
-	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
+	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}, &AspLower{}, &AspUpper{}}
 	fmt.Println("id name Tofiks v1.4.0")
 	fmt.Println("id author Arturs Priede")
 	for _, opt := range availOpts {
@@ -134,4 +134,20 @@ func (o *MoveOverhead) Set(e *eval.Engine) {
 
 func (o *MoveOverhead) Info() {
 	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
+}
+
+func (o *AspLower) Set(e *eval.Engine) {
+	eval.AspirationLower = int16(o.value)
+}
+
+func (o *AspLower) Info() {
+	fmt.Println("option name AspLower type spin default 50 min 10 max 200")
+}
+
+func (o *AspUpper) Set(e *eval.Engine) {
+	eval.AspirationUpper = int16(o.value)
+}
+
+func (o *AspUpper) Info() {
+	fmt.Println("option name AspUpper type spin default 100 min 10 max 300")
 }

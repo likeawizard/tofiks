@@ -384,7 +384,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			} else {
 				e.Stability.recordAspiration(false)
 			}
-			alpha, beta = eval-50, eval+100
+			alpha, beta = eval-AspirationLower, eval+AspirationUpper
 
 			select {
 			case <-ctx.Done():

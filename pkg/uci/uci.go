@@ -68,6 +68,14 @@ func ParseUCI(uciCmd string) Cmd {
 			delay, _ := strconv.Atoi(value)
 			opt.option = &MoveOverhead{delay: delay}
 			return &opt
+		case "AspLower":
+			v, _ := strconv.Atoi(value)
+			opt.option = &AspLower{value: v}
+			return &opt
+		case "AspUpper":
+			v, _ := strconv.Atoi(value)
+			opt.option = &AspUpper{value: v}
+			return &opt
 		}
 		return nil
 	case C_GO:

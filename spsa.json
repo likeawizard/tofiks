@@ -1,0 +1,29 @@
+{
+  "params": [
+    {
+      "name": "AspLower",
+      "type": "int",
+      "value": 50,
+      "min": 10,
+      "max": 200,
+      "c_end": 10,
+      "r_end": 0.38
+    },
+    {
+      "name": "AspUpper",
+      "type": "int",
+      "value": 100,
+      "min": 10,
+      "max": 300,
+      "c_end": 15,
+      "r_end": 0.58
+    }
+  ],
+  "spsa_alpha": 0.602,
+  "spsa_gamma": 0.101,
+  "spsa_A_ratio": 0.1,
+  "spsa_iterations": 128,
+  "spsa_pairs_per": 32,
+  "spsa_reporting_type": "BULK",
+  "spsa_distribution_type": "SINGLE"
+}
