@@ -90,6 +90,7 @@ func (c *NewGame) Exec(e *eval.Engine) bool {
 	e.KillerMoves = [100][2]board.Move{}
 	e.Plys = [512]uint64{}
 	e.History = eval.HistoryHeuristic{}
+	e.ContHist = eval.ContinuationHistory{}
 	return true
 }
 

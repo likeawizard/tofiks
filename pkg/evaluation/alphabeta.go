@@ -193,6 +193,24 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
 					depthR = lmrReduction(depth, legalMoves)
+
+					// Reduce less/more based on continuation history (the side
+					// that played currMove is the pre-MakeMove side, i.e.
+					// e.Board.Side ^ 1). Clamped to avoid overflow from
+					// unbounded conthist entries.
+					if ply > 0 && e.PrevMove[ply-1] != 0 {
+						chAdj := e.GetContHist(int(e.Board.Side^1), e.PrevMove[ply-1], currMove) / 8192
+						if chAdj > 2 {
+							chAdj = 2
+						} else if chAdj < -2 {
+							chAdj = -2
+						}
+						depthR -= int8(chAdj)
+					}
+
+					if depthR < 0 {
+						depthR = 0
+					}
 				}
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
@@ -222,6 +240,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 					if ply > 0 {
 						from, to := e.PrevMove[ply-1].FromTo()
 						e.CounterMoves[from][to] = currMove
+						e.IncrementContHist(int(e.Board.Side), depth, e.PrevMove[ply-1], currMove)
 					}
 				}
 
@@ -229,6 +248,9 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				break
 			}
 			e.DecrementHistory(currMove)
+			if ply > 0 && e.PrevMove[ply-1] != 0 && !currMove.IsCapture() {
+				e.DecrementContHist(int(e.Board.Side), depth, e.PrevMove[ply-1], currMove)
+			}
 
 			if value > alpha {
 				entryType = TT_EXACT

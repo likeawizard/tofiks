@@ -52,7 +52,10 @@ const (
 	scoreHistMax = 508
 )
 
-type HistoryHeuristic [2][64][64]int
+type (
+	HistoryHeuristic    [2][64][64]int
+	ContinuationHistory [2][7][64][7][64]int
+)
 
 type Engine struct {
 	MoveOrder    MoveOrderStats
@@ -64,6 +67,7 @@ type Engine struct {
 	Stats        Stats
 	TC           TimeControl
 	History      HistoryHeuristic
+	ContHist     ContinuationHistory
 	Plys         [512]uint64
 	Clock        Clock
 	WG           sync.WaitGroup
@@ -138,11 +142,42 @@ func (e *Engine) GetHistory(move board.Move) int {
 	return e.History[e.Board.Side][from][to]
 }
 
+func (e *Engine) IncrementContHist(side int, depth int8, prev, curr board.Move) {
+	d := int(depth)
+	pp, pt := prev.Piece(), prev.To()
+	cp, ct := curr.Piece(), curr.To()
+	e.ContHist[side][pp][pt][cp][ct] += d * d
+}
+
+func (e *Engine) DecrementContHist(side int, depth int8, prev, curr board.Move) {
+	d := int(depth)
+	pp, pt := prev.Piece(), prev.To()
+	cp, ct := curr.Piece(), curr.To()
+	e.ContHist[side][pp][pt][cp][ct] -= d * d
+}
+
+func (e *Engine) GetContHist(side int, prev, curr board.Move) int {
+	pp, pt := prev.Piece(), prev.To()
+	cp, ct := curr.Piece(), curr.To()
+	return e.ContHist[side][pp][pt][cp][ct]
+}
+
 func (e *Engine) AgeHistory() {
 	for side := 0; side <= 1; side++ {
 		for from := 0; from < 64; from++ {
 			for to := 0; to < 64; to++ {
 				e.History[side][from][to] /= 2
+			}
+		}
+	}
+	for side := 0; side < 2; side++ {
+		for p1 := 0; p1 < 7; p1++ {
+			for s1 := 0; s1 < 64; s1++ {
+				for p2 := 0; p2 < 7; p2++ {
+					for s2 := 0; s2 < 64; s2++ {
+						e.ContHist[side][p1][s1][p2][s2] /= 2
+					}
+				}
 			}
 		}
 	}
