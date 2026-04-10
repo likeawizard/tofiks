@@ -3,12 +3,43 @@ package eval
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"sync"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
 )
+
+// LmrTable[depth][moveNum] gives the late-move reduction in plies.
+// Computed once at init using a log * log formula.
+var LmrTable [64][64]int8
+
+func init() {
+	for d := 1; d < 64; d++ {
+		for m := 1; m < 64; m++ {
+			LmrTable[d][m] = int8(0.5 + math.Log(float64(d))*math.Log(float64(m))/3.5)
+		}
+	}
+}
+
+// lmrReduction looks up the late-move reduction for a given depth and move
+// number, clamping both to the table bounds and flooring at 1.
+func lmrReduction(depth int8, legalMoves int) int8 {
+	d := depth
+	if d > 63 {
+		d = 63
+	}
+	m := legalMoves
+	if m > 63 {
+		m = 63
+	}
+	r := LmrTable[d][m]
+	if r < 1 {
+		r = 1
+	}
+	return r
+}
 
 // Move ordering score tiers (10-bit range 0-1023, embedded in Move bits 22-31).
 const (

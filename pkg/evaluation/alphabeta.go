@@ -191,8 +191,8 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			} else {
 				depthR := int8(0)
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
-					currMove.Promotion() == 0 && !currMove.IsEnPassant() && board.SquareBitboards[currMove.To()]&e.Board.Occupancy[board.BOTH] == 0 {
-					depthR = max(2, depth/4) + int8(legalMoves)/8
+					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
+					depthR = lmrReduction(depth, legalMoves)
 				}
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
