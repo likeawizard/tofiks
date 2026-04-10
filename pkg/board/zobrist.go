@@ -17,8 +17,8 @@ func init() {
 	seed = rng.Uint64()
 	castlingKeys = make(map[CastlingRights]uint64)
 	for sq := 0; sq < 64; sq++ {
-		for color := WHITE; color <= BLACK; color++ {
-			for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
+		for color := White; color <= Black; color++ {
+			for pieceType := Pawns; pieceType <= Kings; pieceType++ {
 				pieceKeys[color][pieceType][sq] = rng.Uint64()
 			}
 		}
@@ -37,11 +37,11 @@ func init() {
 // SeedPawnHash calculates a zobrist hash of only the pawn positions.
 func (b *Board) SeedPawnHash() uint64 {
 	var hash uint64
-	for color := WHITE; color <= BLACK; color++ {
-		pieces := b.Pieces[color][PAWNS]
+	for color := White; color <= Black; color++ {
+		pieces := b.Pieces[color][Pawns]
 		for pieces > 0 {
 			sq := pieces.PopLS1B()
-			hash ^= pieceKeys[color][PAWNS][sq]
+			hash ^= pieceKeys[color][Pawns][sq]
 		}
 	}
 	return hash
@@ -51,8 +51,8 @@ func (b *Board) SeedPawnHash() uint64 {
 func (b *Board) SeedHash() uint64 {
 	hash := seed
 
-	for color := WHITE; color <= BLACK; color++ {
-		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
+	for color := White; color <= Black; color++ {
+		for pieceType := Pawns; pieceType <= Kings; pieceType++ {
 			pieces := b.Pieces[color][pieceType]
 			for pieces > 0 {
 				sq := pieces.PopLS1B()
@@ -71,7 +71,7 @@ func (b *Board) SeedHash() uint64 {
 		hash ^= enPassantKeys[b.EnPassantTarget]
 	}
 
-	if b.Side == BLACK {
+	if b.Side == Black {
 		hash ^= swapSide
 	}
 
@@ -96,12 +96,12 @@ func (b *Board) ZobristCapture(move Move, piece int) {
 func (b *Board) ZobristEPCapture(move Move) {
 	from, to := move.From(), move.To()
 	direction := Square(8)
-	if b.Side == WHITE {
+	if b.Side == White {
 		direction = -8
 	}
-	b.Hash ^= pieceKeys[b.Side^1][PAWNS][to-direction]
-	b.Hash ^= pieceKeys[b.Side][PAWNS][to]
-	b.Hash ^= pieceKeys[b.Side][PAWNS][from]
+	b.Hash ^= pieceKeys[b.Side^1][Pawns][to-direction]
+	b.Hash ^= pieceKeys[b.Side][Pawns][to]
+	b.Hash ^= pieceKeys[b.Side][Pawns][from]
 }
 
 // Update Zobirst hash with flipping side to move.
@@ -118,17 +118,17 @@ func (b *Board) ZobristCastlingRights(right CastlingRights) {
 func (b *Board) ZobristCastling(right CastlingRights) {
 	switch right {
 	case WOO:
-		b.ZobristSimpleMove(WCastleKing, KINGS)
-		b.ZobristSimpleMove(WCastleKingRook, ROOKS)
+		b.ZobristSimpleMove(WCastleKing, Kings)
+		b.ZobristSimpleMove(WCastleKingRook, Rooks)
 	case WOOO:
-		b.ZobristSimpleMove(WCastleQueen, KINGS)
-		b.ZobristSimpleMove(WCastleQueenRook, ROOKS)
+		b.ZobristSimpleMove(WCastleQueen, Kings)
+		b.ZobristSimpleMove(WCastleQueenRook, Rooks)
 	case BOO:
-		b.ZobristSimpleMove(BCastleKing, KINGS)
-		b.ZobristSimpleMove(BCastleKingRook, ROOKS)
+		b.ZobristSimpleMove(BCastleKing, Kings)
+		b.ZobristSimpleMove(BCastleKingRook, Rooks)
 	case BOOO:
-		b.ZobristSimpleMove(BCastleQueen, KINGS)
-		b.ZobristSimpleMove(BCastleQueenRook, ROOKS)
+		b.ZobristSimpleMove(BCastleQueen, Kings)
+		b.ZobristSimpleMove(BCastleQueenRook, Rooks)
 	}
 }
 
@@ -138,7 +138,7 @@ func (b *Board) ZobristPromotion(move Move) {
 
 	// set destination with newly promoted piece
 	b.Hash ^= pieceKeys[b.Side][move.Promotion()][to]
-	b.Hash ^= pieceKeys[b.Side][PAWNS][to]
+	b.Hash ^= pieceKeys[b.Side][Pawns][to]
 }
 
 // Update Zobrist hash with En Passant square.

@@ -114,8 +114,8 @@ func InitPawnAttacks() {
 		return attacks
 	}
 	for sq := 0; sq < 64; sq++ {
-		PawnAttacks[WHITE][sq] = pawnAttack(sq, true)
-		PawnAttacks[BLACK][sq] = pawnAttack(sq, false)
+		PawnAttacks[White][sq] = pawnAttack(sq, true)
+		PawnAttacks[Black][sq] = pawnAttack(sq, false)
 	}
 }
 
@@ -170,7 +170,7 @@ func InitPawnStructureMasks() {
 		rank := sq / 8
 		mask := IsolatedPawns[sq] | DoubledPawns[sq]
 		behindMask := func(rank, color int) BBoard {
-			if color == WHITE {
+			if color == White {
 				switch rank {
 				case 0:
 					return ^BBoard(0)
@@ -218,7 +218,7 @@ func InitPawnStructureMasks() {
 		rank := sq / 8
 		mask := IsolatedPawns[sq]
 		behindMask := func(rank, color int) BBoard {
-			if color == WHITE {
+			if color == White {
 				switch rank {
 				case 0:
 					return ^BBoard(0)
@@ -279,10 +279,10 @@ func InitPawnStructureMasks() {
 	for sq := 0; sq < 64; sq++ {
 		IsolatedPawns[sq] = isolatedMask(sq)
 		DoubledPawns[sq] = doubledMask(sq)
-		PassedPawns[WHITE][sq] = passedMask(sq, WHITE)
-		PassedPawns[BLACK][sq] = passedMask(sq, BLACK)
-		Outposts[WHITE][sq] = outpostMask(sq, WHITE)
-		Outposts[BLACK][sq] = outpostMask(sq, BLACK)
+		PassedPawns[White][sq] = passedMask(sq, White)
+		PassedPawns[Black][sq] = passedMask(sq, Black)
+		Outposts[White][sq] = outpostMask(sq, White)
+		Outposts[Black][sq] = outpostMask(sq, Black)
 
 		file := sq % 8
 		rank := sq / 8
@@ -295,8 +295,8 @@ func InitPawnStructureMasks() {
 		for r := rank + 1; r < 8; r++ {
 			bSpan |= rankMasks[r] & FileMasks[file]
 		}
-		FrontSpan[WHITE][sq] = wSpan
-		FrontSpan[BLACK][sq] = bSpan
+		FrontSpan[White][sq] = wSpan
+		FrontSpan[Black][sq] = bSpan
 	}
 }
 
@@ -368,7 +368,7 @@ func InitKingSafetyMasks() {
 		piece.Set(sq)
 
 		if piece&HFile == 0 {
-			if side == WHITE {
+			if side == White {
 				attacks |= piece >> 8
 				attacks |= piece << 1
 				attacks |= piece >> 7
@@ -380,7 +380,7 @@ func InitKingSafetyMasks() {
 		}
 
 		if piece&AFile == 0 {
-			if side == WHITE {
+			if side == White {
 				attacks |= piece >> 8
 				attacks |= piece >> 9
 				attacks |= piece >> 1
@@ -393,7 +393,7 @@ func InitKingSafetyMasks() {
 
 		return attacks
 	}
-	for color := WHITE; color <= BLACK; color++ {
+	for color := White; color <= Black; color++ {
 		for sq := 0; sq < 64; sq++ {
 			KingSafetyMask[color][sq] = safetyMask(sq, color)
 		}

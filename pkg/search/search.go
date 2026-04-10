@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"context"
@@ -18,7 +18,7 @@ const (
 	Inf = 2 * CheckmateScore
 )
 
-func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int8, alpha, beta int16, nmp bool, side int16) int16 {
+func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Move, depth, ply int, alpha, beta int16, nmp bool, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -46,7 +46,8 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		var staticEval int16
 		canPrune := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
 		if canPrune {
-			staticEval = side * int16(e.GetEvaluation(e.Board))
+			e.Stats.evals++
+			staticEval = side * int16(e.Eval.GetEvaluation(e.Board))
 			e.StaticEvals[ply] = staticEval
 
 			// Reverse futility pruning. If static eval is well above beta at shallow depths,
@@ -61,7 +62,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		var pvMove board.Move
 		var ttValue int16
-		var ttDepth int8
+		var ttDepth int
 		var ttBound EntryType
 		ttHit := false
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok {
@@ -101,7 +102,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		// Do not prune:
 		// - when in check.
 		// - when less than 7 pieces on board (random heuristic) or pawn only endgame due to possible zugzwang situations
-		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.BOTH].Count() > 6 && !e.Board.IsPawnOnly() {
+		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.Both].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/7
 			e.PrevMove[ply] = 0
@@ -113,7 +114,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		}
 
 		// Singular extension: check if the TT move is significantly better than all alternatives.
-		singularExtension := int8(0)
+		singularExtension := 0
 		if ply > 0 && depth >= 8 && pvMove != 0 && e.ExcludedMove[ply] == 0 &&
 			ttHit && ttDepth >= depth-3 && (ttBound == TT_LOWER || ttBound == TT_EXACT) &&
 			ttValue > -CheckmateThreshold && ttValue < CheckmateThreshold {
@@ -160,7 +161,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			legalMoves++
 
 			// Late move pruning. At shallow depths, skip quiet moves that are ordered late.
-			lmpThreshold := int(5+2*depth*depth) / (2 - boolToInt(improving))
+			lmpThreshold := (5 + 2*depth*depth) / (2 - boolToInt(improving))
 			if canPrune && depth >= 2 && depth <= 6 && legalMoves > lmpThreshold &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				bestVal > -CheckmateThreshold {
@@ -178,7 +179,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 
 			// Apply singular extension to the TT move.
-			ext := int8(0)
+			ext := 0
 			if currMove == pvMove && singularExtension > 0 {
 				ext = singularExtension
 			}
@@ -189,7 +190,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			if legalMoves == 1 {
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -beta, -alpha, true, -side)
 			} else {
-				depthR := int8(0)
+				depthR := 0
 				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
 					depthR = lmrReduction(depth, legalMoves)
@@ -251,7 +252,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 	}
 }
 
-func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int16) int16 {
+func (e *Engine) Quiescence(ctx context.Context, ply int, alpha, beta, side int16) int16 {
 	select {
 	case <-ctx.Done():
 		// Meaningless return. Should never trust the result after ctx is expired
@@ -265,7 +266,8 @@ func (e *Engine) Quiescence(ctx context.Context, ply int8, alpha, beta, side int
 			}
 		}
 
-		eval := side * int16(e.GetEvaluation(e.Board))
+		e.Stats.evals++
+		eval := side * int16(e.Eval.GetEvaluation(e.Board))
 
 		if !e.Board.InCheck && eval >= beta {
 			return beta
@@ -345,7 +347,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 	start := time.Now()
 	color := int16(1)
 	alpha, beta := -Inf, Inf
-	if e.Board.Side != board.WHITE {
+	if e.Board.Side != board.White {
 		color = -color
 	}
 	e.TTable.age = 0
@@ -354,7 +356,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 	done, ok := false, true
 	wg.Add(1)
 	go func() {
-		for d := int8(1); d <= int8(depth); d++ {
+		for d := 1; d <= depth; d++ {
 			if done {
 				wg.Done()
 				return
@@ -367,10 +369,10 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			}
 
 			e.TC.IterationStarted()
-			e.TTable.age = d
+			e.TTable.age = int8(d)
 			e.Stats.Start()
 			e.TTable.Stats.reset()
-			e.PawnTable.Stats.reset()
+			e.Eval.PawnTable.Stats.Reset()
 			e.MoveOrder.reset()
 			var pv []board.Move
 			pv = append(pv, line...)
@@ -424,7 +426,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				if s := e.Stability.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
-				if s := e.PawnTable.Stats.String(); s != "" {
+				if s := e.Eval.PawnTable.Stats.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
 				if eval > CheckmateThreshold || eval < -CheckmateThreshold {

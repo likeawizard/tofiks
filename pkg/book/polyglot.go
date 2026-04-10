@@ -47,17 +47,17 @@ func getPieceIdx(piece, row, file int) int {
 func convertPiece(piece, color int) int {
 	color ^= 1
 	switch piece {
-	case board.PAWNS:
+	case board.Pawns:
 		piece = black_pawn
-	case board.BISHOPS:
+	case board.Bishops:
 		piece = black_bishop
-	case board.KNIGHTS:
+	case board.Knights:
 		piece = black_knight
-	case board.ROOKS:
+	case board.Rooks:
 		piece = black_rook
-	case board.QUEENS:
+	case board.Queens:
 		piece = black_queen
-	case board.KINGS:
+	case board.Kings:
 		piece = black_king
 	}
 	return piece + color
@@ -77,19 +77,19 @@ func InBook(b *board.Board) bool {
 func convertPolyToUCI(b *board.Board, polyMove string) string {
 	switch polyMove {
 	case "e1h1":
-		if b.Pieces[board.WHITE][board.KINGS].LS1B() == board.E1 {
+		if b.Pieces[board.White][board.Kings].LS1B() == board.E1 {
 			return "e1g1"
 		}
 	case "e1a1":
-		if b.Pieces[board.WHITE][board.KINGS].LS1B() == board.E1 {
+		if b.Pieces[board.White][board.Kings].LS1B() == board.E1 {
 			return "e1c1"
 		}
 	case "e8h8":
-		if b.Pieces[board.BLACK][board.KINGS].LS1B() == board.E8 {
+		if b.Pieces[board.Black][board.Kings].LS1B() == board.E8 {
 			return "e8g8"
 		}
 	case "e8a8":
-		if b.Pieces[board.BLACK][board.KINGS].LS1B() == board.E8 {
+		if b.Pieces[board.Black][board.Kings].LS1B() == board.E8 {
 			return "e8c8"
 		}
 	}
@@ -204,8 +204,8 @@ func polyMoveToUCI(move uint16) string {
 
 func PolyZobrist(b *board.Board) uint64 {
 	var hash uint64
-	for color := board.WHITE; color <= board.BLACK; color++ {
-		for piece := board.PAWNS; piece <= board.KINGS; piece++ {
+	for color := board.White; color <= board.Black; color++ {
+		for piece := board.Pawns; piece <= board.Kings; piece++ {
 			polyPiece := convertPiece(piece, color)
 			pieces := b.Pieces[color][piece]
 			for pieces > 0 {
@@ -226,11 +226,11 @@ func PolyZobrist(b *board.Board) uint64 {
 		}
 	}
 
-	if b.EnPassantTarget > 0 && b.Pieces[b.Side][board.PAWNS]&board.PawnAttacks[b.Side^1][b.EnPassantTarget] != 0 {
+	if b.EnPassantTarget > 0 && b.Pieces[b.Side][board.Pawns]&board.PawnAttacks[b.Side^1][b.EnPassantTarget] != 0 {
 		hash ^= zobristHashes[772+b.EnPassantTarget%8]
 	}
 
-	if b.Side == board.WHITE {
+	if b.Side == board.White {
 		hash ^= zobristHashes[sideHash]
 	}
 

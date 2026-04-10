@@ -85,26 +85,26 @@ func GetQueenAttacks(sq int, occ BBoard) BBoard {
 // A knight can never unpin itself. A pinned knight has no legal moves.
 // A bishop can not unpin itself from rook attacks and vice versa.
 func (b *Board) GetPinsBB(side int) map[int]BBoard {
-	king := b.Pieces[side][KINGS].LS1B()
+	king := b.Pieces[side][Kings].LS1B()
 	pins := make(map[int]BBoard)
 	var directAttackers, xRayAttackers, attackMask, pinnedPieces BBoard
 	var attackerSq int
-	directAttackers = GetBishopAttacks(king, b.Occupancy[BOTH]) & (b.Pieces[side^1][BISHOPS] | b.Pieces[side^1][QUEENS])
-	xRayAttackers = GetBishopAttacks(king, b.Occupancy[side^1]) & (b.Pieces[side^1][BISHOPS] | b.Pieces[side^1][QUEENS]) &^ directAttackers
+	directAttackers = GetBishopAttacks(king, b.Occupancy[Both]) & (b.Pieces[side^1][Bishops] | b.Pieces[side^1][Queens])
+	xRayAttackers = GetBishopAttacks(king, b.Occupancy[side^1]) & (b.Pieces[side^1][Bishops] | b.Pieces[side^1][Queens]) &^ directAttackers
 	for xRayAttackers > 0 {
 		attackerSq = xRayAttackers.PopLS1B()
-		attackMask = (GetBishopAttacks(attackerSq, b.Pieces[side][KINGS]) & GetBishopAttacks(king, SquareBitboards[attackerSq])) | SquareBitboards[attackerSq]&^b.Pieces[side][KINGS]
+		attackMask = (GetBishopAttacks(attackerSq, b.Pieces[side][Kings]) & GetBishopAttacks(king, SquareBitboards[attackerSq])) | SquareBitboards[attackerSq]&^b.Pieces[side][Kings]
 		pinnedPieces = attackMask & b.Occupancy[side]
 		if pinnedPieces > 0 && pinnedPieces.Count() == 1 {
 			pins[pinnedPieces.LS1B()] = attackMask
 		}
 	}
 
-	directAttackers = GetRookAttacks(king, b.Occupancy[BOTH]) & (b.Pieces[side^1][ROOKS] | b.Pieces[side^1][QUEENS])
-	xRayAttackers = GetRookAttacks(king, b.Occupancy[side^1]) & (b.Pieces[side^1][ROOKS] | b.Pieces[side^1][QUEENS]) &^ directAttackers
+	directAttackers = GetRookAttacks(king, b.Occupancy[Both]) & (b.Pieces[side^1][Rooks] | b.Pieces[side^1][Queens])
+	xRayAttackers = GetRookAttacks(king, b.Occupancy[side^1]) & (b.Pieces[side^1][Rooks] | b.Pieces[side^1][Queens]) &^ directAttackers
 	for xRayAttackers > 0 {
 		attackerSq = xRayAttackers.PopLS1B()
-		attackMask = (GetRookAttacks(attackerSq, b.Pieces[side][KINGS]) & GetRookAttacks(king, SquareBitboards[attackerSq])) | SquareBitboards[attackerSq]&^b.Pieces[side][KINGS]
+		attackMask = (GetRookAttacks(attackerSq, b.Pieces[side][Kings]) & GetRookAttacks(king, SquareBitboards[attackerSq])) | SquareBitboards[attackerSq]&^b.Pieces[side][Kings]
 		pinnedPieces = attackMask & b.Occupancy[side]
 		if pinnedPieces > 0 && pinnedPieces.Count() == 1 {
 			pins[pinnedPieces.LS1B()] = attackMask
@@ -121,32 +121,32 @@ func (b *Board) GetChecksBB(side int) (BBoard, bool) {
 	var numChecks int
 	var checks, attacker BBoard
 	var pawnCheck bool
-	king := b.Pieces[side][KINGS].LS1B()
+	king := b.Pieces[side][Kings].LS1B()
 
-	attacker = PawnAttacks[side][king] & b.Pieces[side^1][PAWNS]
+	attacker = PawnAttacks[side][king] & b.Pieces[side^1][Pawns]
 	if attacker != 0 {
 		pawnCheck = true
 		checks |= attacker
 		numChecks++
 	}
 
-	attacker = GetRookAttacks(king, b.Occupancy[BOTH]) & (b.Pieces[side^1][ROOKS] | b.Pieces[side^1][QUEENS])
+	attacker = GetRookAttacks(king, b.Occupancy[Both]) & (b.Pieces[side^1][Rooks] | b.Pieces[side^1][Queens])
 	if attacker != 0 {
-		checks |= (GetRookAttacks(attacker.LS1B(), b.Pieces[side][KINGS]) & GetRookAttacks(king, attacker)) | attacker&^b.Pieces[side][KINGS]
+		checks |= (GetRookAttacks(attacker.LS1B(), b.Pieces[side][Kings]) & GetRookAttacks(king, attacker)) | attacker&^b.Pieces[side][Kings]
 		numChecks += attacker.Count()
 	}
 
 	// A pawn can check by moving forward or capturing. Only a capture move that clears a file for a rook attack can create a double check. So only check Knight and Bishop checks if no pawn check is present
 	if !pawnCheck {
-		attacker = KnightAttacks[king] & b.Pieces[side^1][KNIGHTS]
+		attacker = KnightAttacks[king] & b.Pieces[side^1][Knights]
 		if attacker != 0 {
 			checks |= attacker
 			numChecks++
 		}
 
-		attacker = GetBishopAttacks(king, b.Occupancy[BOTH]) & (b.Pieces[side^1][BISHOPS] | b.Pieces[side^1][QUEENS])
+		attacker = GetBishopAttacks(king, b.Occupancy[Both]) & (b.Pieces[side^1][Bishops] | b.Pieces[side^1][Queens])
 		if attacker != 0 {
-			checks |= (GetBishopAttacks(attacker.LS1B(), b.Pieces[side][KINGS]) & GetBishopAttacks(king, attacker)) | attacker&^b.Pieces[side][KINGS]
+			checks |= (GetBishopAttacks(attacker.LS1B(), b.Pieces[side][Kings]) & GetBishopAttacks(king, attacker)) | attacker&^b.Pieces[side][Kings]
 			numChecks++
 		}
 	}
@@ -156,16 +156,16 @@ func (b *Board) GetChecksBB(side int) (BBoard, bool) {
 
 // Determine if a square is attacked by the opposing side.
 func (b *Board) IsAttacked(sq int, side int8, occ BBoard) bool {
-	return PawnAttacks[side][sq]&b.Pieces[side^1][PAWNS] != 0 ||
-		KnightAttacks[sq]&b.Pieces[side^1][KNIGHTS] != 0 ||
-		KingAttacks[sq]&b.Pieces[side^1][KINGS] != 0 ||
-		GetBishopAttacks(sq, occ)&(b.Pieces[side^1][BISHOPS]|b.Pieces[side^1][QUEENS]) != 0 ||
-		GetRookAttacks(sq, occ)&(b.Pieces[side^1][ROOKS]|b.Pieces[side^1][QUEENS]) != 0
+	return PawnAttacks[side][sq]&b.Pieces[side^1][Pawns] != 0 ||
+		KnightAttacks[sq]&b.Pieces[side^1][Knights] != 0 ||
+		KingAttacks[sq]&b.Pieces[side^1][Kings] != 0 ||
+		GetBishopAttacks(sq, occ)&(b.Pieces[side^1][Bishops]|b.Pieces[side^1][Queens]) != 0 ||
+		GetRookAttacks(sq, occ)&(b.Pieces[side^1][Rooks]|b.Pieces[side^1][Queens]) != 0
 }
 
 // Determine if the king for the given side is in check.
 func (b *Board) IsChecked(side int8) bool {
-	return b.IsAttacked(b.Pieces[side][KINGS].LS1B(), side, b.Occupancy[BOTH])
+	return b.IsAttacked(b.Pieces[side][Kings].LS1B(), side, b.Occupancy[Both])
 }
 
 // IsPseudoLegal performs a fast sanity check that the move's piece exists on the
@@ -223,7 +223,7 @@ func (b *Board) MakeMove(move Move) func() {
 	umove := b.GetUnmake()
 	isCapture := move.IsCapture()
 	piece := int(move.Piece())
-	if isCapture || piece == PAWNS {
+	if isCapture || piece == Pawns {
 		b.HalfMoveCounter = 0
 	} else {
 		b.HalfMoveCounter++
@@ -242,21 +242,21 @@ func (b *Board) MakeMove(move Move) func() {
 		b.ZobristEPCapture(move)
 		b.EnPassantTarget = -1
 		direction := 8
-		if b.Side == WHITE {
+		if b.Side == White {
 			direction = -8
 		}
 		capSq := int(to) - direction
-		b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to] ^ pieceKeys[b.Side^1][PAWNS][capSq]
+		b.PawnHash ^= pieceKeys[b.Side][Pawns][from] ^ pieceKeys[b.Side][Pawns][to] ^ pieceKeys[b.Side^1][Pawns][capSq]
 		b.RemoveCaptured(capSq)
 	case isCapture:
 		b.EnPassantTarget = -1
 		capturedPiece := b.PieceAtSquare(to)
 		b.ZobristCapture(move, piece)
-		if capturedPiece == PAWNS {
-			b.PawnHash ^= pieceKeys[b.Side^1][PAWNS][to]
+		if capturedPiece == Pawns {
+			b.PawnHash ^= pieceKeys[b.Side^1][Pawns][to]
 		}
-		if piece == PAWNS {
-			b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		if piece == Pawns {
+			b.PawnHash ^= pieceKeys[b.Side][Pawns][from] ^ pieceKeys[b.Side][Pawns][to]
 		}
 		b.RemoveCaptured(int(to))
 	case move.IsCastling():
@@ -265,34 +265,34 @@ func (b *Board) MakeMove(move Move) func() {
 		b.CompleteCastling(move)
 	case move.IsDouble():
 		b.ZobristSimpleMove(move, piece)
-		b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		b.PawnHash ^= pieceKeys[b.Side][Pawns][from] ^ pieceKeys[b.Side][Pawns][to]
 		b.EnPassantTarget = (to + from) / 2
 		b.ZobristEnPassant(b.EnPassantTarget)
 	default:
 		b.EnPassantTarget = -1
 		b.ZobristSimpleMove(move, piece)
-		if piece == PAWNS {
-			b.PawnHash ^= pieceKeys[b.Side][PAWNS][from] ^ pieceKeys[b.Side][PAWNS][to]
+		if piece == Pawns {
+			b.PawnHash ^= pieceKeys[b.Side][Pawns][from] ^ pieceKeys[b.Side][Pawns][to]
 		}
 	}
 	bitboard.Set(int(move.To()))
 	bitboard.Clear(int(move.From()))
 
 	if move.Promotion() != 0 {
-		b.PawnHash ^= pieceKeys[b.Side][PAWNS][to]
+		b.PawnHash ^= pieceKeys[b.Side][Pawns][to]
 	}
 	b.Promote(move)
 
-	for side := WHITE; side <= BLACK; side++ {
-		b.Occupancy[side] = b.Pieces[side][KINGS]
-		for piece := PAWNS; piece < KINGS; piece++ {
+	for side := White; side <= Black; side++ {
+		b.Occupancy[side] = b.Pieces[side][Kings]
+		for piece := Pawns; piece < Kings; piece++ {
 			b.Occupancy[side] |= b.Pieces[side][piece]
 		}
 	}
-	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
+	b.Occupancy[Both] = b.Occupancy[White] | b.Occupancy[Black]
 
 	b.updateCastlingRights(move)
-	if b.Side == BLACK {
+	if b.Side == Black {
 		b.FullMoveCounter++
 	}
 
@@ -306,10 +306,10 @@ func (b *Board) MakeMove(move Move) func() {
 // https://www.chessprogramming.org/Tapered_Eval#Implementation_example
 func (b *Board) GetGamePhase() int {
 	phase := 24 -
-		b.Pieces[WHITE][BISHOPS].Count() - b.Pieces[BLACK][BISHOPS].Count() -
-		b.Pieces[WHITE][KNIGHTS].Count() - b.Pieces[BLACK][KNIGHTS].Count() -
-		2*(b.Pieces[WHITE][ROOKS].Count()+b.Pieces[BLACK][ROOKS].Count()) -
-		4*(b.Pieces[WHITE][QUEENS].Count()+b.Pieces[BLACK][QUEENS].Count())
+		b.Pieces[White][Bishops].Count() - b.Pieces[Black][Bishops].Count() -
+		b.Pieces[White][Knights].Count() - b.Pieces[Black][Knights].Count() -
+		2*(b.Pieces[White][Rooks].Count()+b.Pieces[Black][Rooks].Count()) -
+		4*(b.Pieces[White][Queens].Count()+b.Pieces[Black][Queens].Count())
 
 	return (phase * 268) / 24
 }
@@ -372,14 +372,14 @@ func (b *Board) PlayMovesUCI(uciMoves string) bool {
 // Remove a piece captured by a move from the opposing bitboard.
 func (b *Board) RemoveCaptured(sq int) {
 	b.Occupancy[b.Side^1].Clear(sq)
-	for piece := PAWNS; piece <= KINGS; piece++ {
+	for piece := Pawns; piece <= Kings; piece++ {
 		b.Pieces[b.Side^1][piece] &= b.Occupancy[b.Side^1]
 	}
 }
 
 // Make the complimentary rook move when castling.
 func (b *Board) CompleteCastling(move Move) {
-	bitboard := &b.Pieces[b.Side][ROOKS]
+	bitboard := &b.Pieces[b.Side][Rooks]
 	var rookMove Move
 	switch move {
 	case WCastleKing:
@@ -391,22 +391,22 @@ func (b *Board) CompleteCastling(move Move) {
 	case BCastleQueen:
 		rookMove = BCastleQueenRook
 	}
-	b.ZobristSimpleMove(rookMove, ROOKS)
+	b.ZobristSimpleMove(rookMove, Rooks)
 	bitboard.Set(int(rookMove.To()))
 	bitboard.Clear(int(rookMove.From()))
 }
 
 // Get the piece at square as a collection of values: found, color, piece.
 func (b *Board) PieceAtSquare(sq Square) int {
-	for color := WHITE; color <= BLACK; color++ {
-		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
+	for color := White; color <= Black; color++ {
+		for pieceType := Pawns; pieceType <= Kings; pieceType++ {
 			if SquareBitboards[sq]&b.Pieces[color][pieceType] != 0 {
 				return pieceType
 			}
 		}
 	}
 
-	return NO_PIECE
+	return NoPiece
 }
 
 // Replace a pawn on the 8th/1st rank with the promotion piece.
@@ -417,7 +417,7 @@ func (b *Board) Promote(move Move) {
 	}
 
 	var pawnBitBoard, promotionBitBoard *BBoard
-	pawnBitBoard = &b.Pieces[b.Side][PAWNS]
+	pawnBitBoard = &b.Pieces[b.Side][Pawns]
 	promotionBitBoard = &b.Pieces[b.Side][promotion]
 
 	pawnBitBoard.Clear(int(move.To()))
@@ -427,7 +427,7 @@ func (b *Board) Promote(move Move) {
 
 // Determine if the game only consists of pawns and kings.
 func (b *Board) IsPawnOnly() bool {
-	return b.Pieces[WHITE][PAWNS]|b.Pieces[WHITE][KINGS]|b.Pieces[BLACK][PAWNS]|b.Pieces[BLACK][KINGS] == b.Occupancy[BOTH]
+	return b.Pieces[White][Pawns]|b.Pieces[White][Kings]|b.Pieces[Black][Pawns]|b.Pieces[Black][Kings] == b.Occupancy[Both]
 }
 
 // Determine if there is a draw by insufficient material
@@ -438,16 +438,16 @@ func (b *Board) InsufficientMaterial() bool {
 	}
 	// If any pawn or major piece on the board can't have insufficient material
 	// No game with 3 or more minors is a strict draw.
-	if b.Pieces[WHITE][PAWNS] != 0 || b.Pieces[BLACK][PAWNS] != 0 ||
-		b.Pieces[WHITE][QUEENS] != 0 || b.Pieces[BLACK][QUEENS] != 0 ||
-		b.Pieces[WHITE][ROOKS] != 0 || b.Pieces[BLACK][ROOKS] != 0 ||
-		b.Occupancy[BOTH].Count() > 4 {
+	if b.Pieces[White][Pawns] != 0 || b.Pieces[Black][Pawns] != 0 ||
+		b.Pieces[White][Queens] != 0 || b.Pieces[Black][Queens] != 0 ||
+		b.Pieces[White][Rooks] != 0 || b.Pieces[Black][Rooks] != 0 ||
+		b.Occupancy[Both].Count() > 4 {
 		return false
 	}
 
 	// We disqualified all obvious sufficient material cases above and are left with games that have at most 2 minors
-	wN, wB := b.Pieces[WHITE][KNIGHTS].Count(), b.Pieces[WHITE][BISHOPS].Count()
-	bN, bB := b.Pieces[BLACK][KNIGHTS].Count(), b.Pieces[BLACK][BISHOPS].Count()
+	wN, wB := b.Pieces[White][Knights].Count(), b.Pieces[White][Bishops].Count()
+	bN, bB := b.Pieces[Black][Knights].Count(), b.Pieces[Black][Bishops].Count()
 	wM, bM := wN+wB, bN+bB
 
 	// Check if only one (or zero) minor on the board. KvKM King v King plus one minor = draw
@@ -461,7 +461,7 @@ func (b *Board) InsufficientMaterial() bool {
 	}
 
 	if wB == 1 && bB == 1 {
-		return isLight(b.Pieces[WHITE][BISHOPS].LS1B()) == isLight(b.Pieces[BLACK][BISHOPS].LS1B())
+		return isLight(b.Pieces[White][Bishops].LS1B()) == isLight(b.Pieces[Black][Bishops].LS1B())
 	}
 
 	return false

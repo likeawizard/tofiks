@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
+	"github.com/likeawizard/tofiks/pkg/eval"
 )
 
 // LmrTable[depth][moveNum] gives the late-move reduction in plies.
@@ -25,7 +26,7 @@ func init() {
 
 // lmrReduction looks up the late-move reduction for a given depth and move
 // number, clamping both to the table bounds and flooring at 1.
-func lmrReduction(depth int8, legalMoves int) int8 {
+func lmrReduction(depth, legalMoves int) int {
 	d := depth
 	if d > 63 {
 		d = 63
@@ -34,7 +35,7 @@ func lmrReduction(depth int8, legalMoves int) int8 {
 	if m > 63 {
 		m = 63
 	}
-	r := LmrTable[d][m]
+	r := int(LmrTable[d][m])
 	if r < 1 {
 		r = 1
 	}
@@ -54,12 +55,15 @@ const (
 
 type HistoryHeuristic [2][64][64]int
 
+// Engine is the stateful search controller. It owns the board, transposition
+// table, history/killer/counter tables, time control, and a reference to the
+// evaluation state. Created once per UCI session and reused across searches.
 type Engine struct {
 	MoveOrder    MoveOrderStats
-	Stability    SearchStability
+	Stability    Stability
 	Board        *board.Board
 	TTable       *TTable
-	PawnTable    *PawnTable
+	Eval         *eval.Eval
 	Stop         context.CancelFunc
 	Stats        Stats
 	TC           TimeControl
@@ -68,7 +72,6 @@ type Engine struct {
 	Clock        Clock
 	WG           sync.WaitGroup
 	Ply          int
-	SearchDepth  int
 	CounterMoves [64][64]board.Move
 	KillerMoves  [100][2]board.Move
 	PrevMove     [100]board.Move
@@ -89,11 +92,12 @@ var mvvlva = [7][6]int{
 	{0, 0, 0, 0, 0, 0},       // no piece.
 }
 
-func NewEvalEngine() *Engine {
+// NewEngine constructs a fresh search engine with default board, TT, and eval state.
+func NewEngine() *Engine {
 	return &Engine{
-		Board:     board.NewBoard(board.StartPos),
-		TTable:    NewTTable(64),
-		PawnTable: NewPawnTable(),
+		Board:  board.NewBoard(board.StartPos),
+		TTable: NewTTable(64),
+		Eval:   eval.New(),
 	}
 }
 
@@ -111,17 +115,16 @@ func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.M
 	return best, ponder
 }
 
-func (e *Engine) AddKillerMove(ply int8, move board.Move) {
+func (e *Engine) AddKillerMove(ply int, move board.Move) {
 	if move != e.KillerMoves[ply][0] {
 		e.KillerMoves[ply][1] = e.KillerMoves[ply][0]
 		e.KillerMoves[ply][0] = move
 	}
 }
 
-func (e *Engine) IncrementHistory(depth int8, move board.Move) {
-	d := int(depth)
+func (e *Engine) IncrementHistory(depth int, move board.Move) {
 	from, to := move.FromTo()
-	e.History[e.Board.Side][from][to] += d * d
+	e.History[e.Board.Side][from][to] += depth * depth
 }
 
 func (e *Engine) DecrementHistory(move board.Move) {
@@ -176,8 +179,8 @@ func (e *Engine) IsDrawByRepetition() bool {
 
 // ScoreMoves embeds move ordering scores into the unused bits of each move.
 // Order: 1. PV 2. hash move 3. Captures by MVVLVA 4. killer moves 5. countermove 6. History Heuristic.
-func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, ply int8) {
-	lenPV := int8(len(pvOrder))
+func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, ply int) {
+	lenPV := len(pvOrder)
 	var counterMove board.Move
 	if ply > 0 {
 		from, to := e.PrevMove[ply-1].FromTo()

@@ -1,6 +1,6 @@
 //go:build !debug
 
-package eval
+package search
 
 // MoveOrderStats is a no-op in release builds.
 type MoveOrderStats struct{}

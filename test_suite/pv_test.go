@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,7 +31,7 @@ func TestValidPV(t *testing.T) {
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 
-			e := eval.NewEvalEngine()
+			e := search.NewEngine()
 			e.Board = board.NewBoard(testPos)
 			position := e.Board.Copy()
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)

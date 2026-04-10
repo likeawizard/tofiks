@@ -27,7 +27,7 @@ const (
 	WOOO
 	BOO
 	BOOO
-	CASTLING_ALL = WOO | WOOO | BOO | BOOO
+	CastlingAll = WOO | WOOO | BOO | BOOO
 )
 
 const (
@@ -39,18 +39,18 @@ const (
 
 const (
 	// Constants for the board Side and Occupancy.
-	WHITE = 0
-	BLACK = 1
-	BOTH  = 2
+	White = 0
+	Black = 1
+	Both  = 2
 
 	// Constants for the board Pieces.
-	PAWNS    = 0
-	BISHOPS  = 1
-	KNIGHTS  = 2
-	ROOKS    = 3
-	QUEENS   = 4
-	KINGS    = 5
-	NO_PIECE = 6
+	Pawns   = 0
+	Bishops = 1
+	Knights = 2
+	Rooks   = 3
+	Queens  = 4
+	Kings   = 5
+	NoPiece = 6
 
 	// File and Rank constants.
 	AFile BBoard = 72340172838076673

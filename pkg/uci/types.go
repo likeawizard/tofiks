@@ -1,7 +1,7 @@
 package uci
 
 import (
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 )
 
 type Cmd interface {
-	Exec(*eval.Engine) bool
+	Exec(*search.Engine) bool
 }
 
 type UCI struct{}
@@ -56,7 +56,7 @@ type NewGame struct{}
 
 type Opt interface {
 	Info()
-	Set(e *eval.Engine)
+	Set(e *search.Engine)
 }
 
 type Hash struct {

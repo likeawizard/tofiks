@@ -1,4 +1,4 @@
-package eval
+package search
 
 import "github.com/likeawizard/tofiks/pkg/board"
 
@@ -12,7 +12,7 @@ func (e *Engine) SEE(fromSq, toSq board.Square) int {
 	depth := 0
 	side := b.Side
 
-	occ := b.Occupancy[board.BOTH]
+	occ := b.Occupancy[board.Both]
 
 	attackerPiece := e.pieceOnSquare(fromSq, side)
 	gain[0] = seeValues[b.PieceAtSquare(toSq)]
@@ -29,7 +29,7 @@ func (e *Engine) SEE(fromSq, toSq board.Square) int {
 		side ^= 1
 
 		attackerPiece, fromSq = e.leastValuableAttacker(toSq, side, occ)
-		if attackerPiece == board.NO_PIECE {
+		if attackerPiece == board.NoPiece {
 			break
 		}
 	}
@@ -43,49 +43,49 @@ func (e *Engine) SEE(fromSq, toSq board.Square) int {
 
 func (e *Engine) pieceOnSquare(sq board.Square, side int8) int {
 	bb := board.SquareBitboards[sq]
-	for piece := board.PAWNS; piece <= board.KINGS; piece++ {
+	for piece := board.Pawns; piece <= board.Kings; piece++ {
 		if e.Board.Pieces[side][piece]&bb != 0 {
 			return piece
 		}
 	}
-	return board.NO_PIECE
+	return board.NoPiece
 }
 
 func (e *Engine) leastValuableAttacker(toSq board.Square, side int8, occ board.BBoard) (int, board.Square) {
 	b := e.Board
 	sq := int(toSq)
 
-	attackers := board.PawnAttacks[side^1][toSq] & b.Pieces[side][board.PAWNS] & occ
+	attackers := board.PawnAttacks[side^1][toSq] & b.Pieces[side][board.Pawns] & occ
 	if attackers != 0 {
-		return board.PAWNS, board.Square(attackers.LS1B())
+		return board.Pawns, board.Square(attackers.LS1B())
 	}
 
-	attackers = board.KnightAttacks[toSq] & b.Pieces[side][board.KNIGHTS] & occ
+	attackers = board.KnightAttacks[toSq] & b.Pieces[side][board.Knights] & occ
 	if attackers != 0 {
-		return board.KNIGHTS, board.Square(attackers.LS1B())
+		return board.Knights, board.Square(attackers.LS1B())
 	}
 
 	bishopAttacks := board.GetBishopAttacks(sq, occ)
-	attackers = bishopAttacks & b.Pieces[side][board.BISHOPS] & occ
+	attackers = bishopAttacks & b.Pieces[side][board.Bishops] & occ
 	if attackers != 0 {
-		return board.BISHOPS, board.Square(attackers.LS1B())
+		return board.Bishops, board.Square(attackers.LS1B())
 	}
 
 	rookAttacks := board.GetRookAttacks(sq, occ)
-	attackers = rookAttacks & b.Pieces[side][board.ROOKS] & occ
+	attackers = rookAttacks & b.Pieces[side][board.Rooks] & occ
 	if attackers != 0 {
-		return board.ROOKS, board.Square(attackers.LS1B())
+		return board.Rooks, board.Square(attackers.LS1B())
 	}
 
-	attackers = (bishopAttacks | rookAttacks) & b.Pieces[side][board.QUEENS] & occ
+	attackers = (bishopAttacks | rookAttacks) & b.Pieces[side][board.Queens] & occ
 	if attackers != 0 {
-		return board.QUEENS, board.Square(attackers.LS1B())
+		return board.Queens, board.Square(attackers.LS1B())
 	}
 
-	attackers = board.KingAttacks[toSq] & b.Pieces[side][board.KINGS] & occ
+	attackers = board.KingAttacks[toSq] & b.Pieces[side][board.Kings] & occ
 	if attackers != 0 {
-		return board.KINGS, board.Square(attackers.LS1B())
+		return board.Kings, board.Square(attackers.LS1B())
 	}
 
-	return board.NO_PIECE, 0
+	return board.NoPiece, 0
 }

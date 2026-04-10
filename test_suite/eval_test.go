@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -434,15 +434,15 @@ var positions = []string{
 }
 
 func TestEvalSymmetry(t *testing.T) {
-	e := eval.NewEvalEngine()
+	e := search.NewEngine()
 	for _, fen := range positions {
 		t.Run(fen, func(t *testing.T) {
 			e.Board = &board.Board{}
 			err := e.Board.ImportFEN(fen)
 			assert.NoError(t, err)
-			evaluation := e.GetEvaluation(e.Board)
+			evaluation := e.Eval.GetEvaluation(e.Board)
 			e.Board.Flip()
-			assert.Equal(t, evaluation, -e.GetEvaluation(e.Board))
+			assert.Equal(t, evaluation, -e.Eval.GetEvaluation(e.Board))
 		})
 	}
 }

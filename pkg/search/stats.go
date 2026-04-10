@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"fmt"

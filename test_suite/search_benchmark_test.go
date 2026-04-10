@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 )
 
 const searchBenchDepth = 6
@@ -15,18 +15,18 @@ var searchBenchPositions = perftResults[1:]
 
 func BenchmarkPVS(b *testing.B) {
 	for _, perft := range searchBenchPositions {
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		e.Board = board.NewBoard(perft.fen)
 
 		color := int16(1)
-		if e.Board.Side != board.WHITE {
+		if e.Board.Side != board.White {
 			color = -color
 		}
 
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				var line []board.Move
-				e.PVS(context.Background(), nil, &line, searchBenchDepth, 0, -eval.Inf, eval.Inf, true, color)
+				e.PVS(context.Background(), nil, &line, searchBenchDepth, 0, -search.Inf, search.Inf, true, color)
 			}
 		})
 	}
@@ -34,17 +34,17 @@ func BenchmarkPVS(b *testing.B) {
 
 func BenchmarkQuiescence(b *testing.B) {
 	for _, perft := range searchBenchPositions {
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		e.Board = board.NewBoard(perft.fen)
 
 		color := int16(1)
-		if e.Board.Side != board.WHITE {
+		if e.Board.Side != board.White {
 			color = -color
 		}
 
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				e.Quiescence(context.Background(), 0, -eval.Inf, eval.Inf, color)
+				e.Quiescence(context.Background(), 0, -search.Inf, search.Inf, color)
 			}
 		})
 	}
@@ -52,7 +52,7 @@ func BenchmarkQuiescence(b *testing.B) {
 
 func BenchmarkSEE(b *testing.B) {
 	for _, perft := range searchBenchPositions {
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		e.Board = board.NewBoard(perft.fen)
 		captures := e.Board.PseudoCaptureAndQueenPromoGen()
 
@@ -74,7 +74,7 @@ func BenchmarkIDSearch(b *testing.B) {
 	defer func() { os.Stdout = old }()
 
 	for _, perft := range searchBenchPositions {
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		e.Board = board.NewBoard(perft.fen)
 
 		b.Run(perft.position, func(b *testing.B) {

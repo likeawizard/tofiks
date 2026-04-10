@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"unsafe"
@@ -14,15 +14,15 @@ type (
 	// LSB 0..31 move, 32..38 depth 39..40 type 41..47 age 48..63 score MSB.
 	EntryData uint64
 
-	// SearchEntry is a struct for storing the key and data in the transposition table.
-	SearchEntry struct {
+	// tableEntry is a struct for storing the key and data in the transposition table.
+	tableEntry struct {
 		key  uint64
 		data EntryData
 	}
 
 	// TTable is a transposition table used for storing search results.
 	TTable struct {
-		entries       []SearchEntry
+		entries       []tableEntry
 		Stats         TTStats
 		age           int8
 		newWrite      uint64
@@ -63,15 +63,16 @@ const (
 	score_shift = 48
 )
 
-func NewEntry(move board.Move, depth int8, eType EntryType, age int8, score int16) EntryData {
+func NewEntry(move board.Move, depth int, eType EntryType, age int8, score int16) EntryData {
+	// depth is masked to 7 bits to prevent spillage into the type field.
 	return EntryData(move) |
-		EntryData(depth)<<depth_shift |
+		EntryData(depth&depth_mask)<<depth_shift |
 		EntryData(eType)<<type_shift |
 		EntryData(age)<<age_shift |
 		EntryData(score)<<score_shift
 }
 
-func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
+func (ed EntryData) GetScore(depth, ply int, alpha, beta int16) (int16, bool) {
 	if ed.Depth() < depth {
 		return 0, false
 	}
@@ -98,15 +99,8 @@ func (ed EntryData) GetScore(depth, ply int8, alpha, beta int16) (int16, bool) {
 	return eval, false
 }
 
-func (ed EntryData) Get() (board.Move, int8, EntryType, int16) {
-	return board.Move(ed & move_mask),
-		int8((ed >> depth_shift) & depth_mask),
-		EntryType((ed >> type_shift) & type_mask),
-		int16(ed >> score_shift)
-}
-
-func (ed EntryData) Depth() int8 {
-	return int8((ed >> depth_shift) & depth_mask)
+func (ed EntryData) Depth() int {
+	return int((ed >> depth_shift) & depth_mask)
 }
 
 func (ed EntryData) Move() board.Move {
@@ -128,7 +122,7 @@ func (ed EntryData) Age() int8 {
 const bucketsPerEntry = 2
 
 func NewTTable(sizeInMb int) *TTable {
-	eSize := int(unsafe.Sizeof(SearchEntry{}))
+	eSize := int(unsafe.Sizeof(tableEntry{}))
 	totalEntries := (1024 * 1024 * sizeInMb) / eSize
 	// Round down to power of 2 for bucket count so we can use bitwise AND.
 	buckets := uint64(1)
@@ -136,7 +130,7 @@ func NewTTable(sizeInMb int) *TTable {
 		buckets *= 2
 	}
 	return &TTable{
-		entries: make([]SearchEntry, buckets*bucketsPerEntry),
+		entries: make([]tableEntry, buckets*bucketsPerEntry),
 		size:    buckets,
 	}
 }
@@ -160,7 +154,7 @@ func (tt *TTable) Hashfull() uint64 {
 	return (tt.newWrite * 1000) / (tt.size * bucketsPerEntry)
 }
 
-func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply int8, move board.Move) {
+func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply int, move board.Move) {
 	// Normalize mate scores to position-relative distances for correct retrieval at any ply.
 	if eval > CheckmateThreshold {
 		eval += int16(ply)
@@ -169,7 +163,7 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 	}
 
 	data := NewEntry(move, depth, entryType, tt.age, eval)
-	newEntry := SearchEntry{
+	newEntry := tableEntry{
 		key:  hash ^ uint64(data),
 		data: data,
 	}
@@ -194,12 +188,12 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 	}
 
 	// All buckets occupied by different positions. Evict the weakest.
-	newScore := int16(depth) + int16(tt.age)
-	weakestScore := int16(tt.entries[base].data.Depth()) + int16(tt.entries[base].data.Age())
+	newScore := depth + int(tt.age)
+	weakestScore := tt.entries[base].data.Depth() + int(tt.entries[base].data.Age())
 	weakestIdx := base
 
 	for i := uint64(1); i < bucketsPerEntry; i++ {
-		s := int16(tt.entries[base+i].data.Depth()) + int16(tt.entries[base+i].data.Age())
+		s := tt.entries[base+i].data.Depth() + int(tt.entries[base+i].data.Age())
 		if s < weakestScore {
 			weakestScore = s
 			weakestIdx = base + i
@@ -221,9 +215,5 @@ func (tt *TTable) Clear() {
 	tt.overWrite = 0
 	tt.rejectedWrite = 0
 	tt.Stats.reset()
-	totalEntries := tt.size * bucketsPerEntry
-	for i := uint64(0); i < totalEntries; i++ {
-		tt.entries[i].key = 0
-		tt.entries[i].data = 0
-	}
+	clear(tt.entries)
 }

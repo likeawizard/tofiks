@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"context"
@@ -34,7 +34,7 @@ func (c *Clock) GetContext(fmCounter int, side int8) (context.Context, context.C
 // minus overhead, as a safety cap for time control.
 func (c *Clock) remainingTime(side int8) time.Duration {
 	t := c.Wtime
-	if side == board.BLACK {
+	if side == board.Black {
 		t = c.Btime
 	}
 	return time.Millisecond * time.Duration(max(t-c.Overhead, 0))
@@ -49,7 +49,7 @@ func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
 		movestogo := c.Movestogo
 		t := c.Wtime
 		inc := c.Winc
-		if side == board.BLACK {
+		if side == board.Black {
 			t = c.Btime
 			inc = c.Binc
 		}

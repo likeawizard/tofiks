@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 )
 
 var benchPositions = []string{
@@ -25,11 +25,11 @@ func TestTraceMatchesEval(t *testing.T) {
 
 	for _, fen := range benchPositions {
 		b := board.NewBoard(fen)
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		e.Board = b
 		e.Board.Phase = e.Board.GetGamePhase()
 
-		engineEval := float64(e.GetEvaluation(e.Board))
+		engineEval := float64(e.Eval.GetEvaluation(e.Board))
 
 		trace, _ := TraceEvaluate(b)
 		traceEval := EvalFromTrace(&trace, &weights)
