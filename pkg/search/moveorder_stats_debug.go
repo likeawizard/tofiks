@@ -1,6 +1,6 @@
 //go:build debug
 
-package eval
+package search
 
 import "fmt"
 

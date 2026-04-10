@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMateScoreAcrossPlies(t *testing.T) {
 	tests := []struct {
 		name         string
-		storePly     int8
-		retrievePly  int8
-		mateDistance int8 // plies from the position to the mate leaf
+		storePly     int
+		retrievePly  int
+		mateDistance int  // plies from the position to the mate leaf
 		positive     bool // true = side to move delivers mate, false = side to move gets mated
 	}{
 		{
@@ -55,7 +55,7 @@ func TestMateScoreAcrossPlies(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			tt := eval.NewTTable(1)
+			tt := search.NewTTable(1)
 			hash := uint64(0xDEADBEEF)
 
 			// Build the score as PVS would produce it at storePly.
@@ -64,21 +64,21 @@ func TestMateScoreAcrossPlies(t *testing.T) {
 			mateLeafPly := int16(tc.storePly) + int16(tc.mateDistance)
 			var storedScore, expectedScore int16
 			if tc.positive {
-				storedScore = eval.CheckmateScore - mateLeafPly
+				storedScore = search.CheckmateScore - mateLeafPly
 				// At retrievePly the correct score: CheckmateScore - (retrievePly + mateDistance)
-				expectedScore = eval.CheckmateScore - int16(tc.retrievePly) - int16(tc.mateDistance)
+				expectedScore = search.CheckmateScore - int16(tc.retrievePly) - int16(tc.mateDistance)
 			} else {
-				storedScore = -eval.CheckmateScore + mateLeafPly
+				storedScore = -search.CheckmateScore + mateLeafPly
 				// At retrievePly the correct score: -CheckmateScore + (retrievePly + mateDistance)
-				expectedScore = -eval.CheckmateScore + int16(tc.retrievePly) + int16(tc.mateDistance)
+				expectedScore = -search.CheckmateScore + int16(tc.retrievePly) + int16(tc.mateDistance)
 			}
 
-			tt.Store(hash, eval.TT_EXACT, storedScore, 10, tc.storePly, 0)
+			tt.Store(hash, search.TT_EXACT, storedScore, 10, tc.storePly, 0)
 
 			entry, ok := tt.Probe(hash)
 			assert.True(t, ok, "TT probe should hit")
 
-			score, ok := entry.GetScore(10, tc.retrievePly, -eval.Inf, eval.Inf)
+			score, ok := entry.GetScore(10, tc.retrievePly, -search.Inf, search.Inf)
 			assert.True(t, ok, "exact entry with sufficient depth should return a score")
 			assert.Equal(t, expectedScore, score,
 				"mate score should be adjusted to reflect the new ply distance; expected %d but got %d",
@@ -93,10 +93,10 @@ func FuzzEntry(f *testing.F) {
 		if eType > 2 || depth < 0 || age < 0 {
 			return
 		}
-		entry := eval.NewEntry(board.Move(move), depth, eval.EntryType(eType), age, score)
+		entry := search.NewEntry(board.Move(move), int(depth), search.EntryType(eType), age, score)
 		assert.Equal(t, board.Move(move), entry.Move(), "move mismatch")
-		assert.Equal(t, depth, entry.Depth(), "depth mismatch")
-		assert.Equal(t, eval.EntryType(eType), entry.Type(), "type mismatch")
+		assert.Equal(t, int(depth), entry.Depth(), "depth mismatch")
+		assert.Equal(t, search.EntryType(eType), entry.Type(), "type mismatch")
 		assert.Equal(t, age, entry.Age(), "age mismatch")
 		assert.Equal(t, score, entry.Score(), "score mismatch")
 	})

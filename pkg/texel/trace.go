@@ -2,7 +2,7 @@ package texel
 
 import (
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/eval"
 )
 
 // TraceCoeff is a single non-zero coefficient in a sparse trace.
@@ -28,24 +28,24 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 	egPhase := float64(phase) / 256.0
 
 	oppKing := [2]board.BBoard{
-		board.KingAttacks[board.Square(b.Pieces[board.BLACK][board.KINGS].LS1B())],
-		board.KingAttacks[board.Square(b.Pieces[board.WHITE][board.KINGS].LS1B())],
+		board.KingAttacks[board.Square(b.Pieces[board.Black][board.Kings].LS1B())],
+		board.KingAttacks[board.Square(b.Pieces[board.White][board.Kings].LS1B())],
 	}
 
-	for color := board.WHITE; color <= board.BLACK; color++ {
+	for color := board.White; color <= board.Black; color++ {
 		sign := 1.0
-		if color == board.BLACK {
+		if color == board.Black {
 			sign = -1.0
 		}
 
-		for pieceType := board.PAWNS; pieceType <= board.KINGS; pieceType++ {
+		for pieceType := board.Pawns; pieceType <= board.Kings; pieceType++ {
 			pieces := b.Pieces[color][pieceType]
 			for pieces > 0 {
 				piece := pieces.PopLS1B()
 				sq := piece
 				// For black, mirror the square for PST lookup (same as InitPSTs).
 				pstSq := sq
-				if color == board.BLACK {
+				if color == board.Black {
 					pstSq = (7-sq/8)*8 + sq%8
 				}
 
@@ -60,17 +60,17 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 
 				// Piece-specific eval traces.
 				switch pieceType {
-				case board.PAWNS:
+				case board.Pawns:
 					// Handled separately in tracePawns.
-				case board.KNIGHTS:
+				case board.Knights:
 					traceKnight(b, board.Square(sq), color, oppKing[color], sign, &t)
-				case board.BISHOPS:
+				case board.Bishops:
 					traceBishop(b, board.Square(sq), color, oppKing[color], sign, &t)
-				case board.ROOKS:
+				case board.Rooks:
 					traceRook(b, board.Square(sq), color, oppKing[color], sign, &t)
-				case board.QUEENS:
+				case board.Queens:
 					traceQueen(b, board.Square(sq), color, oppKing[color], sign, &t)
-				case board.KINGS:
+				case board.Kings:
 					traceKing(b, board.Square(sq), color, sign, phase, &t)
 				}
 			}
@@ -105,15 +105,15 @@ func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
-	t[mobilityStart+3] += sign * moveCount // MOVE_KNIGHT
-	t[captureStart] += sign * captureCount // W_CAPTURE
-	t[threatStart+3] += sign * threatCount // KNIGHT_THREAT
+	t[mobilityStart+3] += sign * moveCount // KnightMobility
+	t[captureStart] += sign * captureCount // CaptureBonus
+	t[threatStart+3] += sign * threatCount // KnightThreat
 
 	// Outpost.
-	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
-		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.Pawns] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.Pawns] != 0 {
 		outSq := int(sq)
-		if side == board.BLACK {
+		if side == board.Black {
 			outSq = (7-outSq/8)*8 + outSq%8
 		}
 		t[outpostStart+outSq] += sign
@@ -121,45 +121,45 @@ func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 }
 
 func traceBishop(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, t *denseTrace) {
-	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.BOTH])
+	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
 	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
-	t[mobilityStart+2] += sign * moveCount // MOVE_BISHOP
-	t[captureStart] += sign * captureCount // W_CAPTURE
-	t[threatStart+2] += sign * threatCount // BISHOP_THREAT
+	t[mobilityStart+2] += sign * moveCount // BishopMobility
+	t[captureStart] += sign * captureCount // CaptureBonus
+	t[threatStart+2] += sign * threatCount // BishopThreat
 
 	// Outpost.
-	if board.Outposts[side][sq]&b.Pieces[side^1][board.PAWNS] == 0 &&
-		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.PAWNS] != 0 {
+	if board.Outposts[side][sq]&b.Pieces[side^1][board.Pawns] == 0 &&
+		board.PawnAttacks[side^1][sq]&b.Pieces[side][board.Pawns] != 0 {
 		outSq := int(sq)
-		if side == board.BLACK {
+		if side == board.Black {
 			outSq = (7-outSq/8)*8 + outSq%8
 		}
 		t[outpostStart+64+outSq] += sign
 	}
 
 	// Bishop pair.
-	if b.Pieces[side][board.BISHOPS].Count() > 1 {
+	if b.Pieces[side][board.Bishops].Count() > 1 {
 		t[bishopPairStart] += sign
 	}
 }
 
 func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, t *denseTrace) {
-	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.BOTH])
+	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
 	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
-	t[mobilityStart+1] += sign * moveCount // MOVE_ROOK
-	t[captureStart] += sign * captureCount // W_CAPTURE
-	t[threatStart+1] += sign * threatCount // ROOK_THREAT
+	t[mobilityStart+1] += sign * moveCount // RookMobility
+	t[captureStart] += sign * captureCount // CaptureBonus
+	t[threatStart+1] += sign * threatCount // RookThreat
 
 	// Rook on open / semi-open file.
 	file := board.FileMasks[sq%8]
-	if file&b.Pieces[side][board.PAWNS] == 0 {
-		if file&b.Pieces[side^1][board.PAWNS] == 0 {
+	if file&b.Pieces[side][board.Pawns] == 0 {
+		if file&b.Pieces[side^1][board.Pawns] == 0 {
 			t[rookFileStart+0] += sign // open file
 		} else {
 			t[rookFileStart+1] += sign // semi-open file
@@ -168,19 +168,19 @@ func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, 
 }
 
 func traceQueen(b *board.Board, sq board.Square, _ int, oppKing board.BBoard, sign float64, t *denseTrace) {
-	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.BOTH])
+	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
 
-	side := board.WHITE
+	side := board.White
 	if sign < 0 {
-		side = board.BLACK
+		side = board.Black
 	}
 	captures := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
-	t[mobilityStart+0] += sign * moveCount // MOVE_QUEEN
-	t[captureStart] += sign * captures     // W_CAPTURE
-	t[threatStart+0] += sign * threatCount // QUEEN_THREAT
+	t[mobilityStart+0] += sign * moveCount // QueenMobility
+	t[captureStart] += sign * captures     // CaptureBonus
+	t[threatStart+0] += sign * threatCount // QueenThreat
 }
 
 func traceKing(b *board.Board, king board.Square, side int, sign float64, phase int, t *denseTrace) {
@@ -193,8 +193,8 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 	// Note: enemyNearKing was removed — it correlated with material count,
 	// causing the tuner to flip its sign. Per-piece threats already capture
 	// enemy pressure on the king zone more accurately.
-	distC := float64(eval.DistCenter(king))
-	pawnShield := float64((board.KingSafetyMask[side][king] & b.Pieces[side][board.PAWNS]).Count())
+	distC := float64(eval.DistCenter(int(king)))
+	pawnShield := float64((board.KingSafetyMask[side][king] & b.Pieces[side][board.Pawns]).Count())
 	allFriendly := float64((board.KingSafetyMask[side][king] & b.Occupancy[side]).Count())
 	friendlyNonPawn := allFriendly - pawnShield
 
@@ -204,7 +204,7 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 	t[kingSafetyStart+3] += sign * moveCount * mgPhase
 
 	// King activity (EG): distCenter, distSquares, mobility.
-	distS := float64(eval.DistSquares(king, board.Square(b.Pieces[side^1][board.KINGS].LS1B())))
+	distS := float64(eval.DistSquares(int(king), b.Pieces[side^1][board.Kings].LS1B()))
 	t[kingActivityStart+0] += sign * distC * egPhase
 	t[kingActivityStart+1] += sign * distS * egPhase
 	t[kingActivityStart+2] += sign * moveCount * egPhase
@@ -212,14 +212,14 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 
 // tracePawns computes pawn structure coefficients for both sides.
 func tracePawns(b *board.Board, t *denseTrace) {
-	for color := board.WHITE; color <= board.BLACK; color++ {
+	for color := board.White; color <= board.Black; color++ {
 		sign := 1.0
-		if color == board.BLACK {
+		if color == board.Black {
 			sign = -1.0
 		}
 		opp := color ^ 1
-		ownPawns := b.Pieces[color][board.PAWNS]
-		oppPawns := b.Pieces[opp][board.PAWNS]
+		ownPawns := b.Pieces[color][board.Pawns]
+		oppPawns := b.Pieces[opp][board.Pawns]
 		pieces := ownPawns
 
 		for pieces > 0 {
@@ -242,7 +242,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 			passed := eval.IsPassed(b, sq, color)
 			if passed {
 				rank := 7 - int(sq)/8
-				if color == board.BLACK {
+				if color == board.Black {
 					rank = int(sq) / 8
 				}
 				// Passed pawn bonus (ranks 1-6 map to indices 0-5).
@@ -266,7 +266,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 			// Backward pawn.
 			if !isolated && !passed {
 				stopSq := int(sq) - 8
-				if color == board.BLACK {
+				if color == board.Black {
 					stopSq = int(sq) + 8
 				}
 				if stopSq >= 0 && stopSq < 64 {
@@ -280,7 +280,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 
 			// Blocked pawn.
 			stopSq := int(sq) - 8
-			if color == board.BLACK {
+			if color == board.Black {
 				stopSq = int(sq) + 8
 			}
 			if stopSq >= 0 && stopSq < 64 && board.SquareBitboards[stopSq]&oppPawns != 0 {

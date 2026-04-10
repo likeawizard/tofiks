@@ -12,7 +12,7 @@ type PawnTableStats struct {
 
 func (s *PawnTableStats) recordProbe() { s.probes++ }
 func (s *PawnTableStats) recordHit()   { s.hits++ }
-func (s *PawnTableStats) reset()       { *s = PawnTableStats{} }
+func (s *PawnTableStats) Reset()       { *s = PawnTableStats{} }
 
 func (s *PawnTableStats) String() string {
 	if s.probes == 0 {

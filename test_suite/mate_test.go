@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +27,7 @@ func TestMate(t *testing.T) {
 			r, w, _ := os.Pipe()
 			os.Stdout = w
 
-			e := eval.NewEvalEngine()
+			e := search.NewEngine()
 			e.Board = board.NewBoard(testPos.fen)
 			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 			lr := bufio.NewScanner(r)

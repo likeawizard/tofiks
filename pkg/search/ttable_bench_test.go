@@ -1,4 +1,4 @@
-package eval
+package search
 
 import (
 	"math/rand/v2"
@@ -63,7 +63,7 @@ func BenchmarkTTProbeMiss(b *testing.B) {
 func BenchmarkTTStoreMixed(b *testing.B) {
 	tt := NewTTable(benchTTSize)
 	hashes := generateHashes(b.N)
-	depths := []int8{0, 2, 5, 8, 12}
+	depths := []int{0, 2, 5, 8, 12}
 	types := []EntryType{TT_UPPER, TT_LOWER, TT_EXACT}
 
 	b.ResetTimer()

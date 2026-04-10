@@ -7,5 +7,5 @@ type PawnTableStats struct{}
 
 func (s *PawnTableStats) recordProbe()   {}
 func (s *PawnTableStats) recordHit()     {}
-func (s *PawnTableStats) reset()         {}
+func (s *PawnTableStats) Reset()         {}
 func (s *PawnTableStats) String() string { return "" }

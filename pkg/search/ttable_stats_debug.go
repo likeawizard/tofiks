@@ -1,6 +1,6 @@
 //go:build debug
 
-package eval
+package search
 
 import "fmt"
 
@@ -16,14 +16,14 @@ type TTStats struct {
 	depthSum   uint64
 }
 
-func (s *TTStats) recordProbe()         { s.probes++ }
-func (s *TTStats) recordHit(depth int8) { s.hits++; s.depthSum += uint64(depth) }
-func (s *TTStats) recordCutoff()        { s.scoreCuts++ }
-func (s *TTStats) recordMoveHit()       { s.moveHits++ }
-func (s *TTStats) recordNewWrite()      { s.newWrites++ }
-func (s *TTStats) recordOverWrite()     { s.overWrites++ }
-func (s *TTStats) recordRejected()      { s.rejected++ }
-func (s *TTStats) reset()               { *s = TTStats{} }
+func (s *TTStats) recordProbe()        { s.probes++ }
+func (s *TTStats) recordHit(depth int) { s.hits++; s.depthSum += uint64(depth) }
+func (s *TTStats) recordCutoff()       { s.scoreCuts++ }
+func (s *TTStats) recordMoveHit()      { s.moveHits++ }
+func (s *TTStats) recordNewWrite()     { s.newWrites++ }
+func (s *TTStats) recordOverWrite()    { s.overWrites++ }
+func (s *TTStats) recordRejected()     { s.rejected++ }
+func (s *TTStats) reset()              { *s = TTStats{} }
 
 // String returns a human-readable summary of TT performance for the current iteration.
 func (s *TTStats) String() string {

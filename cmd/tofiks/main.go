@@ -10,7 +10,7 @@ import (
 	"runtime/pprof"
 	"time"
 
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 	"github.com/likeawizard/tofiks/pkg/uci"
 	"github.com/pkg/profile"
 	_ "go.uber.org/automaxprocs"
@@ -45,7 +45,7 @@ func main() {
 		return
 	}
 
-	e := eval.NewEvalEngine()
+	e := search.NewEngine()
 
 	input := bufio.NewScanner(os.Stdin)
 	for {
@@ -83,7 +83,7 @@ func runBench() {
 	start := time.Now()
 
 	for _, fen := range benchPositions {
-		e := eval.NewEvalEngine()
+		e := search.NewEngine()
 		if err := e.Board.ImportFEN(fen); err != nil {
 			log.Fatalf("bad bench FEN: %v", err)
 		}

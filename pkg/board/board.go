@@ -17,11 +17,11 @@ func NewBoard(position string) *Board {
 
 func (b *Board) Flip() {
 	b.Side ^= 1
-	for pieces := PAWNS; pieces <= KINGS; pieces++ {
-		b.Pieces[WHITE][pieces], b.Pieces[BLACK][pieces] = b.Pieces[BLACK][pieces].Flip(), b.Pieces[WHITE][pieces].Flip()
+	for pieces := Pawns; pieces <= Kings; pieces++ {
+		b.Pieces[White][pieces], b.Pieces[Black][pieces] = b.Pieces[Black][pieces].Flip(), b.Pieces[White][pieces].Flip()
 	}
-	b.Occupancy[WHITE], b.Occupancy[BLACK] = b.Occupancy[BLACK].Flip(), b.Occupancy[WHITE].Flip()
-	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
+	b.Occupancy[White], b.Occupancy[Black] = b.Occupancy[Black].Flip(), b.Occupancy[White].Flip()
+	b.Occupancy[Both] = b.Occupancy[White] | b.Occupancy[Black]
 	b.PawnHash = b.SeedPawnHash()
 }
 

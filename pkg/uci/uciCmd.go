@@ -6,10 +6,10 @@ import (
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
-	eval "github.com/likeawizard/tofiks/pkg/evaluation"
+	"github.com/likeawizard/tofiks/pkg/search"
 )
 
-func (c *Go) Exec(e *eval.Engine) bool {
+func (c *Go) Exec(e *search.Engine) bool {
 	// Check if internal state is ready - should be done by gui
 	e.WG.Wait()
 	if c.isPerft {
@@ -37,7 +37,7 @@ func (c *Go) Exec(e *eval.Engine) bool {
 	return true
 }
 
-func (c *Stop) Exec(e *eval.Engine) bool {
+func (c *Stop) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	if e.Stop != nil {
 		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
@@ -49,23 +49,23 @@ func (c *Stop) Exec(e *eval.Engine) bool {
 	return true
 }
 
-func (c *Quit) Exec(_ *eval.Engine) bool {
+func (c *Quit) Exec(_ *search.Engine) bool {
 	return true
 }
 
-func (c *Position) Exec(e *eval.Engine) bool {
+func (c *Position) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	e.Board = board.NewBoard(c.pos)
 	return e.PlayMovesUCI(c.moves)
 }
 
-func (c *IsReady) Exec(e *eval.Engine) bool {
+func (c *IsReady) Exec(e *search.Engine) bool {
 	e.WG.Wait()
 	fmt.Println("readyok")
 	return true
 }
 
-func (c *UCI) Exec(e *eval.Engine) bool {
+func (c *UCI) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
 	fmt.Println("id name Tofiks v1.4.0")
@@ -77,31 +77,31 @@ func (c *UCI) Exec(e *eval.Engine) bool {
 	return true
 }
 
-func (c *SetOption) Exec(e *eval.Engine) bool {
+func (c *SetOption) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	c.option.Set(e)
 	return true
 }
 
-func (c *NewGame) Exec(e *eval.Engine) bool {
+func (c *NewGame) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	e.TTable.Clear()
-	e.PawnTable.Clear()
+	e.Eval.PawnTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
 	e.Plys = [512]uint64{}
-	e.History = eval.HistoryHeuristic{}
+	e.History = search.HistoryHeuristic{}
 	return true
 }
 
-func (o *Hash) Set(e *eval.Engine) {
-	e.TTable = eval.NewTTable(o.size)
+func (o *Hash) Set(e *search.Engine) {
+	e.TTable = search.NewTTable(o.size)
 }
 
 func (o *Hash) Info() {
 	fmt.Println("option name Hash type spin default 64 min 1 max 256")
 }
 
-func (o *OwnBook) Set(e *eval.Engine) {
+func (o *OwnBook) Set(e *search.Engine) {
 	e.OwnBook = o.enable
 }
 
@@ -111,7 +111,7 @@ func (o *OwnBook) Info() {
 	}
 }
 
-func (o *Ponder) Set(e *eval.Engine) {
+func (o *Ponder) Set(e *search.Engine) {
 	e.Ponder = o.enable
 }
 
@@ -119,16 +119,16 @@ func (o *Ponder) Info() {
 	fmt.Println("option name Ponder type check default false")
 }
 
-func (o *Clear) Set(e *eval.Engine) {
+func (o *Clear) Set(e *search.Engine) {
 	e.TTable.Clear()
-	e.PawnTable.Clear()
+	e.Eval.PawnTable.Clear()
 }
 
 func (o *Clear) Info() {
 	fmt.Println("option name Clear Hash type button")
 }
 
-func (o *MoveOverhead) Set(e *eval.Engine) {
+func (o *MoveOverhead) Set(e *search.Engine) {
 	e.Clock.Overhead = o.delay
 }
 

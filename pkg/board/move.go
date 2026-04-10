@@ -31,10 +31,10 @@ const (
 
 var (
 	// Castling moves. Used for recognizing castling and moving king during castling.
-	WCastleKing  = MoveFromString("e1g1") | IsCastling | KINGS<<pieceShift
-	WCastleQueen = MoveFromString("e1c1") | IsCastling | KINGS<<pieceShift
-	BCastleKing  = MoveFromString("e8g8") | IsCastling | KINGS<<pieceShift
-	BCastleQueen = MoveFromString("e8c8") | IsCastling | KINGS<<pieceShift
+	WCastleKing  = MoveFromString("e1g1") | IsCastling | Kings<<pieceShift
+	WCastleQueen = MoveFromString("e1c1") | IsCastling | Kings<<pieceShift
+	BCastleKing  = MoveFromString("e8g8") | IsCastling | Kings<<pieceShift
+	BCastleQueen = MoveFromString("e8c8") | IsCastling | Kings<<pieceShift
 
 	// Complimentary castling moves. Used during castling to reposition rook.
 	WCastleKingRook  = MoveFromString("h1f1")
@@ -128,13 +128,13 @@ func (m Move) ClearScore() Move {
 func (m Move) String() string {
 	promo := ""
 	switch m.Promotion() {
-	case BISHOPS:
+	case Bishops:
 		promo = "b"
-	case KNIGHTS:
+	case Knights:
 		promo = "n"
-	case ROOKS:
+	case Rooks:
 		promo = "r"
-	case QUEENS:
+	case Queens:
 		promo = "q"
 	}
 	return fmt.Sprintf("%v%v%s", m.From(), m.To(), promo)

@@ -1,6 +1,6 @@
 //go:build debug
 
-package eval
+package search
 
 import (
 	"fmt"
@@ -8,8 +8,8 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
-// SearchStability tracks search stability metrics across iterative deepening iterations.
-type SearchStability struct {
+// Stability tracks search stability metrics across iterative deepening iterations.
+type Stability struct {
 	prevBestMove   board.Move
 	prevEval       int16
 	pvChanges      uint64
@@ -21,7 +21,7 @@ type SearchStability struct {
 	iterations     uint64
 }
 
-func (s *SearchStability) recordIteration(bestMove board.Move, eval int16) {
+func (s *Stability) recordIteration(bestMove board.Move, eval int16) {
 	if s.iterations > 0 {
 		if bestMove != s.prevBestMove {
 			s.pvChanges++
@@ -37,7 +37,7 @@ func (s *SearchStability) recordIteration(bestMove board.Move, eval int16) {
 	s.iterations++
 }
 
-func (s *SearchStability) recordAspiration(failed bool) {
+func (s *Stability) recordAspiration(failed bool) {
 	if failed {
 		s.aspirationFail++
 	} else {
@@ -45,16 +45,16 @@ func (s *SearchStability) recordAspiration(failed bool) {
 	}
 }
 
-func (s *SearchStability) recordLMR(researched bool) {
+func (s *Stability) recordLMR(researched bool) {
 	s.lmrSearches++
 	if researched {
 		s.lmrResearches++
 	}
 }
 
-func (s *SearchStability) reset() { *s = SearchStability{} }
+func (s *Stability) reset() { *s = Stability{} }
 
-func (s *SearchStability) String() string {
+func (s *Stability) String() string {
 	if s.iterations == 0 {
 		return ""
 	}

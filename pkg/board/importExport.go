@@ -32,7 +32,7 @@ func (b *Board) ExportFEN() string {
 	}
 
 	sideToMove := 'w'
-	if b.Side == BLACK {
+	if b.Side == Black {
 		sideToMove = 'b'
 	}
 
@@ -53,9 +53,9 @@ func (b *Board) ImportFEN(fen string) error {
 	b.parsePieces(position)
 
 	if sideToMove[0] == 'w' {
-		b.Side = WHITE
+		b.Side = White
 	} else {
-		b.Side = BLACK
+		b.Side = Black
 	}
 	fm, err := strconv.Atoi(fullMove)
 	if err != nil {
@@ -110,29 +110,29 @@ func (b *Board) parsePieces(position string) {
 			piece := BBoard(1 << (i*8 + file))
 			switch symbol {
 			case "P":
-				b.Pieces[WHITE][PAWNS] |= piece
+				b.Pieces[White][Pawns] |= piece
 			case "B":
-				b.Pieces[WHITE][BISHOPS] |= piece
+				b.Pieces[White][Bishops] |= piece
 			case "N":
-				b.Pieces[WHITE][KNIGHTS] |= piece
+				b.Pieces[White][Knights] |= piece
 			case "R":
-				b.Pieces[WHITE][ROOKS] |= piece
+				b.Pieces[White][Rooks] |= piece
 			case "Q":
-				b.Pieces[WHITE][QUEENS] |= piece
+				b.Pieces[White][Queens] |= piece
 			case "K":
-				b.Pieces[WHITE][KINGS] |= piece
+				b.Pieces[White][Kings] |= piece
 			case "p":
-				b.Pieces[BLACK][PAWNS] |= piece
+				b.Pieces[Black][Pawns] |= piece
 			case "b":
-				b.Pieces[BLACK][BISHOPS] |= piece
+				b.Pieces[Black][Bishops] |= piece
 			case "n":
-				b.Pieces[BLACK][KNIGHTS] |= piece
+				b.Pieces[Black][Knights] |= piece
 			case "r":
-				b.Pieces[BLACK][ROOKS] |= piece
+				b.Pieces[Black][Rooks] |= piece
 			case "q":
-				b.Pieces[BLACK][QUEENS] |= piece
+				b.Pieces[Black][Queens] |= piece
 			case "k":
-				b.Pieces[BLACK][KINGS] |= piece
+				b.Pieces[Black][Kings] |= piece
 			}
 			file--
 		}
@@ -143,28 +143,28 @@ func (b *Board) parsePieces(position string) {
 		}
 	}
 
-	b.Occupancy[BOTH] = b.Occupancy[WHITE] | b.Occupancy[BLACK]
+	b.Occupancy[Both] = b.Occupancy[White] | b.Occupancy[Black]
 }
 
 // Serialize the board into fen representation of piece placement.
 func (b *Board) serializePosition() string {
 	byteBoard := make([]byte, 64)
-	for color := WHITE; color <= BLACK; color++ {
-		for pieceType := PAWNS; pieceType <= KINGS; pieceType++ {
+	for color := White; color <= Black; color++ {
+		for pieceType := Pawns; pieceType <= Kings; pieceType++ {
 			pieces := b.Pieces[color][pieceType]
 			var piece byte
 			switch pieceType {
-			case PAWNS:
+			case Pawns:
 				piece = 'P'
-			case BISHOPS:
+			case Bishops:
 				piece = 'B'
-			case KNIGHTS:
+			case Knights:
 				piece = 'N'
-			case ROOKS:
+			case Rooks:
 				piece = 'R'
-			case QUEENS:
+			case Queens:
 				piece = 'Q'
-			case KINGS:
+			case Kings:
 				piece = 'K'
 			}
 			piece += byte(color) * 32

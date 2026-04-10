@@ -55,41 +55,42 @@ func (pt *PawnTable) Clear() {
 
 // evaluatePawns computes the full pawn structure score for both sides.
 func evaluatePawns(b *board.Board) int16 {
-	var score int16
-	for color := board.WHITE; color <= board.BLACK; color++ {
-		side := int16(1)
-		if color == board.BLACK {
+	var score int
+	for color := board.White; color <= board.Black; color++ {
+		side := 1
+		if color == board.Black {
 			side = -1
 		}
 		opp := color ^ 1
-		ownPawns := b.Pieces[color][board.PAWNS]
-		oppPawns := b.Pieces[opp][board.PAWNS]
+		ownPawns := b.Pieces[color][board.Pawns]
+		oppPawns := b.Pieces[opp][board.Pawns]
 		pieces := ownPawns
 		for pieces > 0 {
 			piece := pieces.PopLS1B()
 			sq := board.Square(piece)
-			file := int(sq) % 8
-			var value int16
+			s := int(sq)
+			file := s % 8
+			var value int
 
 			if IsProtected(b, sq, color) {
-				value = int16(W_P_PROTECTED)
+				value = PawnProtected
 			}
 			if IsDoubled(b, sq, color) {
-				value += int16(W_P_DOUBLED)
+				value += PawnDoubled
 			}
 
 			isolated := IsIsolated(b, sq, color)
 			if isolated {
-				value += int16(W_P_ISOLATED)
+				value += PawnIsolated
 			}
 
 			passed := IsPassed(b, sq, color)
 			if passed {
-				rank := 7 - int(sq)/8
-				if color == board.BLACK {
-					rank = int(sq) / 8
+				rank := 7 - s/8
+				if color == board.Black {
+					rank = s / 8
 				}
-				value += int16(PassedPawnBonus[rank])
+				value += PassedPawnBonus[rank]
 
 				// Connected passed pawns: passed pawn with a friendly passed pawn on an adjacent file.
 				if board.AdjacentFiles[file] != 0 {
@@ -97,7 +98,7 @@ func evaluatePawns(b *board.Board) int16 {
 					for adjPassers > 0 {
 						adjSq := board.Square(adjPassers.PopLS1B())
 						if IsPassed(b, adjSq, color) {
-							value += int16(W_P_CONNECTED_PASS)
+							value += PawnConnectedPasser
 							break
 						}
 					}
@@ -107,9 +108,9 @@ func evaluatePawns(b *board.Board) int16 {
 			// Backward pawn: not isolated, not passed, no friendly pawn behind on adjacent files
 			// that could advance to protect it, and the stop square is controlled by enemy pawns.
 			if !isolated && !passed {
-				stopSq := int(sq) - 8
-				if color == board.BLACK {
-					stopSq = int(sq) + 8
+				stopSq := s - 8
+				if color == board.Black {
+					stopSq = s + 8
 				}
 				if stopSq >= 0 && stopSq < 64 {
 					// Check if enemy pawns attack the stop square.
@@ -117,18 +118,18 @@ func evaluatePawns(b *board.Board) int16 {
 					// Check if no friendly pawn behind on adjacent files can support.
 					behindSupport := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 					if stopAttacked && behindSupport == 0 {
-						value += int16(W_P_BACKWARD)
+						value += PawnBackward
 					}
 				}
 			}
 
 			// Blocked pawn: directly blocked by an enemy pawn.
-			stopSq := int(sq) - 8
-			if color == board.BLACK {
-				stopSq = int(sq) + 8
+			stopSq := s - 8
+			if color == board.Black {
+				stopSq = s + 8
 			}
 			if stopSq >= 0 && stopSq < 64 && board.SquareBitboards[stopSq]&oppPawns != 0 {
-				value += int16(W_P_BLOCKED)
+				value += PawnBlocked
 			}
 
 			// Candidate passed pawn: not yet passed, but friendly supporters on adjacent files
@@ -140,12 +141,12 @@ func evaluatePawns(b *board.Board) int16 {
 				helpers := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 				totalSupport := supporters.Count() + helpers.Count()
 				if sentries != 0 && totalSupport >= sentries.Count() {
-					value += int16(W_P_CANDIDATE)
+					value += PawnCandidate
 				}
 			}
 
 			score += side * value
 		}
 	}
-	return score
+	return int16(score)
 }

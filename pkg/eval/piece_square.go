@@ -13,17 +13,17 @@ func InitPSTs() {
 		return (7-sq/8)*8 + sq%8
 	}
 	for stage := 0; stage < 2; stage++ {
-		for piece := board.PAWNS; piece <= board.KINGS; piece++ {
+		for piece := board.Pawns; piece <= board.Kings; piece++ {
 			for sq := 0; sq < 64; sq++ {
-				PST[stage][board.BLACK][piece][sq] = PST[stage][board.WHITE][piece][invert(sq)]
+				PST[stage][board.Black][piece][sq] = PST[stage][board.White][piece][invert(sq)]
 			}
 		}
 	}
-	OutpostsScores[board.WHITE][board.KNIGHTS] = knightOutposts
-	OutpostsScores[board.WHITE][board.BISHOPS] = bishopOutposts
-	for piece := board.PAWNS; piece <= board.KINGS; piece++ {
+	OutpostsScores[board.White][board.Knights] = knightOutposts
+	OutpostsScores[board.White][board.Bishops] = bishopOutposts
+	for piece := board.Pawns; piece <= board.Kings; piece++ {
 		for sq := 0; sq < 64; sq++ {
-			OutpostsScores[board.BLACK][piece][sq] = OutpostsScores[board.WHITE][piece][invert(sq)]
+			OutpostsScores[board.Black][piece][sq] = OutpostsScores[board.White][piece][invert(sq)]
 		}
 	}
 }
