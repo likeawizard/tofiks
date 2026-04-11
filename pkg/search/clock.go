@@ -53,7 +53,12 @@ func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
 			t = c.Btime
 			inc = c.Binc
 		}
-		return time.Millisecond * time.Duration((t+((inc-c.Overhead)*movestogo))/(movestogo+1)-c.Overhead)
+		base := (t+(inc-c.Overhead)*movestogo)/(movestogo+1) - c.Overhead
+		// Safety check for no time allocated.
+		if base <= 0 && t > 0 {
+			base = max((t-c.Overhead)/2, 1)
+		}
+		return time.Millisecond * time.Duration(base)
 	}
 }
 

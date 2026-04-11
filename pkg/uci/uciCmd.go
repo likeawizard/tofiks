@@ -68,7 +68,7 @@ func (c *IsReady) Exec(e *search.Engine) bool {
 func (c *UCI) Exec(e *search.Engine) bool {
 	defer e.WG.Done()
 	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
-	fmt.Println("id name Tofiks v1.4.0")
+	fmt.Println("id name Tofiks v1.4.1")
 	fmt.Println("id author Arturs Priede")
 	for _, opt := range availOpts {
 		opt.Info()

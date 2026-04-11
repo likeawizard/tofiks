@@ -2,7 +2,7 @@
 # All paths are relative to the project root since make is invoked from there.
 # Variables (EXE, GOAMD64VERSION) are inherited from the root Makefile.
 
-VERSION=v1.4.0
+VERSION=v1.4.1
 RELEASE_DIR=release
 
 default:
