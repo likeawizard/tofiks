@@ -91,9 +91,9 @@ func (ed EntryData) GetScore(depth, ply int, alpha, beta int16) (int16, bool) {
 	case ttType == TT_EXACT:
 		return eval, true
 	case ttType == TT_UPPER && eval <= alpha:
-		return alpha, true
+		return eval, true
 	case ttType == TT_LOWER && eval >= beta:
-		return beta, true
+		return eval, true
 	}
 
 	return eval, false

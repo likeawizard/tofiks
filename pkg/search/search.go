@@ -42,24 +42,8 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			return 0
 		}
 
-		// Static eval for pruning decisions.
-		var staticEval int16
-		canPrune := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
-		if canPrune {
-			e.Stats.evals++
-			staticEval = side * int16(e.Eval.GetEvaluation(e.Board))
-			e.StaticEvals[ply] = staticEval
-
-			// Reverse futility pruning. If static eval is well above beta at shallow depths,
-			// the opponent is unlikely to improve their position enough to drop below beta.
-			if depth <= 5 && staticEval-90*int16(depth) >= beta {
-				return staticEval
-			}
-		}
-
-		// Improving: is our static eval better than 2 plies ago?
-		improving := canPrune && ply >= 2 && staticEval > e.StaticEvals[ply-2]
-
+		// TT probe. Done before static eval so we can skip the eval call on
+		// TT cutoffs and use the stored score to refine staticEval below.
 		var pvMove board.Move
 		var ttValue int16
 		var ttDepth int
@@ -91,6 +75,40 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				pvMove = ttMove
 			}
 		}
+
+		// Static eval for pruning decisions.
+		var staticEval int16
+		canPrune := !isPV && !inCheck && beta > -CheckmateThreshold && beta < CheckmateThreshold
+		if canPrune {
+			e.Stats.evals++
+			staticEval = side * int16(e.Eval.GetEvaluation(e.Board))
+
+			// TT score refinement: the TT score comes from an actual search and
+			// is typically a tighter estimate than the static function. Use it
+			// when the stored bound is consistent with it being tighter:
+			//   EXACT  — always prefer (it IS the search result)
+			//   LOWER  — truth ≥ ttValue, so if ttValue > staticEval the raw
+			//            eval underestimates and ttValue is a better floor
+			//   UPPER  — symmetric: truth ≤ ttValue, use it when tighter
+			if ttHit {
+				if ttBound == TT_EXACT ||
+					(ttBound == TT_LOWER && ttValue > staticEval) ||
+					(ttBound == TT_UPPER && ttValue < staticEval) {
+					staticEval = ttValue
+				}
+			}
+
+			e.StaticEvals[ply] = staticEval
+
+			// Reverse futility pruning. If static eval is well above beta at shallow depths,
+			// the opponent is unlikely to improve their position enough to drop below beta.
+			if depth <= 5 && staticEval-90*int16(depth) >= beta {
+				return staticEval
+			}
+		}
+
+		// Improving: is our static eval better than 2 plies ago?
+		improving := canPrune && ply >= 2 && staticEval > e.StaticEvals[ply-2]
 
 		// Internal iterative reduction. Without a hash move, move ordering is weaker,
 		// so reduce depth to avoid spending too much time on poorly ordered nodes.
