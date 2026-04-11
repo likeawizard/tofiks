@@ -19,7 +19,7 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{111, 263, 288, 498, 991, 10000}
+	PieceWeights = [6]int{111, 284, 310, 500, 1021, 10000}
 
 	// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board.
 	PiecePawnBonus = [6][9]int{
@@ -44,39 +44,39 @@ var (
 )
 
 var (
-	QueenMobility  = 2
-	RookMobility   = 3
+	QueenMobility  = 1
+	RookMobility   = 2
 	BishopMobility = 6
 	KnightMobility = -2
 	KingMobility   = -5
-	CaptureBonus   = 8
+	CaptureBonus   = 9
 
-	QueenThreat  = 16
-	RookThreat   = 1
-	BishopThreat = 7
-	KnightThreat = 3
+	QueenThreat  = 14
+	RookThreat   = 2
+	BishopThreat = 3
+	KnightThreat = -1
 
-	PawnProtected       = 10
-	PawnDoubled         = -12
+	PawnProtected       = 15
+	PawnDoubled         = -14
 	PawnIsolated        = -5
-	PawnBackward        = -1
+	PawnBackward        = -4
 	PawnBlocked         = -5
-	PawnConnectedPasser = 11
+	PawnConnectedPasser = 9
 	PawnCandidate       = 8
 
-	RookOpenFile     = 23
-	RookSemiOpenFile = 17
+	RookOpenFile     = 22
+	RookSemiOpenFile = 16
 
-	BishopPair = 15
+	BishopPair = 17
 
-	KingSafetyDistCenter = 24
-	KingSafetyPawnShield = 31
+	KingSafetyDistCenter = 10
+	KingSafetyPawnShield = 29
 	KingSafetyFriendly   = 8
 
-	KingActivityDistCenter  = -24
+	KingActivityDistCenter  = -33
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, 0, 0, 20, 44, 67, 156, 0}
+	PassedPawnBonus = [8]int{0, -7, -3, 14, 42, 78, 173, 0}
 )
 
 // Piece protected a pawn.
