@@ -17,9 +17,11 @@ const (
 	pieceWeightStart = pstStart + pstCount
 	pieceWeightCount = 5
 
-	// Mobility weights: queen, rook, bishop, knight, king.
+	// Mobility weights: queen, rook, bishop, knight.
+	// King mobility lives in the king safety (MG) and king activity (EG) blocks,
+	// since it's phase-dependent — see kingSafetyStart+3 and kingActivityStart+2.
 	mobilityStart = pieceWeightStart + pieceWeightCount
-	mobilityCount = 5
+	mobilityCount = 4
 
 	// Capture bonus.
 	captureStart = mobilityStart + mobilityCount
@@ -45,20 +47,26 @@ const (
 	bishopPairStart = rookFileStart + rookFileCount
 	bishopPairCount = 1
 
-	// King safety MG: distCenter, pawnShield, friendlyNearKing, mobility.
+	// King safety MG: distCenter, pawnShield, friendlyNearKing.
+	// King mobility was removed — bad proxy conflating safety with mating nets.
 	kingSafetyStart = bishopPairStart + bishopPairCount
-	kingSafetyCount = 4
+	kingSafetyCount = 3
 
-	// King activity EG: distCenter, distSquares, mobility.
+	// King activity EG: distCenter, distSquares.
 	kingActivityStart = kingSafetyStart + kingSafetyCount
-	kingActivityCount = 3
+	kingActivityCount = 2
 
 	// Outpost tables: knight[64] + bishop[64].
 	outpostStart = kingActivityStart + kingActivityCount
 	outpostCount = 128
 
+	// Kaufman piece-value slopes: single linear rule per piece.
+	// bonus = slope * (numPawns - 5). Pivot at 5 matches Kaufman's convention.
+	knightPawnSlopeStart = outpostStart + outpostCount
+	rookPawnSlopeStart   = knightPawnSlopeStart + 1
+
 	// Total parameter count.
-	NumParams = outpostStart + outpostCount
+	NumParams = rookPawnSlopeStart + 1
 )
 
 // PST index helpers.
@@ -120,12 +128,12 @@ func InitialParams() [NumParams]float64 {
 		p[pieceWeightStart+i] = float64(eval.PieceWeights[i])
 	}
 
-	// Mobility: queen=0, rook=1, bishop=2, knight=3, king=4.
+	// Mobility: queen=0, rook=1, bishop=2, knight=3.
+	// King mobility is phase-dependent and lives in the king-safety / king-activity blocks below.
 	p[mobilityStart+0] = float64(eval.QueenMobility)
 	p[mobilityStart+1] = float64(eval.RookMobility)
 	p[mobilityStart+2] = float64(eval.BishopMobility)
 	p[mobilityStart+3] = float64(eval.KnightMobility)
-	p[mobilityStart+4] = float64(eval.KingMobility)
 
 	// Capture bonus.
 	p[captureStart] = float64(eval.CaptureBonus)
@@ -157,22 +165,24 @@ func InitialParams() [NumParams]float64 {
 	// Bishop pair.
 	p[bishopPairStart] = float64(eval.BishopPair)
 
-	// King safety MG (enemyNearKing removed — correlated with material count).
+	// King safety MG (enemyNearKing + king mobility removed).
 	p[kingSafetyStart+0] = float64(eval.KingSafetyDistCenter)
 	p[kingSafetyStart+1] = float64(eval.KingSafetyPawnShield)
 	p[kingSafetyStart+2] = float64(eval.KingSafetyFriendly)
-	p[kingSafetyStart+3] = float64(eval.KingMobility)
 
 	// King activity EG.
 	p[kingActivityStart+0] = float64(eval.KingActivityDistCenter)
 	p[kingActivityStart+1] = float64(eval.KingActivityDistSquares)
-	p[kingActivityStart+2] = 5 // -KingMobility in the original code
 
 	// Outposts.
 	for sq := 0; sq < 64; sq++ {
 		p[outpostStart+sq] = float64(eval.OutpostsScores[board.White][board.Knights][sq])
 		p[outpostStart+64+sq] = float64(eval.OutpostsScores[board.White][board.Bishops][sq])
 	}
+
+	// Kaufman piece-value slopes.
+	p[knightPawnSlopeStart] = float64(eval.KnightPawnSlope)
+	p[rookPawnSlopeStart] = float64(eval.RookPawnSlope)
 
 	return p
 }
@@ -196,7 +206,6 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.RookMobility = int(p[mobilityStart+1])
 	eval.BishopMobility = int(p[mobilityStart+2])
 	eval.KnightMobility = int(p[mobilityStart+3])
-	eval.KingMobility = int(p[mobilityStart+4])
 
 	eval.CaptureBonus = int(p[captureStart])
 
@@ -225,11 +234,9 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.KingSafetyDistCenter = int(p[kingSafetyStart+0])
 	eval.KingSafetyPawnShield = int(p[kingSafetyStart+1])
 	eval.KingSafetyFriendly = int(p[kingSafetyStart+2])
-	// kingSafetyStart+3 is king MG mobility, same as KingMobility (already set above).
 
 	eval.KingActivityDistCenter = int(p[kingActivityStart+0])
 	eval.KingActivityDistSquares = int(p[kingActivityStart+1])
-	// kingActivityStart+2 is king EG mobility — separate from KingMobility.
 	for sq := 0; sq < 64; sq++ {
 		eval.OutpostsScores[board.White][board.Knights][sq] = int(p[outpostStart+sq])
 		eval.OutpostsScores[board.White][board.Bishops][sq] = int(p[outpostStart+64+sq])
@@ -241,4 +248,8 @@ func ApplyParams(p *[NumParams]float64) {
 			eval.OutpostsScores[board.Black][piece][sq] = eval.OutpostsScores[board.White][piece][invert(sq)]
 		}
 	}
+
+	// Kaufman piece-value slopes.
+	eval.KnightPawnSlope = int(p[knightPawnSlopeStart])
+	eval.RookPawnSlope = int(p[rookPawnSlopeStart])
 }
