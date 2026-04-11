@@ -81,7 +81,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			if ply > 0 && ttDepth >= depth {
 				if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
-					e.TTable.Stats.recordCutoff()
+					e.TTable.Stats.recordCutoff(ttBound, eval, alpha, beta)
 					*line = []board.Move{ttMove}
 					return eval
 				}
@@ -202,6 +202,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 					if depthR > 0 {
 						e.Stability.recordLMR(true)
 					}
+					e.MoveOrder.recordPVSReSearch()
 					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
 				} else if depthR > 0 {
 					e.Stability.recordLMR(false)
@@ -382,7 +383,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				e.Stability.recordAspiration(true)
 				e.TC.AspirationFailed()
 				alpha, beta = -Inf, Inf
+				nodesBefore := uint64(e.Stats.nodes + e.Stats.qNodes)
 				eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
+				e.Stability.recordAspirationReSearch(uint64(e.Stats.nodes+e.Stats.qNodes) - nodesBefore)
 			} else {
 				e.Stability.recordAspiration(false)
 			}

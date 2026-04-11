@@ -9,6 +9,7 @@ type Stability struct{}
 
 func (s *Stability) recordIteration(_ board.Move, _ int16) {}
 func (s *Stability) recordAspiration(_ bool)               {}
+func (s *Stability) recordAspirationReSearch(_ uint64)     {}
 func (s *Stability) recordLMR(_ bool)                      {}
 func (s *Stability) reset()                                {}
 func (s *Stability) String() string                        { return "" }

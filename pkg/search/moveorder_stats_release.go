@@ -6,5 +6,6 @@ package search
 type MoveOrderStats struct{}
 
 func (s *MoveOrderStats) recordFailHigh(_ bool) {}
+func (s *MoveOrderStats) recordPVSReSearch()    {}
 func (s *MoveOrderStats) reset()                {}
 func (s *MoveOrderStats) String() string        { return "" }

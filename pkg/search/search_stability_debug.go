@@ -10,15 +10,16 @@ import (
 
 // Stability tracks search stability metrics across iterative deepening iterations.
 type Stability struct {
-	prevBestMove   board.Move
-	prevEval       int16
-	pvChanges      uint64
-	aspirationOk   uint64
-	aspirationFail uint64
-	lmrSearches    uint64
-	lmrResearches  uint64
-	scoreDeltaSum  uint64
-	iterations     uint64
+	prevBestMove     board.Move
+	prevEval         int16
+	pvChanges        uint64
+	aspirationOk     uint64
+	aspirationFail   uint64
+	aspReSearchNodes uint64
+	lmrSearches      uint64
+	lmrResearches    uint64
+	scoreDeltaSum    uint64
+	iterations       uint64
 }
 
 func (s *Stability) recordIteration(bestMove board.Move, eval int16) {
@@ -45,6 +46,14 @@ func (s *Stability) recordAspiration(failed bool) {
 	}
 }
 
+// recordAspirationReSearch records the node cost of an aspiration re-search —
+// how many nodes were consumed walking the tree again after a fail at the
+// narrow window. This is the metric fail-soft TT probes are supposed to
+// reduce, because warm TT entries should prove cutoffs at a wider re-search.
+func (s *Stability) recordAspirationReSearch(nodes uint64) {
+	s.aspReSearchNodes += nodes
+}
+
 func (s *Stability) recordLMR(researched bool) {
 	s.lmrSearches++
 	if researched {
@@ -67,13 +76,18 @@ func (s *Stability) String() string {
 	if aspTotal > 0 {
 		aspFailRate = (100 * s.aspirationFail) / aspTotal
 	}
+	aspAvgReNodes := uint64(0)
+	if s.aspirationFail > 0 {
+		aspAvgReNodes = s.aspReSearchNodes / s.aspirationFail
+	}
 	lmrRate := uint64(0)
 	if s.lmrSearches > 0 {
 		lmrRate = (100 * s.lmrResearches) / s.lmrSearches
 	}
-	return fmt.Sprintf("stability: pv_changes %d avg_delta %dcp asp_fail %d%% (%d/%d) lmr_re %d%% (%d/%d)",
+	return fmt.Sprintf("stability: pv_changes %d avg_delta %dcp asp_fail %d%% (%d/%d) asp_re_nodes %d (avg %d) lmr_re %d%% (%d/%d)",
 		s.pvChanges, avgDelta,
 		aspFailRate, s.aspirationFail, aspTotal,
+		s.aspReSearchNodes, aspAvgReNodes,
 		lmrRate, s.lmrResearches, s.lmrSearches,
 	)
 }
