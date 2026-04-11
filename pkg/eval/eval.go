@@ -19,17 +19,20 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{111, 284, 310, 500, 1021, 10000}
+	PieceWeights = [6]int{130, 323, 351, 562, 1151, 10000}
 
-	// Based on L. Kaufman - rook and knight values are adjusted by the number of pawns on the board.
-	PiecePawnBonus = [6][9]int{
-		{},
-		{},
-		{-25, -19, -13, -6, 0, 6, 13, 19, 25},
-		{50, 37, 25, 12, 0, -12, -25, -37, -50},
-		{},
-		{},
-	}
+	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
+	// expressed as a single linear rule: each own pawn above 5 adjusts the piece
+	// value by `slope`, and each pawn below 5 by `-slope`. The pivot at 5 pawns
+	// is the Kaufman convention ("no adjustment" point).
+	//
+	//   knightBonus = KnightPawnSlope * (numPawns - 5)
+	//   rookBonus   = RookPawnSlope   * (numPawns - 5)
+	//
+	// Defaults derive from Kaufman's original ratios (knight_value / 16 and
+	// -rook_value / 8). Both are applied as flat per-piece value adjustments.
+	KnightPawnSlope = 3  // knights gain value in pawn-heavy positions
+	RookPawnSlope   = -5 // rooks lose value in pawn-heavy positions
 
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
@@ -44,39 +47,38 @@ var (
 )
 
 var (
-	QueenMobility  = 1
+	QueenMobility  = 2
 	RookMobility   = 2
-	BishopMobility = 6
-	KnightMobility = -2
-	KingMobility   = -5
-	CaptureBonus   = 9
+	BishopMobility = 7
+	KnightMobility = -1
+	CaptureBonus   = 10
 
-	QueenThreat  = 14
-	RookThreat   = 2
+	QueenThreat  = 16
+	RookThreat   = 3
 	BishopThreat = 3
-	KnightThreat = -1
+	KnightThreat = 0
 
-	PawnProtected       = 15
-	PawnDoubled         = -14
-	PawnIsolated        = -5
+	PawnProtected       = 17
+	PawnDoubled         = -17
+	PawnIsolated        = -6
 	PawnBackward        = -4
 	PawnBlocked         = -5
-	PawnConnectedPasser = 9
+	PawnConnectedPasser = 10
 	PawnCandidate       = 8
 
-	RookOpenFile     = 22
-	RookSemiOpenFile = 16
+	RookOpenFile     = 24
+	RookSemiOpenFile = 18
 
-	BishopPair = 17
+	BishopPair = 20
 
-	KingSafetyDistCenter = 10
-	KingSafetyPawnShield = 29
-	KingSafetyFriendly   = 8
+	KingSafetyDistCenter = 5
+	KingSafetyPawnShield = 31
+	KingSafetyFriendly   = 6
 
-	KingActivityDistCenter  = -33
+	KingActivityDistCenter  = -28
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -7, -3, 14, 42, 78, 173, 0}
+	PassedPawnBonus = [8]int{0, -10, -4, 16, 48, 87, 203, 0}
 )
 
 // Piece protected a pawn.
@@ -138,9 +140,9 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 				case board.Bishops:
 					pieceEval = bishopEval(b, piece, color, oppKing)
 				case board.Knights:
-					pieceEval = knightEval(b, piece, color, oppKing)
+					pieceEval = knightEval(b, piece, color, oppKing, numPawns)
 				case board.Rooks:
-					pieceEval = rookEval(b, piece, color, oppKing)
+					pieceEval = rookEval(b, piece, color, oppKing, numPawns)
 				case board.Queens:
 					pieceEval = queenEval(b, piece, color, oppKing)
 				case board.Kings:
@@ -149,7 +151,7 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 				eval += side * (PieceWeights[pieceType] +
 					pieceEval +
 					(PST[0][color][pieceType][piece]*(256-b.Phase)+
-						(PST[1][color][pieceType][piece]+PiecePawnBonus[pieceType][numPawns])*b.Phase)/256)
+						PST[1][color][pieceType][piece]*b.Phase)/256)
 			}
 		}
 	}
@@ -187,7 +189,7 @@ func getKingActivity(b *board.Board, king int, side int) (kingActivity int) {
 	return kingActivity
 }
 
-func knightEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
+func knightEval(b *board.Board, sq int, side int, oppKing board.BBoard, numPawns int) int {
 	var eval int
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
 	if board.Outposts[side][sq]&b.Pieces[side^1][board.Pawns] == 0 &&
@@ -196,7 +198,8 @@ func knightEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
 	}
 	return eval + moves.Count()*KnightMobility +
 		(moves&b.Occupancy[side^1]).Count()*CaptureBonus +
-		(moves&oppKing).Count()*KnightThreat
+		(moves&oppKing).Count()*KnightThreat +
+		KnightPawnSlope*(numPawns-5)
 }
 
 func bishopEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
@@ -216,11 +219,12 @@ func bishopEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
 }
 
 // Evaluation for rooks - mobility, captures, king threats, and (semi)open files.
-func rookEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
+func rookEval(b *board.Board, sq int, side int, oppKing board.BBoard, numPawns int) int {
 	moves := board.GetRookAttacks(sq, b.Occupancy[board.Both])
 	eval := moves.Count()*RookMobility +
 		(moves&b.Occupancy[side^1]).Count()*CaptureBonus +
-		(moves&oppKing).Count()*RookThreat
+		(moves&oppKing).Count()*RookThreat +
+		RookPawnSlope*(numPawns-5)
 
 	file := board.FileMasks[sq%8]
 	if file&b.Pieces[side][board.Pawns] == 0 {
@@ -242,6 +246,5 @@ func queenEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
 }
 
 func kingEval(b *board.Board, king int, side int, _ board.BBoard) int {
-	moves := board.KingAttacks[king] & ^b.Occupancy[side]
-	return ((getKingSafety(b, king, side)+moves.Count()*KingMobility)*(256-b.Phase) + (getKingActivity(b, king, side)-moves.Count()*KingMobility)*b.Phase) / 256
+	return (getKingSafety(b, king, side)*(256-b.Phase) + getKingActivity(b, king, side)*b.Phase) / 256
 }

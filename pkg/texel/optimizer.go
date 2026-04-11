@@ -248,7 +248,6 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("RookMobility   = %d\n", int(math.Round(w[mobilityStart+1])))
 	fmt.Printf("BishopMobility = %d\n", int(math.Round(w[mobilityStart+2])))
 	fmt.Printf("KnightMobility = %d\n", int(math.Round(w[mobilityStart+3])))
-	fmt.Printf("KingMobility   = %d\n", int(math.Round(w[mobilityStart+4])))
 	fmt.Printf("CaptureBonus   = %d\n\n", int(math.Round(w[captureStart])))
 
 	fmt.Println("// === Threats ===")
@@ -285,13 +284,11 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Println("// === King Safety (MG) ===")
 	fmt.Printf("KingSafetyDistCenter = %d\n", int(math.Round(w[kingSafetyStart+0])))
 	fmt.Printf("KingSafetyPawnShield = %d\n", int(math.Round(w[kingSafetyStart+1])))
-	fmt.Printf("KingSafetyFriendly    = %d\n", int(math.Round(w[kingSafetyStart+2])))
-	fmt.Printf("KingSafetyMobility    = %d\n\n", int(math.Round(w[kingSafetyStart+3])))
+	fmt.Printf("KingSafetyFriendly   = %d\n\n", int(math.Round(w[kingSafetyStart+2])))
 
 	fmt.Println("// === King Activity (EG) ===")
 	fmt.Printf("KingActivityDistCenter  = %d\n", int(math.Round(w[kingActivityStart+0])))
-	fmt.Printf("KingActivityDistSquares = %d\n", int(math.Round(w[kingActivityStart+1])))
-	fmt.Printf("KingActivityMobility     = %d\n\n", int(math.Round(w[kingActivityStart+2])))
+	fmt.Printf("KingActivityDistSquares = %d\n\n", int(math.Round(w[kingActivityStart+1])))
 
 	fmt.Println("// === Outposts ===")
 	for _, name := range []string{"knight", "bishop"} {
@@ -312,4 +309,9 @@ func PrintParams(w *[NumParams]float64) {
 		fmt.Println("}")
 		fmt.Println()
 	}
+
+	fmt.Println("// === Kaufman Piece-Value Slopes ===")
+	fmt.Printf("KnightPawnSlope = %d\n", int(math.Round(w[knightPawnSlopeStart])))
+	fmt.Printf("RookPawnSlope   = %d\n", int(math.Round(w[rookPawnSlopeStart])))
+	fmt.Println()
 }

@@ -37,6 +37,7 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 		if color == board.Black {
 			sign = -1.0
 		}
+		numPawns := b.Pieces[color][board.Pawns].Count()
 
 		for pieceType := board.Pawns; pieceType <= board.Kings; pieceType++ {
 			pieces := b.Pieces[color][pieceType]
@@ -63,11 +64,11 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 				case board.Pawns:
 					// Handled separately in tracePawns.
 				case board.Knights:
-					traceKnight(b, board.Square(sq), color, oppKing[color], sign, &t)
+					traceKnight(b, board.Square(sq), color, oppKing[color], sign, numPawns, &t)
 				case board.Bishops:
 					traceBishop(b, board.Square(sq), color, oppKing[color], sign, &t)
 				case board.Rooks:
-					traceRook(b, board.Square(sq), color, oppKing[color], sign, &t)
+					traceRook(b, board.Square(sq), color, oppKing[color], sign, numPawns, &t)
 				case board.Queens:
 					traceQueen(b, board.Square(sq), color, oppKing[color], sign, &t)
 				case board.Kings:
@@ -99,7 +100,7 @@ func EvalFromTrace(t *Trace, w *[NumParams]float64) float64 {
 	return sum
 }
 
-func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, t *denseTrace) {
+func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, numPawns int, t *denseTrace) {
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
 	moveCount := float64(moves.Count())
 	captureCount := float64((moves & b.Occupancy[side^1]).Count())
@@ -108,6 +109,9 @@ func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 	t[mobilityStart+3] += sign * moveCount // KnightMobility
 	t[captureStart] += sign * captureCount // CaptureBonus
 	t[threatStart+3] += sign * threatCount // KnightThreat
+
+	// Kaufman knight-pawn slope: bonus = slope * (numPawns - 5).
+	t[knightPawnSlopeStart] += sign * float64(numPawns-5)
 
 	// Outpost.
 	if board.Outposts[side][sq]&b.Pieces[side^1][board.Pawns] == 0 &&
@@ -146,7 +150,7 @@ func traceBishop(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 	}
 }
 
-func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, t *denseTrace) {
+func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, numPawns int, t *denseTrace) {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
 	captureCount := float64((moves & b.Occupancy[side^1]).Count())
@@ -155,6 +159,9 @@ func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, 
 	t[mobilityStart+1] += sign * moveCount // RookMobility
 	t[captureStart] += sign * captureCount // CaptureBonus
 	t[threatStart+1] += sign * threatCount // RookThreat
+
+	// Kaufman rook-pawn slope: bonus = slope * (numPawns - 5).
+	t[rookPawnSlopeStart] += sign * float64(numPawns-5)
 
 	// Rook on open / semi-open file.
 	file := board.FileMasks[sq%8]
@@ -184,15 +191,16 @@ func traceQueen(b *board.Board, sq board.Square, _ int, oppKing board.BBoard, si
 }
 
 func traceKing(b *board.Board, king board.Square, side int, sign float64, phase int, t *denseTrace) {
-	moves := board.KingAttacks[king] & ^b.Occupancy[side]
-	moveCount := float64(moves.Count())
 	mgPhase := float64(256-phase) / 256.0
 	egPhase := float64(phase) / 256.0
 
-	// King safety (MG): distCenter, pawnShield, friendlyNearKing, mobility.
+	// King safety (MG): distCenter, pawnShield, friendlyNearKing.
 	// Note: enemyNearKing was removed — it correlated with material count,
 	// causing the tuner to flip its sign. Per-piece threats already capture
 	// enemy pressure on the king zone more accurately.
+	// Note: king mobility (MG and EG) was removed — a noisy proxy that
+	// conflated castled kings (few moves, good) with mating-net kings (few
+	// moves, losing), and active endgame kings with exposed center kings.
 	distC := float64(eval.DistCenter(int(king)))
 	pawnShield := float64((board.KingSafetyMask[side][king] & b.Pieces[side][board.Pawns]).Count())
 	allFriendly := float64((board.KingSafetyMask[side][king] & b.Occupancy[side]).Count())
@@ -201,13 +209,11 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 	t[kingSafetyStart+0] += sign * distC * mgPhase
 	t[kingSafetyStart+1] += sign * pawnShield * mgPhase
 	t[kingSafetyStart+2] += sign * friendlyNonPawn * mgPhase
-	t[kingSafetyStart+3] += sign * moveCount * mgPhase
 
-	// King activity (EG): distCenter, distSquares, mobility.
+	// King activity (EG): distCenter, distSquares.
 	distS := float64(eval.DistSquares(int(king), b.Pieces[side^1][board.Kings].LS1B()))
 	t[kingActivityStart+0] += sign * distC * egPhase
 	t[kingActivityStart+1] += sign * distS * egPhase
-	t[kingActivityStart+2] += sign * moveCount * egPhase
 }
 
 // tracePawns computes pawn structure coefficients for both sides.
