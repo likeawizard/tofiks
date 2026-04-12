@@ -125,9 +125,13 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			seValue := e.PVS(ctx, pvOrder, &[]board.Move{}, singularDepth, ply, singularBeta-1, singularBeta, true, side)
 			e.ExcludedMove[ply] = 0
 
-			if seValue < singularBeta {
+			switch {
+			case seValue < singularBeta-5*int16(depth):
+				// Double extension: TT move is overwhelmingly better than alternatives.
+				singularExtension = 2
+			case seValue < singularBeta:
 				singularExtension = 1
-			} else if seValue >= beta {
+			case seValue >= beta:
 				// Multi-cut: even without the TT move, the position fails high.
 				return beta
 			}
