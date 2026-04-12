@@ -55,6 +55,16 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			if depth <= 5 && staticEval-90*int16(depth) >= beta {
 				return staticEval
 			}
+
+			// Razoring. If static eval is well below alpha at shallow depths, drop into
+			// qsearch to check for tactical saves. If qsearch confirms the position is
+			// hopeless, return early without expensive full-depth search.
+			if depth <= 3 && staticEval+100*int16(depth) < alpha {
+				score := e.Quiescence(ctx, ply, alpha, beta, side)
+				if score <= alpha {
+					return score
+				}
+			}
 		}
 
 		// Improving: is our static eval better than 2 plies ago?
