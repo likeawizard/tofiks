@@ -73,6 +73,10 @@ func (c *UCI) Exec(e *search.Engine) bool {
 	for _, opt := range availOpts {
 		opt.Info()
 	}
+	fmt.Printf("option name LMRMinMoves type spin default %d min 1 max 10\n", search.LMRMinMoves)
+	fmt.Printf("option name LMRMinDepth type spin default %d min 1 max 8\n", search.LMRMinDepth)
+	fmt.Printf("option name LMPBase type spin default %d min 1 max 15\n", search.LMPBase)
+	fmt.Printf("option name LMPScale type spin default %d min 1 max 8\n", search.LMPScale)
 	fmt.Println("uciok")
 	return true
 }
@@ -135,3 +139,18 @@ func (o *MoveOverhead) Set(e *search.Engine) {
 func (o *MoveOverhead) Info() {
 	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
 }
+
+func (o *SPSAParam) Set(_ *search.Engine) {
+	switch o.name {
+	case "LMRMinMoves":
+		search.LMRMinMoves = o.val
+	case "LMRMinDepth":
+		search.LMRMinDepth = o.val
+	case "LMPBase":
+		search.LMPBase = o.val
+	case "LMPScale":
+		search.LMPScale = o.val
+	}
+}
+
+func (o *SPSAParam) Info() {}

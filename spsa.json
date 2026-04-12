@@ -1,0 +1,47 @@
+{
+  "params": [
+    {
+      "name": "LMRMinMoves",
+      "type": "int",
+      "value": 4,
+      "min": 1,
+      "max": 10,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "LMRMinDepth",
+      "type": "int",
+      "value": 3,
+      "min": 1,
+      "max": 8,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "LMPBase",
+      "type": "int",
+      "value": 5,
+      "min": 1,
+      "max": 15,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "LMPScale",
+      "type": "int",
+      "value": 2,
+      "min": 1,
+      "max": 8,
+      "c_end": 1,
+      "r_end": 0.002
+    }
+  ],
+  "spsa_alpha": 0.602,
+  "spsa_gamma": 0.101,
+  "spsa_A_ratio": 0.1,
+  "spsa_iterations": 500,
+  "spsa_pairs_per": 32,
+  "spsa_reporting_type": "BULK",
+  "spsa_distribution_type": "SINGLE"
+}

@@ -68,6 +68,10 @@ func ParseUCI(uciCmd string) Cmd {
 			delay, _ := strconv.Atoi(value)
 			opt.option = &MoveOverhead{delay: delay}
 			return &opt
+		case "LMRMinMoves", "LMRMinDepth", "LMPBase", "LMPScale":
+			val, _ := strconv.Atoi(value)
+			opt.option = &SPSAParam{name: name, val: val}
+			return &opt
 		}
 		return nil
 	case C_GO:

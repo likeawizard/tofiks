@@ -161,7 +161,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			legalMoves++
 
 			// Late move pruning. At shallow depths, skip quiet moves that are ordered late.
-			lmpThreshold := (5 + 2*depth*depth) / (2 - boolToInt(improving))
+			lmpThreshold := (LMPBase + LMPScale*depth*depth) / (2 - boolToInt(improving))
 			if canPrune && depth >= 2 && depth <= 6 && legalMoves > lmpThreshold &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				bestVal > -CheckmateThreshold {
@@ -191,7 +191,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -beta, -alpha, true, -side)
 			} else {
 				depthR := 0
-				if !isPV && legalMoves > 4 && !inCheck && depth > 3 &&
+				if !isPV && legalMoves > LMRMinMoves && !inCheck && depth > LMRMinDepth &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
 					depthR = lmrReduction(depth, legalMoves)
 				}

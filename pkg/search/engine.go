@@ -12,6 +12,14 @@ import (
 	"github.com/likeawizard/tofiks/pkg/eval"
 )
 
+// SPSA-tunable search parameters.
+var (
+	LMRMinMoves = 4 // LMR only fires after this many legal moves
+	LMRMinDepth = 3 // LMR only fires at depths above this
+	LMPBase     = 5 // base threshold for late move pruning
+	LMPScale    = 2 // scaling factor in LMP: (base + scale*depth²)
+)
+
 // LmrTable[depth][moveNum] gives the late-move reduction in plies.
 // Computed once at init using a log * log formula.
 var LmrTable [64][64]int8
