@@ -76,3 +76,8 @@ type Clear struct{}
 type MoveOverhead struct {
 	delay int
 }
+
+type SPSAParam struct {
+	name string
+	val  int
+}

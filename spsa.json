@@ -1,0 +1,47 @@
+{
+  "params": [
+    {
+      "name": "SEMinDepth",
+      "type": "int",
+      "value": 8,
+      "min": 4,
+      "max": 12,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "SETTDepthSlack",
+      "type": "int",
+      "value": 3,
+      "min": 0,
+      "max": 6,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "SEBetaMarginMul",
+      "type": "int",
+      "value": 2,
+      "min": 1,
+      "max": 6,
+      "c_end": 1,
+      "r_end": 0.002
+    },
+    {
+      "name": "SEVerifyDepthDiv",
+      "type": "int",
+      "value": 2,
+      "min": 1,
+      "max": 4,
+      "c_end": 1,
+      "r_end": 0.002
+    }
+  ],
+  "spsa_alpha": 0.602,
+  "spsa_gamma": 0.101,
+  "spsa_A_ratio": 0.1,
+  "spsa_iterations": 256,
+  "spsa_pairs_per": 32,
+  "spsa_reporting_type": "BULK",
+  "spsa_distribution_type": "SINGLE"
+}

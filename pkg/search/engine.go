@@ -12,6 +12,14 @@ import (
 	"github.com/likeawizard/tofiks/pkg/eval"
 )
 
+// SPSA-tunable search parameters.
+var (
+	SEMinDepth       = 8 // minimum depth at which singular extension triggers
+	SETTDepthSlack   = 3 // TT entry depth must be at least (depth - SETTDepthSlack)
+	SEBetaMarginMul  = 2 // singularBeta = ttValue - SEBetaMarginMul*depth
+	SEVerifyDepthDiv = 2 // verification search uses depth / SEVerifyDepthDiv
+)
+
 // LmrTable[depth][moveNum] gives the late-move reduction in plies.
 // Computed once at init using a log * log formula.
 var LmrTable [64][64]int8

@@ -115,11 +115,11 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 		// Singular extension: check if the TT move is significantly better than all alternatives.
 		singularExtension := 0
-		if ply > 0 && depth >= 8 && pvMove != 0 && e.ExcludedMove[ply] == 0 &&
-			ttHit && ttDepth >= depth-3 && (ttBound == TT_LOWER || ttBound == TT_EXACT) &&
+		if ply > 0 && depth >= SEMinDepth && pvMove != 0 && e.ExcludedMove[ply] == 0 &&
+			ttHit && ttDepth >= depth-SETTDepthSlack && (ttBound == TT_LOWER || ttBound == TT_EXACT) &&
 			ttValue > -CheckmateThreshold && ttValue < CheckmateThreshold {
-			singularBeta := ttValue - 2*int16(depth)
-			singularDepth := depth / 2
+			singularBeta := ttValue - int16(SEBetaMarginMul)*int16(depth)
+			singularDepth := depth / SEVerifyDepthDiv
 
 			e.ExcludedMove[ply] = pvMove
 			seValue := e.PVS(ctx, pvOrder, &[]board.Move{}, singularDepth, ply, singularBeta-1, singularBeta, true, side)

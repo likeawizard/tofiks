@@ -73,6 +73,10 @@ func (c *UCI) Exec(e *search.Engine) bool {
 	for _, opt := range availOpts {
 		opt.Info()
 	}
+	fmt.Printf("option name SEMinDepth type spin default %d min 4 max 12\n", search.SEMinDepth)
+	fmt.Printf("option name SETTDepthSlack type spin default %d min 0 max 6\n", search.SETTDepthSlack)
+	fmt.Printf("option name SEBetaMarginMul type spin default %d min 1 max 6\n", search.SEBetaMarginMul)
+	fmt.Printf("option name SEVerifyDepthDiv type spin default %d min 1 max 4\n", search.SEVerifyDepthDiv)
 	fmt.Println("uciok")
 	return true
 }
@@ -135,3 +139,21 @@ func (o *MoveOverhead) Set(e *search.Engine) {
 func (o *MoveOverhead) Info() {
 	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
 }
+
+func (o *SPSAParam) Set(_ *search.Engine) {
+	switch o.name {
+	case "SEMinDepth":
+		search.SEMinDepth = o.val
+	case "SETTDepthSlack":
+		search.SETTDepthSlack = o.val
+	case "SEBetaMarginMul":
+		search.SEBetaMarginMul = o.val
+	case "SEVerifyDepthDiv":
+		if o.val < 1 {
+			o.val = 1
+		}
+		search.SEVerifyDepthDiv = o.val
+	}
+}
+
+func (o *SPSAParam) Info() {}
