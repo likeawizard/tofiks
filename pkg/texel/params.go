@@ -65,8 +65,13 @@ const (
 	knightPawnSlopeStart = outpostStart + outpostCount
 	rookPawnSlopeStart   = knightPawnSlopeStart + 1
 
+	// Passed-pawn king proximity: enemy-king-dist coefficient, friendly-king-dist
+	// coefficient. Both multiplied by (rank × distance × egPhase) at eval time.
+	passerKingProxStart = rookPawnSlopeStart + 1
+	passerKingProxCount = 2
+
 	// Total parameter count.
-	NumParams = rookPawnSlopeStart + 1
+	NumParams = passerKingProxStart + passerKingProxCount
 )
 
 // PST index helpers.
@@ -184,6 +189,10 @@ func InitialParams() [NumParams]float64 {
 	p[knightPawnSlopeStart] = float64(eval.KnightPawnSlope)
 	p[rookPawnSlopeStart] = float64(eval.RookPawnSlope)
 
+	// Passed-pawn king proximity (EG).
+	p[passerKingProxStart+0] = float64(eval.PasserEnemyKingDist)
+	p[passerKingProxStart+1] = float64(eval.PasserFriendlyKingDist)
+
 	return p
 }
 
@@ -252,4 +261,8 @@ func ApplyParams(p *[NumParams]float64) {
 	// Kaufman piece-value slopes.
 	eval.KnightPawnSlope = int(p[knightPawnSlopeStart])
 	eval.RookPawnSlope = int(p[rookPawnSlopeStart])
+
+	// Passed-pawn king proximity.
+	eval.PasserEnemyKingDist = int(p[passerKingProxStart+0])
+	eval.PasserFriendlyKingDist = int(p[passerKingProxStart+1])
 }
