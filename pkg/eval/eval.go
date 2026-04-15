@@ -19,7 +19,7 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{130, 323, 351, 562, 1151, 10000}
+	PieceWeights = [6]int{124, 351, 383, 626, 1268, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
 	// expressed as a single linear rule: each own pawn above 5 adjusts the piece
@@ -31,7 +31,7 @@ var (
 	//
 	// Defaults derive from Kaufman's original ratios (knight_value / 16 and
 	// -rook_value / 8). Both are applied as flat per-piece value adjustments.
-	KnightPawnSlope = 3  // knights gain value in pawn-heavy positions
+	KnightPawnSlope = 4  // knights gain value in pawn-heavy positions
 	RookPawnSlope   = -5 // rooks lose value in pawn-heavy positions
 
 	dist = [64]int{
@@ -48,37 +48,43 @@ var (
 
 var (
 	QueenMobility  = 2
-	RookMobility   = 2
-	BishopMobility = 7
+	RookMobility   = 3
+	BishopMobility = 9
 	KnightMobility = -1
-	CaptureBonus   = 10
+	CaptureBonus   = 9
 
-	QueenThreat  = 16
-	RookThreat   = 3
-	BishopThreat = 3
-	KnightThreat = 0
+	QueenThreat  = 17
+	RookThreat   = 4
+	BishopThreat = 4
+	KnightThreat = 1
 
 	PawnProtected       = 17
-	PawnDoubled         = -17
-	PawnIsolated        = -6
-	PawnBackward        = -4
+	PawnDoubled         = -16
+	PawnIsolated        = -10
+	PawnBackward        = -7
 	PawnBlocked         = -5
-	PawnConnectedPasser = 10
+	PawnConnectedPasser = 9
 	PawnCandidate       = 8
 
-	RookOpenFile     = 24
-	RookSemiOpenFile = 18
+	RookOpenFile     = 27
+	RookSemiOpenFile = 21
 
-	BishopPair = 20
+	BishopPair = 22
 
-	KingSafetyDistCenter = 5
-	KingSafetyPawnShield = 31
-	KingSafetyFriendly   = 6
+	KingSafetyDistCenter = 6
+	KingSafetyPawnShield = 35
+	KingSafetyFriendly   = 3
 
-	KingActivityDistCenter  = -28
+	KingActivityDistCenter  = -23
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -10, -4, 16, 48, 87, 203, 0}
+	PassedPawnBonus = [8]int{0, -22, -32, -14, 20, 68, 206, 0}
+
+	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
+	// distance to each king and are applied EG-only. Enemy-king-far is good,
+	// friendly-king-close is good — signs set accordingly.
+	PasserEnemyKingDist    = 5
+	PasserFriendlyKingDist = -2
 )
 
 // Piece protected a pawn.
@@ -126,7 +132,9 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 
 	for color := board.White; color <= board.Black; color++ {
 		side *= -1
-		oppKing = board.KingAttacks[b.Pieces[color^1][board.Kings].LS1B()]
+		friendlyKingSq := b.Pieces[color][board.Kings].LS1B()
+		enemyKingSq := b.Pieces[color^1][board.Kings].LS1B()
+		oppKing = board.KingAttacks[enemyKingSq]
 		numPawns = b.Pieces[color][board.Pawns].Count()
 
 		for pieceType := board.Pawns; pieceType <= board.Kings; pieceType++ {
@@ -153,6 +161,22 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 					(PST[0][color][pieceType][piece]*(256-b.Phase)+
 						PST[1][color][pieceType][piece]*b.Phase)/256)
 			}
+		}
+
+		// Passed-pawn king proximity (EG-only). Kept outside the pawn-hash
+		// cache because the score depends on king squares, not pawn structure.
+		for pawns := b.Pieces[color][board.Pawns]; pawns > 0; {
+			sq := pawns.PopLS1B()
+			if !IsPassed(b, board.Square(sq), color) {
+				continue
+			}
+			rank := 7 - sq/8
+			if color == board.Black {
+				rank = sq / 8
+			}
+			kingProx := rank * (DistSquares(enemyKingSq, sq)*PasserEnemyKingDist +
+				DistSquares(friendlyKingSq, sq)*PasserFriendlyKingDist)
+			eval += side * kingProx * b.Phase / 256
 		}
 	}
 

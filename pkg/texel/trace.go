@@ -38,6 +38,8 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 			sign = -1.0
 		}
 		numPawns := b.Pieces[color][board.Pawns].Count()
+		friendlyKingSq := b.Pieces[color][board.Kings].LS1B()
+		enemyKingSq := b.Pieces[color^1][board.Kings].LS1B()
 
 		for pieceType := board.Pawns; pieceType <= board.Kings; pieceType++ {
 			pieces := b.Pieces[color][pieceType]
@@ -75,6 +77,24 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 					traceKing(b, board.Square(sq), color, sign, phase, &t)
 				}
 			}
+		}
+
+		// Passed-pawn king proximity (EG-only). Matches the second pass in
+		// eval.GetEvaluation; kept out of tracePawns because it depends on
+		// king squares, not just pawn structure.
+		for pawns := b.Pieces[color][board.Pawns]; pawns > 0; {
+			sq := pawns.PopLS1B()
+			if !eval.IsPassed(b, board.Square(sq), color) {
+				continue
+			}
+			rank := 7 - sq/8
+			if color == board.Black {
+				rank = sq / 8
+			}
+			enemyDist := eval.DistSquares(enemyKingSq, sq)
+			friendlyDist := eval.DistSquares(friendlyKingSq, sq)
+			t[passerKingProxStart+0] += sign * egPhase * float64(rank*enemyDist)
+			t[passerKingProxStart+1] += sign * egPhase * float64(rank*friendlyDist)
 		}
 	}
 

@@ -45,11 +45,12 @@ func TestTraceMatchesEval(t *testing.T) {
 
 		// Allow small rounding differences due to integer vs float phase interpolation.
 		// The eval does several independent integer `/256` divisions (main PST loop,
-		// king safety/activity, knight/rook pawn bonus), each contributing up to 1 cp
-		// of truncation error. The trace computes everything in float so has none.
-		// 5 cp tolerance covers the realistic worst case; TestTraceCoefficientsMatchEval
+		// king safety/activity, knight/rook pawn bonus, one per passed pawn for
+		// king-proximity), each contributing up to 1 cp of truncation error. The
+		// trace computes everything in float so has none. 10 cp tolerance covers
+		// the realistic worst case (8-passer endgames); TestTraceCoefficientsMatchEval
 		// verifies correctness at the per-coefficient level where truncation is avoided.
-		if math.Abs(engineEval-traceEval) > 5.0 {
+		if math.Abs(engineEval-traceEval) > 10.0 {
 			t.Errorf("FEN %s: engine=%v trace=%v diff=%v",
 				fen, engineEval, traceEval, engineEval-traceEval)
 		}
