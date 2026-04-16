@@ -408,6 +408,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					}
 				}
 				e.TC.IterationFinished()
+				e.TC.RecordIteration(best, eval)
 				e.Stability.recordIteration(best, eval)
 				lineStr := ""
 				for _, m := range line {

@@ -7,6 +7,14 @@ import (
 	"github.com/likeawizard/tofiks/pkg/board"
 )
 
+// Time control constants. Conservative starting values; tune via SPSA later.
+const (
+	// Eval drop (in centipawns) that triggers a time extension.
+	tcEvalDropThreshold = 30
+	// Fraction of budget to extend on significant eval drop (1/4 = 25%).
+	tcEvalDropExtendDiv = 4
+)
+
 type Clock struct {
 	Wtime     int
 	Btime     int
@@ -75,6 +83,10 @@ type TimeControl struct {
 	budget           time.Duration
 	maxBudget        time.Duration
 	lastIterDuration time.Duration
+	bestMoveChanges  int
+	iterations       int
+	prevBestMove     board.Move
+	prevEval         int16
 	infinite         bool
 }
 
@@ -109,6 +121,26 @@ func (tc *TimeControl) ShouldStop() bool {
 	elapsed := time.Since(tc.start)
 	predicted := tc.lastIterDuration * 4
 	return elapsed+predicted > tc.budget
+}
+
+// RecordIteration updates TC tracking after a completed iteration.
+// Extends the budget when eval drops significantly (position is harder than
+// expected and worth investing more time).
+func (tc *TimeControl) RecordIteration(best board.Move, eval int16) {
+	if tc.iterations > 0 {
+		if best != tc.prevBestMove {
+			tc.bestMoveChanges++
+		}
+		if !tc.infinite && tc.budget > 0 {
+			drop := int(tc.prevEval) - int(eval)
+			if drop > tcEvalDropThreshold {
+				tc.extend(tc.budget / tcEvalDropExtendDiv)
+			}
+		}
+	}
+	tc.prevBestMove = best
+	tc.prevEval = eval
+	tc.iterations++
 }
 
 // AspirationFailed extends the budget on aspiration window failure — the
