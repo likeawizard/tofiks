@@ -59,27 +59,29 @@ type HistoryHeuristic [2][64][64]int
 // table, history/killer/counter tables, time control, and a reference to the
 // evaluation state. Created once per UCI session and reused across searches.
 type Engine struct {
-	MoveOrder    MoveOrderStats
-	Stability    Stability
-	Board        *board.Board
-	TTable       *TTable
-	Eval         *eval.Eval
-	Stop         context.CancelFunc
-	Stats        Stats
-	TC           TimeControl
-	History      HistoryHeuristic
-	Plys         [512]uint64
-	Clock        Clock
-	WG           sync.WaitGroup
-	Ply          int
-	CounterMoves [64][64]board.Move
-	KillerMoves  [100][2]board.Move
-	PrevMove     [100]board.Move
-	ExcludedMove [100]board.Move
-	StaticEvals  [100]int16
-	MateFound    bool
-	OwnBook      bool
-	Ponder       bool
+	MoveOrder      MoveOrderStats
+	Stability      Stability
+	Board          *board.Board
+	TTable         *TTable
+	Eval           *eval.Eval
+	Stop           context.CancelFunc
+	Stats          Stats
+	TC             TimeControl
+	History        HistoryHeuristic
+	Plys           [512]uint64
+	Clock          Clock
+	WG             sync.WaitGroup
+	Ply            int
+	CounterMoves   [64][64]board.Move
+	KillerMoves    [100][2]board.Move
+	PrevMove       [100]board.Move
+	ExcludedMove   [100]board.Move
+	StaticEvals    [100]int16
+	RootBestNodes  int
+	RootTotalNodes int
+	MateFound      bool
+	OwnBook        bool
+	Ponder         bool
 }
 
 var mvvlva = [7][6]int{

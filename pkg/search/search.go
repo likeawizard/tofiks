@@ -160,6 +160,12 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 			legalMoves++
 
+			// Snapshot node count at root for node-fraction TC.
+			var rootNodesBefore int
+			if ply == 0 {
+				rootNodesBefore = e.Stats.nodes + e.Stats.qNodes
+			}
+
 			// Late move pruning. At shallow depths, skip quiet moves that are ordered late.
 			lmpThreshold := (5 + 3*depth*depth) / (2 - boolToInt(improving))
 			if canPrune && depth >= 2 && depth <= 6 && legalMoves > lmpThreshold &&
@@ -210,6 +216,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			}
 			umove()
 			e.RemovePly()
+
+			// Accumulate root node counts for TC node-fraction tracking.
+			if ply == 0 {
+				moveNodes := (e.Stats.nodes + e.Stats.qNodes) - rootNodesBefore
+				e.RootTotalNodes += moveNodes
+				if value > bestVal {
+					e.RootBestNodes = moveNodes
+				}
+			}
 
 			if value > bestVal {
 				bestVal = value
@@ -370,6 +385,8 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			}
 
 			e.TC.IterationStarted()
+			e.RootBestNodes = 0
+			e.RootTotalNodes = 0
 			e.TTable.age = int8(d)
 			e.Stats.Start()
 			e.TTable.Stats.reset()
@@ -408,7 +425,11 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					}
 				}
 				e.TC.IterationFinished()
-				e.TC.RecordIteration(best, eval)
+				nodePct := 0
+				if e.RootTotalNodes > 0 {
+					nodePct = 100 * e.RootBestNodes / e.RootTotalNodes
+				}
+				e.TC.RecordIteration(best, eval, nodePct)
 				e.Stability.recordIteration(best, eval)
 				lineStr := ""
 				for _, m := range line {
