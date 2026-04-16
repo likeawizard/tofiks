@@ -109,10 +109,40 @@ func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.M
 		return move, 0
 	}
 
+	if !infinite {
+		if only := e.onlyLegalMove(); only != 0 {
+			fmt.Printf("info depth 0 score cp 0 nodes 0 time 0 pv %v\n", only)
+			return only, 0
+		}
+	}
+
 	e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 	best, ponder, _ = e.IDSearch(ctx, depth, infinite)
 
 	return best, ponder
+}
+
+// onlyLegalMove returns the single legal move if exactly one exists, else 0.
+func (e *Engine) onlyLegalMove() board.Move {
+	all := e.Board.PseudoMoveGen()
+	var legal board.Move
+	count := 0
+	for _, move := range all {
+		umove := e.Board.MakeMove(move)
+		if !e.Board.IsChecked(e.Board.Side ^ 1) {
+			count++
+			legal = move
+			if count > 1 {
+				umove()
+				return 0
+			}
+		}
+		umove()
+	}
+	if count == 1 {
+		return legal
+	}
+	return 0
 }
 
 func (e *Engine) AddKillerMove(ply int, move board.Move) {
