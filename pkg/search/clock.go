@@ -16,8 +16,8 @@ const (
 	// Node-fraction thresholds: if the best move consumed this fraction of root
 	// nodes, the position is "clear" and we can stop earlier; below the low
 	// threshold, the position is contested and we extend.
-	tcNodeFracHigh = 90 // % — clear position, shrink budget
-	tcNodeFracLow  = 40 // % — contested position, extend budget
+	tcNodeFracHigh    = 90 // % — clear position, shrink budget
+	tcNodeFracDropPct = 20 // percentage-point drop in node fraction between iterations that triggers extension
 )
 
 type Clock struct {
@@ -92,6 +92,7 @@ type TimeControl struct {
 	iterations       int
 	extensions       uint // number of TC extensions granted; used for diminishing amounts
 	bestMoveNodePct  int  // % of root nodes on best move (0-100), last completed iter
+	prevNodePct      int  // previous iteration's node fraction
 	prevBestMove     board.Move
 	prevEval         int16
 	infinite         bool
@@ -151,16 +152,21 @@ func (tc *TimeControl) RecordIteration(best board.Move, eval int16, bestMoveNode
 		}
 		if !tc.infinite && tc.budget > 0 {
 			// Extend on significant eval drop.
-			drop := int(tc.prevEval) - int(eval)
-			if drop > tcEvalDropThreshold {
+			evalDrop := int(tc.prevEval) - int(eval)
+			if evalDrop > tcEvalDropThreshold {
 				tc.extendDiminishing(tc.budget / tcEvalDropExtendDiv)
 			}
-			// Extend on contested position (low node fraction on best move).
-			if bestMoveNodePct > 0 && bestMoveNodePct <= tcNodeFracLow {
-				tc.extendDiminishing(tc.budget / tcEvalDropExtendDiv)
+			// Extend when node fraction drops significantly between iterations —
+			// the position became MORE contested at deeper search.
+			if tc.prevNodePct > 0 && bestMoveNodePct > 0 {
+				nodeDrop := tc.prevNodePct - bestMoveNodePct
+				if nodeDrop >= tcNodeFracDropPct {
+					tc.extendDiminishing(tc.budget / tcEvalDropExtendDiv)
+				}
 			}
 		}
 	}
+	tc.prevNodePct = tc.bestMoveNodePct
 	tc.bestMoveNodePct = bestMoveNodePct
 	tc.prevBestMove = best
 	tc.prevEval = eval
