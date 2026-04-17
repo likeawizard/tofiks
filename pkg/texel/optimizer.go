@@ -247,8 +247,7 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("QueenMobility  = %d\n", int(math.Round(w[mobilityStart+0])))
 	fmt.Printf("RookMobility   = %d\n", int(math.Round(w[mobilityStart+1])))
 	fmt.Printf("BishopMobility = %d\n", int(math.Round(w[mobilityStart+2])))
-	fmt.Printf("KnightMobility = %d\n", int(math.Round(w[mobilityStart+3])))
-	fmt.Printf("CaptureBonus   = %d\n\n", int(math.Round(w[captureStart])))
+	fmt.Printf("KnightMobility = %d\n\n", int(math.Round(w[mobilityStart+3])))
 
 	fmt.Println("// === Threats ===")
 	fmt.Printf("QueenThreat  = %d\n", int(math.Round(w[threatStart+0])))
@@ -322,5 +321,13 @@ func PrintParams(w *[NumParams]float64) {
 
 	fmt.Println("// === Tempo ===")
 	fmt.Printf("Tempo = %d\n", int(math.Round(w[tempoStart])))
+	fmt.Println()
+
+	fmt.Println("// === Threats ===")
+	fmt.Printf("ThreatPawnOnMinor  = %d\n", int(math.Round(w[threatsStart+0])))
+	fmt.Printf("ThreatPawnOnMajor  = %d\n", int(math.Round(w[threatsStart+1])))
+	fmt.Printf("ThreatMinorOnRook  = %d\n", int(math.Round(w[threatsStart+2])))
+	fmt.Printf("ThreatMinorOnQueen = %d\n", int(math.Round(w[threatsStart+3])))
+	fmt.Printf("ThreatRookOnQueen  = %d\n", int(math.Round(w[threatsStart+4])))
 	fmt.Println()
 }

@@ -79,6 +79,21 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 			}
 		}
 
+		// Pawn threats on enemy non-pawn pieces. Mirrors the pass in
+		// eval.GetEvaluation; kept outside tracePawns because it depends on
+		// enemy piece positions.
+		ownPawns := b.Pieces[color][board.Pawns]
+		var pawnAttackBB board.BBoard
+		if color == board.White {
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) << 7) | ((ownPawns & ^board.FileMasks[7]) << 9)
+		} else {
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) >> 9) | ((ownPawns & ^board.FileMasks[7]) >> 7)
+		}
+		enemyMinors := b.Pieces[color^1][board.Knights] | b.Pieces[color^1][board.Bishops]
+		enemyMajors := b.Pieces[color^1][board.Rooks] | b.Pieces[color^1][board.Queens]
+		t[threatsStart+0] += sign * float64((pawnAttackBB & enemyMinors).Count())
+		t[threatsStart+1] += sign * float64((pawnAttackBB & enemyMajors).Count())
+
 		// Passed-pawn king proximity (EG-only). Matches the second pass in
 		// eval.GetEvaluation; kept out of tracePawns because it depends on
 		// king squares, not just pawn structure.
@@ -130,12 +145,14 @@ func EvalFromTrace(t *Trace, w *[NumParams]float64) float64 {
 func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, numPawns int, t *denseTrace) {
 	moves := board.KnightAttacks[sq] & ^b.Occupancy[side]
 	moveCount := float64(moves.Count())
-	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
 	t[mobilityStart+3] += sign * moveCount // KnightMobility
-	t[captureStart] += sign * captureCount // CaptureBonus
 	t[threatStart+3] += sign * threatCount // KnightThreat
+
+	// Minor-on-major threats.
+	t[threatsStart+2] += sign * float64((moves & b.Pieces[side^1][board.Rooks]).Count())
+	t[threatsStart+3] += sign * float64((moves & b.Pieces[side^1][board.Queens]).Count())
 
 	// Kaufman knight-pawn slope: bonus = slope * (numPawns - 5).
 	t[knightPawnSlopeStart] += sign * float64(numPawns-5)
@@ -154,12 +171,14 @@ func traceKnight(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 func traceBishop(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, t *denseTrace) {
 	moves := board.GetBishopAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
-	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
 	t[mobilityStart+2] += sign * moveCount // BishopMobility
-	t[captureStart] += sign * captureCount // CaptureBonus
 	t[threatStart+2] += sign * threatCount // BishopThreat
+
+	// Minor-on-major threats.
+	t[threatsStart+2] += sign * float64((moves & b.Pieces[side^1][board.Rooks]).Count())
+	t[threatsStart+3] += sign * float64((moves & b.Pieces[side^1][board.Queens]).Count())
 
 	// Outpost.
 	if board.Outposts[side][sq]&b.Pieces[side^1][board.Pawns] == 0 &&
@@ -180,12 +199,13 @@ func traceBishop(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, numPawns int, t *denseTrace) {
 	moves := board.GetRookAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
-	captureCount := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
 	t[mobilityStart+1] += sign * moveCount // RookMobility
-	t[captureStart] += sign * captureCount // CaptureBonus
 	t[threatStart+1] += sign * threatCount // RookThreat
+
+	// Rook-on-queen threat.
+	t[threatsStart+4] += sign * float64((moves & b.Pieces[side^1][board.Queens]).Count())
 
 	// Kaufman rook-pawn slope: bonus = slope * (numPawns - 5).
 	t[rookPawnSlopeStart] += sign * float64(numPawns-5)
@@ -204,16 +224,9 @@ func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, 
 func traceQueen(b *board.Board, sq board.Square, _ int, oppKing board.BBoard, sign float64, t *denseTrace) {
 	moves := board.GetQueenAttacks(int(sq), b.Occupancy[board.Both])
 	moveCount := float64(moves.Count())
-
-	side := board.White
-	if sign < 0 {
-		side = board.Black
-	}
-	captures := float64((moves & b.Occupancy[side^1]).Count())
 	threatCount := float64((moves & oppKing).Count())
 
 	t[mobilityStart+0] += sign * moveCount // QueenMobility
-	t[captureStart] += sign * captures     // CaptureBonus
 	t[threatStart+0] += sign * threatCount // QueenThreat
 }
 
