@@ -75,8 +75,11 @@ const (
 	threatsStart = tempoStart + tempoCount
 	threatsCount = 5
 
+	badBishopStart = threatsStart + threatsCount
+	badBishopCount = 1
+
 	// Total parameter count.
-	NumParams = threatsStart + threatsCount
+	NumParams = badBishopStart + badBishopCount
 )
 
 // PST index helpers.
@@ -205,6 +208,9 @@ func InitialParams() [NumParams]float64 {
 	p[threatsStart+3] = float64(eval.ThreatMinorOnQueen)
 	p[threatsStart+4] = float64(eval.ThreatRookOnQueen)
 
+	// Bad bishop.
+	p[badBishopStart] = float64(eval.BadBishop)
+
 	return p
 }
 
@@ -285,4 +291,6 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.ThreatMinorOnRook = int(p[threatsStart+2])
 	eval.ThreatMinorOnQueen = int(p[threatsStart+3])
 	eval.ThreatRookOnQueen = int(p[threatsStart+4])
+
+	eval.BadBishop = int(p[badBishopStart])
 }

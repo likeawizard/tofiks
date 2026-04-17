@@ -18,14 +18,15 @@ var (
 	KingAttacks       [64]BBoard
 
 	// Evaluation bitboard masks.
-	KingSafetyMask [2][64]BBoard
-	PassedPawns    [2][64]BBoard
-	IsolatedPawns  [64]BBoard
-	DoubledPawns   [64]BBoard
-	Outposts       [2][64]BBoard
-	FileMasks      [8]BBoard
-	AdjacentFiles  [8]BBoard
-	FrontSpan      [2][64]BBoard // Squares in front of a pawn on the same file (exclusive).
+	KingSafetyMask  [2][64]BBoard
+	PassedPawns     [2][64]BBoard
+	IsolatedPawns   [64]BBoard
+	DoubledPawns    [64]BBoard
+	Outposts        [2][64]BBoard
+	FileMasks       [8]BBoard
+	AdjacentFiles   [8]BBoard
+	FrontSpan       [2][64]BBoard // Squares in front of a pawn on the same file (exclusive).
+	SquareColorMask [64]BBoard    // LightSquares or DarkSquares, indexed by square.
 
 	// Magic bitboard masks.
 	BishopOccBitCount [64]int
@@ -86,6 +87,11 @@ func init() {
 func InitSquares() {
 	for i := 0; i < 64; i++ {
 		SquareBitboards[i] = 1 << i
+		if SquareBitboards[i]&LightSquares != 0 {
+			SquareColorMask[i] = LightSquares
+		} else {
+			SquareColorMask[i] = DarkSquares
+		}
 	}
 }
 

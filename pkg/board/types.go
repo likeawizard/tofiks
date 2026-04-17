@@ -71,6 +71,10 @@ const (
 	Rank2        = Rank3 << 8
 	Rank1        = Rank2 << 8
 
+	// Square-color masks. Board layout is A8=0, H1=63, so a8 (light) is bit 0.
+	LightSquares BBoard = 0xAA55AA55AA55AA55
+	DarkSquares  BBoard = 0x55AA55AA55AA55AA
+
 	// Constants for squares relevant to castling legality.
 	F1G1 = Rank1&FFile | Rank1&GFile
 	D1C1 = Rank1&DFile | Rank1&CFile
