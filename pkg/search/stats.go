@@ -6,10 +6,11 @@ import (
 )
 
 type Stats struct {
-	start  time.Time
-	nodes  int
-	qNodes int
-	evals  int
+	start    time.Time
+	nodes    int
+	qNodes   int
+	evals    int
+	SelDepth int
 }
 
 func (es *Stats) Start() {
@@ -21,6 +22,7 @@ func (es *Stats) Clear() {
 	es.nodes = 0
 	es.qNodes = 0
 	es.evals = 0
+	es.SelDepth = 0
 }
 
 func (es *Stats) TotalNodes() int {

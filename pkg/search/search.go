@@ -27,6 +27,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		isPV := beta-alpha != 1
 		inCheck := e.Board.InCheck
 
+		if ply > e.Stats.SelDepth {
+			e.Stats.SelDepth = ply
+		}
+
 		if e.Board.InCheck {
 			depth++
 		}
@@ -261,6 +265,10 @@ func (e *Engine) Quiescence(ctx context.Context, ply int, alpha, beta, side int1
 	default:
 		e.Stats.qNodes++
 
+		if ply > e.Stats.SelDepth {
+			e.Stats.SelDepth = ply
+		}
+
 		if entry, ok := e.TTable.Probe(e.Board.Hash); ok {
 			if eval, ok := entry.GetScore(0, ply, alpha, beta); ok {
 				return eval
@@ -420,7 +428,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 				if timeSince.Milliseconds() != 0 {
 					nps = (1000 * nps) / timeSince.Milliseconds()
 				}
-				fmt.Printf("info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
+				fmt.Printf("info depth %d seldepth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.Stats.SelDepth, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
 				if s := e.TTable.Stats.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
