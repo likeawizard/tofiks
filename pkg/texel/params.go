@@ -23,12 +23,8 @@ const (
 	mobilityStart = pieceWeightStart + pieceWeightCount
 	mobilityCount = 4
 
-	// Capture bonus.
-	captureStart = mobilityStart + mobilityCount
-	captureCount = 1
-
 	// King threat weights: queen, rook, bishop, knight.
-	threatStart = captureStart + captureCount
+	threatStart = mobilityStart + mobilityCount
 	threatCount = 4
 
 	// Pawn structure: protected, doubled, isolated, backward, blocked, connectedPass, candidate.
@@ -74,8 +70,13 @@ const (
 	tempoStart = passerKingProxStart + passerKingProxCount
 	tempoCount = 1
 
+	// Victim-aware threats: pawn-on-minor, pawn-on-major, minor-on-rook,
+	// minor-on-queen, rook-on-queen.
+	threatsStart = tempoStart + tempoCount
+	threatsCount = 5
+
 	// Total parameter count.
-	NumParams = tempoStart + tempoCount
+	NumParams = threatsStart + threatsCount
 )
 
 // PST index helpers.
@@ -144,9 +145,6 @@ func InitialParams() [NumParams]float64 {
 	p[mobilityStart+2] = float64(eval.BishopMobility)
 	p[mobilityStart+3] = float64(eval.KnightMobility)
 
-	// Capture bonus.
-	p[captureStart] = float64(eval.CaptureBonus)
-
 	// Threats: queen=0, rook=1, bishop=2, knight=3.
 	p[threatStart+0] = float64(eval.QueenThreat)
 	p[threatStart+1] = float64(eval.RookThreat)
@@ -200,6 +198,13 @@ func InitialParams() [NumParams]float64 {
 	// Tempo.
 	p[tempoStart] = float64(eval.Tempo)
 
+	// Victim-aware threats.
+	p[threatsStart+0] = float64(eval.ThreatPawnOnMinor)
+	p[threatsStart+1] = float64(eval.ThreatPawnOnMajor)
+	p[threatsStart+2] = float64(eval.ThreatMinorOnRook)
+	p[threatsStart+3] = float64(eval.ThreatMinorOnQueen)
+	p[threatsStart+4] = float64(eval.ThreatRookOnQueen)
+
 	return p
 }
 
@@ -222,8 +227,6 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.RookMobility = int(p[mobilityStart+1])
 	eval.BishopMobility = int(p[mobilityStart+2])
 	eval.KnightMobility = int(p[mobilityStart+3])
-
-	eval.CaptureBonus = int(p[captureStart])
 
 	eval.QueenThreat = int(p[threatStart+0])
 	eval.RookThreat = int(p[threatStart+1])
@@ -275,4 +278,11 @@ func ApplyParams(p *[NumParams]float64) {
 
 	// Tempo.
 	eval.Tempo = int(p[tempoStart])
+
+	// Victim-aware threats.
+	eval.ThreatPawnOnMinor = int(p[threatsStart+0])
+	eval.ThreatPawnOnMajor = int(p[threatsStart+1])
+	eval.ThreatMinorOnRook = int(p[threatsStart+2])
+	eval.ThreatMinorOnQueen = int(p[threatsStart+3])
+	eval.ThreatRookOnQueen = int(p[threatsStart+4])
 }
