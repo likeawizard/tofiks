@@ -319,4 +319,8 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("PasserEnemyKingDist    = %d\n", int(math.Round(w[passerKingProxStart+0])))
 	fmt.Printf("PasserFriendlyKingDist = %d\n", int(math.Round(w[passerKingProxStart+1])))
 	fmt.Println()
+
+	fmt.Println("// === Tempo ===")
+	fmt.Printf("Tempo = %d\n", int(math.Round(w[tempoStart])))
+	fmt.Println()
 }

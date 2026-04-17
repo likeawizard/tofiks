@@ -85,6 +85,9 @@ var (
 	// friendly-king-close is good — signs set accordingly.
 	PasserEnemyKingDist    = 5
 	PasserFriendlyKingDist = -2
+
+	// Tempo is a flat bonus for the side to move.
+	Tempo = 15
 )
 
 // Piece protected a pawn.
@@ -178,6 +181,13 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 				DistSquares(friendlyKingSq, sq)*PasserFriendlyKingDist)
 			eval += side * kingProx * b.Phase / 256
 		}
+	}
+
+	// Tempo bonus for side to move (from White's perspective).
+	if b.Side == board.White {
+		eval += Tempo
+	} else {
+		eval -= Tempo
 	}
 
 	return eval
