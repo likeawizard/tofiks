@@ -194,6 +194,8 @@ func traceBishop(b *board.Board, sq board.Square, side int, oppKing board.BBoard
 	if b.Pieces[side][board.Bishops].Count() > 1 {
 		t[bishopPairStart] += sign
 	}
+
+	t[badBishopStart] += sign * float64((b.Pieces[side][board.Pawns] & board.SquareColorMask[sq]).Count())
 }
 
 func traceRook(b *board.Board, sq board.Square, side int, oppKing board.BBoard, sign float64, numPawns int, t *denseTrace) {

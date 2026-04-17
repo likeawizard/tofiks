@@ -330,4 +330,8 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("ThreatMinorOnQueen = %d\n", int(math.Round(w[threatsStart+3])))
 	fmt.Printf("ThreatRookOnQueen  = %d\n", int(math.Round(w[threatsStart+4])))
 	fmt.Println()
+
+	fmt.Println("// === Bad Bishop ===")
+	fmt.Printf("BadBishop = %d\n", int(math.Round(w[badBishopStart])))
+	fmt.Println()
 }

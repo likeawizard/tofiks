@@ -19,12 +19,12 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{122, 349, 379, 625, 1263, 10000}
+	PieceWeights = [6]int{123, 356, 371, 619, 1246, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
 	// The rook values are tuned to opposite of what "theory" suggests. Consider dropping.
-	KnightPawnSlope = 3
-	RookPawnSlope   = 7
+	KnightPawnSlope = 1
+	RookPawnSlope   = 8
 
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
@@ -45,31 +45,33 @@ var (
 	KnightMobility = -1
 
 	QueenThreat  = 16
-	RookThreat   = 3
+	RookThreat   = 4
 	BishopThreat = 4
-	KnightThreat = 1
+	KnightThreat = 2
 
-	PawnProtected       = 16
-	PawnDoubled         = -15
+	PawnProtected       = 17
+	PawnDoubled         = -14
 	PawnIsolated        = -12
-	PawnBackward        = -9
+	PawnBackward        = -8
 	PawnBlocked         = -5
 	PawnConnectedPasser = 8
 	PawnCandidate       = 8
 
-	RookOpenFile     = 27
-	RookSemiOpenFile = 27
+	RookOpenFile     = 26
+	RookSemiOpenFile = 26
 
-	BishopPair = 22
+	BishopPair = 24
 
-	KingSafetyDistCenter = 2
-	KingSafetyPawnShield = 32
-	KingSafetyFriendly   = 2
+	BadBishop = -8
+
+	KingSafetyDistCenter = -2
+	KingSafetyPawnShield = 33
+	KingSafetyFriendly   = 3
 
 	KingActivityDistCenter  = -23
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -24, -31, -15, 17, 66, 207, 0}
+	PassedPawnBonus = [8]int{0, -22, -30, -15, 17, 65, 206, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -78,14 +80,14 @@ var (
 	PasserFriendlyKingDist = -2
 
 	// Tempo is a flat bonus for the side to move.
-	Tempo = 22
+	Tempo = 23
 
 	// Victim-aware threats.
 	ThreatPawnOnMinor  = -10
-	ThreatPawnOnMajor  = 4
-	ThreatMinorOnRook  = 32
-	ThreatMinorOnQueen = 8
-	ThreatRookOnQueen  = 31
+	ThreatPawnOnMajor  = 2
+	ThreatMinorOnRook  = 67
+	ThreatMinorOnQueen = 10
+	ThreatRookOnQueen  = 49
 )
 
 // Piece protected a pawn.
@@ -260,6 +262,7 @@ func bishopEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
 	if b.Pieces[side][board.Bishops].Count() > 1 {
 		eval += BishopPair
 	}
+	eval += BadBishop * (b.Pieces[side][board.Pawns] & board.SquareColorMask[sq]).Count()
 	return eval + moves.Count()*BishopMobility +
 		(moves&oppKing).Count()*BishopThreat +
 		(moves&b.Pieces[side^1][board.Rooks]).Count()*ThreatMinorOnRook +
