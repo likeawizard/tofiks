@@ -19,20 +19,12 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{124, 351, 383, 626, 1268, 10000}
+	PieceWeights = [6]int{124, 350, 382, 621, 1257, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
-	// expressed as a single linear rule: each own pawn above 5 adjusts the piece
-	// value by `slope`, and each pawn below 5 by `-slope`. The pivot at 5 pawns
-	// is the Kaufman convention ("no adjustment" point).
-	//
-	//   knightBonus = KnightPawnSlope * (numPawns - 5)
-	//   rookBonus   = RookPawnSlope   * (numPawns - 5)
-	//
-	// Defaults derive from Kaufman's original ratios (knight_value / 16 and
-	// -rook_value / 8). Both are applied as flat per-piece value adjustments.
-	KnightPawnSlope = 4  // knights gain value in pawn-heavy positions
-	RookPawnSlope   = -5 // rooks lose value in pawn-heavy positions
+	// The tune flipped the "theoretical" rook slope to positive. Consider dropping.
+	KnightPawnSlope = 4 // knights gain value in pawn-heavy positions
+	RookPawnSlope   = 5
 
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
@@ -49,36 +41,36 @@ var (
 var (
 	QueenMobility  = 2
 	RookMobility   = 3
-	BishopMobility = 9
-	KnightMobility = -1
-	CaptureBonus   = 9
+	BishopMobility = 8
+	KnightMobility = -2
+	CaptureBonus   = 10
 
 	QueenThreat  = 17
-	RookThreat   = 4
+	RookThreat   = 3
 	BishopThreat = 4
-	KnightThreat = 1
+	KnightThreat = 0
 
 	PawnProtected       = 17
 	PawnDoubled         = -16
-	PawnIsolated        = -10
+	PawnIsolated        = -9
 	PawnBackward        = -7
 	PawnBlocked         = -5
 	PawnConnectedPasser = 9
 	PawnCandidate       = 8
 
 	RookOpenFile     = 27
-	RookSemiOpenFile = 21
+	RookSemiOpenFile = 22
 
-	BishopPair = 22
+	BishopPair = 21
 
-	KingSafetyDistCenter = 6
+	KingSafetyDistCenter = 5
 	KingSafetyPawnShield = 35
 	KingSafetyFriendly   = 3
 
 	KingActivityDistCenter  = -23
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -22, -32, -14, 20, 68, 206, 0}
+	PassedPawnBonus = [8]int{0, -23, -33, -14, 20, 67, 208, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -87,7 +79,7 @@ var (
 	PasserFriendlyKingDist = -2
 
 	// Tempo is a flat bonus for the side to move.
-	Tempo = 15
+	Tempo = 23
 )
 
 // Piece protected a pawn.
