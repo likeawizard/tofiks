@@ -70,8 +70,12 @@ const (
 	passerKingProxStart = rookPawnSlopeStart + 1
 	passerKingProxCount = 2
 
+	// Tempo bonus for side to move.
+	tempoStart = passerKingProxStart + passerKingProxCount
+	tempoCount = 1
+
 	// Total parameter count.
-	NumParams = passerKingProxStart + passerKingProxCount
+	NumParams = tempoStart + tempoCount
 )
 
 // PST index helpers.
@@ -193,6 +197,9 @@ func InitialParams() [NumParams]float64 {
 	p[passerKingProxStart+0] = float64(eval.PasserEnemyKingDist)
 	p[passerKingProxStart+1] = float64(eval.PasserFriendlyKingDist)
 
+	// Tempo.
+	p[tempoStart] = float64(eval.Tempo)
+
 	return p
 }
 
@@ -265,4 +272,7 @@ func ApplyParams(p *[NumParams]float64) {
 	// Passed-pawn king proximity.
 	eval.PasserEnemyKingDist = int(p[passerKingProxStart+0])
 	eval.PasserFriendlyKingDist = int(p[passerKingProxStart+1])
+
+	// Tempo.
+	eval.Tempo = int(p[tempoStart])
 }

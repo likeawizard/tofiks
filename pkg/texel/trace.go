@@ -98,6 +98,13 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 		}
 	}
 
+	// Tempo bonus: +1 for white to move, -1 for black.
+	if b.Side == board.White {
+		t[tempoStart] += 1.0
+	} else {
+		t[tempoStart] -= 1.0
+	}
+
 	// Pawn structure (not phase-dependent).
 	tracePawns(b, &t)
 
