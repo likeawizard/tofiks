@@ -80,7 +80,7 @@ var (
 	// Tempo is a flat bonus for the side to move.
 	Tempo = 22
 
-	// Victim-aware threats
+	// Victim-aware threats.
 	ThreatPawnOnMinor  = -10
 	ThreatPawnOnMajor  = 4
 	ThreatMinorOnRook  = 32
@@ -153,7 +153,7 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 				case board.Rooks:
 					pieceEval = rookEval(b, piece, color, oppKing, numPawns)
 				case board.Queens:
-					pieceEval = queenEval(b, piece, color, oppKing)
+					pieceEval = queenEval(b, piece, oppKing)
 				case board.Kings:
 					pieceEval = kingEval(b, piece, color, oppKing)
 				}
@@ -286,7 +286,7 @@ func rookEval(b *board.Board, sq int, side int, oppKing board.BBoard, numPawns i
 	return eval
 }
 
-func queenEval(b *board.Board, sq int, side int, oppKing board.BBoard) int {
+func queenEval(b *board.Board, sq int, oppKing board.BBoard) int {
 	moves := board.GetQueenAttacks(sq, b.Occupancy[board.Both])
 	return moves.Count()*QueenMobility +
 		(moves&oppKing).Count()*QueenThreat
