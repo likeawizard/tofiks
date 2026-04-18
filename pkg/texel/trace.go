@@ -85,9 +85,9 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 		ownPawns := b.Pieces[color][board.Pawns]
 		var pawnAttackBB board.BBoard
 		if color == board.White {
-			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) << 7) | ((ownPawns & ^board.FileMasks[7]) << 9)
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[7]) >> 7) | ((ownPawns & ^board.FileMasks[0]) >> 9)
 		} else {
-			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) >> 9) | ((ownPawns & ^board.FileMasks[7]) >> 7)
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) << 7) | ((ownPawns & ^board.FileMasks[7]) << 9)
 		}
 		enemyMinors := b.Pieces[color^1][board.Knights] | b.Pieces[color^1][board.Bishops]
 		enemyMajors := b.Pieces[color^1][board.Rooks] | b.Pieces[color^1][board.Queens]

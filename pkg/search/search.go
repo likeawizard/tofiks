@@ -202,14 +202,13 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
 
+				if depthR > 0 {
+					e.Stability.recordLMR(value > alpha)
+				}
+
 				if value > alpha && value < beta {
-					if depthR > 0 {
-						e.Stability.recordLMR(true)
-					}
 					e.MoveOrder.recordPVSReSearch()
 					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
-				} else if depthR > 0 {
-					e.Stability.recordLMR(false)
 				}
 			}
 			umove()
