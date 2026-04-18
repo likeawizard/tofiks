@@ -19,7 +19,7 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{123, 356, 371, 619, 1246, 10000}
+	PieceWeights = [6]int{123, 357, 371, 620, 1248, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
 	// The rook values are tuned to opposite of what "theory" suggests. Consider dropping.
@@ -41,37 +41,37 @@ var (
 var (
 	QueenMobility  = 2
 	RookMobility   = 3
-	BishopMobility = 9
-	KnightMobility = -1
+	BishopMobility = 8
+	KnightMobility = 0
 
-	QueenThreat  = 16
+	QueenThreat  = 17
 	RookThreat   = 4
 	BishopThreat = 4
 	KnightThreat = 2
 
 	PawnProtected       = 17
-	PawnDoubled         = -14
+	PawnDoubled         = -15
 	PawnIsolated        = -12
 	PawnBackward        = -8
 	PawnBlocked         = -5
-	PawnConnectedPasser = 8
+	PawnConnectedPasser = 7
 	PawnCandidate       = 8
 
-	RookOpenFile     = 26
-	RookSemiOpenFile = 26
+	RookOpenFile     = 27
+	RookSemiOpenFile = 27
 
 	BishopPair = 24
 
 	BadBishop = -8
 
-	KingSafetyDistCenter = -2
-	KingSafetyPawnShield = 33
+	KingSafetyDistCenter = -3
+	KingSafetyPawnShield = 34
 	KingSafetyFriendly   = 3
 
-	KingActivityDistCenter  = -23
+	KingActivityDistCenter  = -24
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -22, -30, -15, 17, 65, 206, 0}
+	PassedPawnBonus = [8]int{0, -23, -31, -15, 16, 65, 206, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -83,11 +83,11 @@ var (
 	Tempo = 23
 
 	// Victim-aware threats.
-	ThreatPawnOnMinor  = -10
-	ThreatPawnOnMajor  = 2
-	ThreatMinorOnRook  = 67
-	ThreatMinorOnQueen = 10
-	ThreatRookOnQueen  = 49
+	ThreatPawnOnMinor  = 11
+	ThreatPawnOnMajor  = 22
+	ThreatMinorOnRook  = 69
+	ThreatMinorOnQueen = 12
+	ThreatRookOnQueen  = 50
 )
 
 // Piece protected a pawn.
@@ -171,9 +171,9 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 		ownPawns := b.Pieces[color][board.Pawns]
 		var pawnAttackBB board.BBoard
 		if color == board.White {
-			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) << 7) | ((ownPawns & ^board.FileMasks[7]) << 9)
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[7]) >> 7) | ((ownPawns & ^board.FileMasks[0]) >> 9)
 		} else {
-			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) >> 9) | ((ownPawns & ^board.FileMasks[7]) >> 7)
+			pawnAttackBB = ((ownPawns & ^board.FileMasks[0]) << 7) | ((ownPawns & ^board.FileMasks[7]) << 9)
 		}
 		enemyMinors := b.Pieces[color^1][board.Knights] | b.Pieces[color^1][board.Bishops]
 		enemyMajors := b.Pieces[color^1][board.Rooks] | b.Pieces[color^1][board.Queens]

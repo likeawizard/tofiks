@@ -54,9 +54,15 @@ func (s *Stability) recordAspirationReSearch(nodes uint64) {
 	s.aspReSearchNodes += nodes
 }
 
-func (s *Stability) recordLMR(researched bool) {
+// recordLMR records the outcome of an LMR-reduced null-window search.
+// `failedHigh` is true when the reduced search returned value > alpha — i.e.
+// the move beat the null window, meaning the reduction was potentially too
+// aggressive. (For nested null-window searches, beta == alpha+1, so a true
+// "in-band" re-search is impossible — `failedHigh` is the only meaningful
+// signal of LMR error rate.)
+func (s *Stability) recordLMR(failedHigh bool) {
 	s.lmrSearches++
-	if researched {
+	if failedHigh {
 		s.lmrResearches++
 	}
 }
