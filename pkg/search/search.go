@@ -87,7 +87,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				ttValue += int16(ply)
 			}
 
-			if ply > 0 && ttDepth >= depth {
+			// Skip the TT cutoff during singular extension verification at this
+			// ply — the excluded move is typically the TT move, so the stored
+			// score would short-circuit the verification and make SE a no-op.
+			if ply > 0 && ttDepth >= depth && e.ExcludedMove[ply] == 0 {
 				if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
 					e.TTable.Stats.recordCutoff(ttBound, ttValue, alpha, beta)
 					*line = []board.Move{ttMove}
