@@ -219,7 +219,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 					depthR = lmrReduction(depth, legalMoves)
 				}
 
-				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR, ply+1, -(alpha + 1), -alpha, true, -side)
+				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR+ext, ply+1, -(alpha + 1), -alpha, true, -side)
 
 				if depthR > 0 {
 					e.Stability.recordLMR(value > alpha)
@@ -227,7 +227,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 				if value > alpha && value < beta {
 					e.MoveOrder.recordPVSReSearch()
-					value = -e.PVS(ctx, pvOrder, &pv, depth-1, ply+1, -beta, -alpha, true, -side)
+					value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -beta, -alpha, true, -side)
 				}
 			}
 			umove()
