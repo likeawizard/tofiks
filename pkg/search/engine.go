@@ -61,6 +61,7 @@ type HistoryHeuristic [2][64][64]int
 type Engine struct {
 	MoveOrder    MoveOrderStats
 	Stability    Stability
+	Prune        PruneStats
 	Board        *board.Board
 	TTable       *TTable
 	Eval         *eval.Eval
