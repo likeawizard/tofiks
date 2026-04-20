@@ -278,11 +278,11 @@ func (e *Engine) Quiescence(ctx context.Context, ply int, alpha, beta, side int1
 		eval := side * int16(e.Eval.GetEvaluation(e.Board))
 
 		if !e.Board.InCheck && eval >= beta {
-			return beta
+			return eval
 		}
 
 		if !e.Board.InCheck && eval < alpha-975 {
-			return alpha
+			return eval
 		}
 
 		if eval > alpha {
