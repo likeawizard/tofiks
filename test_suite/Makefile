@@ -16,6 +16,9 @@ test-perft:
 test-mate:
 	go test -run=TestMate -v -timeout 0 ./test_suite/
 
+test-health:
+	go test -tags debug -run=TestSearchHealth -v -timeout 0 ./test_suite/
+
 fuzz-entry:
 	go test -run=- -fuzz=FuzzEntry -v ./test_suite/
 

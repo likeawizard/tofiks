@@ -27,8 +27,11 @@ func (s *TTStats) recordHit(depth int) { s.hits++; s.depthSum += uint64(depth) }
 
 // recordCutoff records a TT cutoff split by bound type, tracking overshoot
 // (how far the stored eval is past the window edge) and mate-score detection.
+// rawEval must be the pre-clamp stored score — GetScore returns a value
+// clamped to alpha/beta on non-EXACT bounds, which would make overshoot always
+// zero and hide mate-score cutoffs on LOWER/UPPER entries.
 // Overshoot is always >= 0 and is 0 for EXACT bounds.
-func (s *TTStats) recordCutoff(bound EntryType, eval, alpha, beta int16) {
+func (s *TTStats) recordCutoff(bound EntryType, rawEval, alpha, beta int16) {
 	s.scoreCuts++
 	overshoot := 0
 	switch bound {
@@ -36,10 +39,10 @@ func (s *TTStats) recordCutoff(bound EntryType, eval, alpha, beta int16) {
 		s.scoreCutsExact++
 	case TT_LOWER:
 		s.scoreCutsLower++
-		overshoot = int(eval) - int(beta)
+		overshoot = int(rawEval) - int(beta)
 	case TT_UPPER:
 		s.scoreCutsUpper++
-		overshoot = int(alpha) - int(eval)
+		overshoot = int(alpha) - int(rawEval)
 	}
 	if overshoot < 0 {
 		overshoot = 0
@@ -48,7 +51,7 @@ func (s *TTStats) recordCutoff(bound EntryType, eval, alpha, beta int16) {
 	if uint64(overshoot) > s.cutoffOvershootMax {
 		s.cutoffOvershootMax = uint64(overshoot)
 	}
-	if eval >= CheckmateThreshold || eval <= -CheckmateThreshold {
+	if rawEval >= CheckmateThreshold || rawEval <= -CheckmateThreshold {
 		s.mateCutoffs++
 	}
 }

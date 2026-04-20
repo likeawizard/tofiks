@@ -56,8 +56,12 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			// Reverse futility pruning. If static eval is well above beta at shallow depths,
 			// the opponent is unlikely to improve their position enough to drop below beta.
-			if depth <= 5 && staticEval-90*int16(depth) >= beta {
-				return staticEval
+			if depth <= 5 {
+				cutoff := staticEval-90*int16(depth) >= beta
+				e.Prune.recordRFP(cutoff)
+				if cutoff {
+					return staticEval
+				}
 			}
 		}
 
@@ -85,7 +89,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			if ply > 0 && ttDepth >= depth {
 				if eval, ok := entry.GetScore(depth, ply, alpha, beta); ok && e.Board.IsPseudoLegal(ttMove) {
-					e.TTable.Stats.recordCutoff(ttBound, eval, alpha, beta)
+					e.TTable.Stats.recordCutoff(ttBound, ttValue, alpha, beta)
 					*line = []board.Move{ttMove}
 					return eval
 				}
@@ -99,6 +103,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		// Internal iterative reduction. Without a hash move, move ordering is weaker,
 		// so reduce depth to avoid spending too much time on poorly ordered nodes.
 		if pvMove == 0 && depth > 3 {
+			e.Prune.recordIIR()
 			depth--
 		}
 
@@ -112,6 +117,7 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			e.PrevMove[ply] = 0
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 			unull()
+			e.Prune.recordNMP(value >= beta)
 			if value >= beta {
 				return beta
 			}
@@ -129,9 +135,12 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			seValue := e.PVS(ctx, pvOrder, &[]board.Move{}, singularDepth, ply, singularBeta-1, singularBeta, true, side)
 			e.ExcludedMove[ply] = 0
 
-			if seValue < singularBeta {
+			applied := seValue < singularBeta
+			multiCut := !applied && seValue >= beta
+			e.Prune.recordSE(applied, multiCut)
+			if applied {
 				singularExtension = 1
-			} else if seValue >= beta {
+			} else if multiCut {
 				// Multi-cut: even without the TT move, the position fails high.
 				return beta
 			}
@@ -166,20 +175,27 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 			// Late move pruning. At shallow depths, skip quiet moves that are ordered late.
 			lmpThreshold := (5 + 3*depth*depth) / (2 - boolToInt(improving))
-			if canPrune && depth >= 2 && depth <= 6 && legalMoves > lmpThreshold &&
+			if canPrune && depth >= 2 && depth <= 6 &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
 				bestVal > -CheckmateThreshold {
-				umove()
-				continue
+				prune := legalMoves > lmpThreshold
+				e.Prune.recordLMP(prune)
+				if prune {
+					umove()
+					continue
+				}
 			}
 
 			// Futility pruning.
 			if canPrune && depth <= 2 && legalMoves > 1 &&
 				!currMove.IsCapture() && currMove.Promotion() == 0 &&
-				!e.Board.InCheck &&
-				staticEval+154*int16(depth) <= alpha {
-				umove()
-				continue
+				!e.Board.InCheck {
+				prune := staticEval+154*int16(depth) <= alpha
+				e.Prune.recordFP(prune)
+				if prune {
+					umove()
+					continue
+				}
 			}
 
 			// Apply singular extension to the TT move.
@@ -382,6 +398,7 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 			e.TTable.Stats.reset()
 			e.Eval.PawnTable.Stats.Reset()
 			e.MoveOrder.reset()
+			e.Prune.reset()
 			var pv []board.Move
 			pv = append(pv, line...)
 			eval = e.PVS(ctx, pv, &line, d, 0, alpha, beta, true, color)
@@ -432,6 +449,9 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 					fmt.Printf("info string %s\n", s)
 				}
 				if s := e.MoveOrder.String(); s != "" {
+					fmt.Printf("info string %s\n", s)
+				}
+				if s := e.Prune.String(); s != "" {
 					fmt.Printf("info string %s\n", s)
 				}
 				if s := e.Stability.String(); s != "" {
