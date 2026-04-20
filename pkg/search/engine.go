@@ -19,7 +19,7 @@ var LmrTable [64][64]int8
 func init() {
 	for d := 1; d < 64; d++ {
 		for m := 1; m < 64; m++ {
-			LmrTable[d][m] = int8(0.5 + math.Log(float64(d))*math.Log(float64(m))/3.5)
+			LmrTable[d][m] = int8(0.5 + math.Log(float64(d))*math.Log(float64(m))/2.5)
 		}
 	}
 }

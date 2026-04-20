@@ -223,6 +223,10 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 
 				if depthR > 0 {
 					e.Stability.recordLMR(value > alpha)
+					// Verify reduced fail-high / fail-soft result at full depth,
+					if value > alpha {
+						value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -(alpha + 1), -alpha, true, -side)
+					}
 				}
 
 				if value > alpha && value < beta {
