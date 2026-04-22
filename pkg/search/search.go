@@ -214,9 +214,15 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1+ext, ply+1, -beta, -alpha, true, -side)
 			} else {
 				depthR := 0
-				if !isPV && legalMoves > 4 && !inCheck && depth > 2 &&
+				if legalMoves > 4 && !inCheck && depth > 2 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
 					depthR = lmrReduction(depth, legalMoves)
+					// Softer reduction on PV nodes — still searched, but less
+					// aggressively than non-PV siblings. Verification re-search
+					// at full depth catches lossy fail-highs.
+					if isPV && depthR > 1 {
+						depthR--
+					}
 				}
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR+ext, ply+1, -(alpha + 1), -alpha, true, -side)
