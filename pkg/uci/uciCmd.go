@@ -73,6 +73,7 @@ func (c *UCI) Exec(e *search.Engine) bool {
 	for _, opt := range availOpts {
 		opt.Info()
 	}
+	fmt.Printf("option name LMRDivisor type spin default %d min 120 max 450\n", search.LMRDivisor)
 	fmt.Println("uciok")
 	return true
 }
@@ -135,3 +136,12 @@ func (o *MoveOverhead) Set(e *search.Engine) {
 func (o *MoveOverhead) Info() {
 	fmt.Println("option name Move Overhead type spin default 0 min 0 max 1000")
 }
+
+func (o *SPSAParam) Set(_ *search.Engine) {
+	if o.name == "LMRDivisor" {
+		search.LMRDivisor = o.val
+		search.BuildLmrTable()
+	}
+}
+
+func (o *SPSAParam) Info() {}

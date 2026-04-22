@@ -13,16 +13,23 @@ import (
 )
 
 // LmrTable[depth][moveNum] gives the late-move reduction in plies.
-// Computed once at init using a log * log formula.
+// Rebuilt from LMRDivisor at init and whenever the UCI option changes.
 var LmrTable [64][64]int8
 
-func init() {
+// LMRDivisor is the LMR formula divisor scaled x100 (e.g. 225 = /2.25).
+// Integer scaling lets OpenBench SPSA tune it as a spin option.
+var LMRDivisor = 225
+
+func BuildLmrTable() {
+	div := float64(LMRDivisor) / 100.0
 	for d := 1; d < 64; d++ {
 		for m := 1; m < 64; m++ {
-			LmrTable[d][m] = int8(0.5 + math.Log(float64(d))*math.Log(float64(m))/2.5)
+			LmrTable[d][m] = int8(0.5 + math.Log(float64(d))*math.Log(float64(m))/div)
 		}
 	}
 }
+
+func init() { BuildLmrTable() }
 
 // lmrReduction looks up the late-move reduction for a given depth and move
 // number, clamping both to the table bounds and flooring at 1.

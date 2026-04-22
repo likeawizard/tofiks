@@ -1,0 +1,20 @@
+{
+  "params": [
+    {
+      "name": "LMRDivisor",
+      "type": "int",
+      "value": 225,
+      "min": 120,
+      "max": 450,
+      "c_end": 4,
+      "r_end": 0.002
+    }
+  ],
+  "spsa_alpha": 0.602,
+  "spsa_gamma": 0.101,
+  "spsa_A_ratio": 0.1,
+  "spsa_iterations": 188,
+  "spsa_pairs_per": 32,
+  "spsa_reporting_type": "BULK",
+  "spsa_distribution_type": "SINGLE"
+}
