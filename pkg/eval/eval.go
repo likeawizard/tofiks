@@ -52,7 +52,9 @@ var (
 	PawnProtected       = 17
 	PawnDoubled         = -15
 	PawnIsolated        = -12
-	PawnBackward        = -8
+	PawnBackwardDeep    = -12
+	PawnBackwardMid     = -4
+	PawnBackwardOpen    = -8
 	PawnBlocked         = -5
 	PawnConnectedPasser = 7
 	PawnCandidate       = 8

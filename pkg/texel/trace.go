@@ -304,7 +304,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 					for adjPassers > 0 {
 						adjSq := board.Square(adjPassers.PopLS1B())
 						if eval.IsPassed(b, adjSq, color) {
-							t[pawnStructStart+5] += sign // connectedPass
+							t[pawnStructStart+7] += sign // connectedPass
 							break
 						}
 					}
@@ -321,7 +321,18 @@ func tracePawns(b *board.Board, t *denseTrace) {
 					stopAttacked := board.PawnAttacks[color][board.Square(stopSq)]&oppPawns != 0
 					behindSupport := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 					if stopAttacked && behindSupport == 0 {
-						t[pawnStructStart+3] += sign // backward
+						ownRank := int(sq) / 8
+						if color == board.Black {
+							ownRank = 7 - ownRank
+						}
+						if ownRank <= 2 {
+							t[pawnStructStart+3] += sign // backwardDeep
+						} else {
+							t[pawnStructStart+4] += sign // backwardMid
+						}
+						if board.FileMasks[file]&oppPawns == 0 {
+							t[pawnStructStart+5] += sign // backwardOpen
+						}
 					}
 				}
 			}
@@ -332,7 +343,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 				stopSq = int(sq) + 8
 			}
 			if stopSq >= 0 && stopSq < 64 && board.SquareBitboards[stopSq]&oppPawns != 0 {
-				t[pawnStructStart+4] += sign // blocked
+				t[pawnStructStart+6] += sign // blocked
 			}
 
 			// Candidate passed pawn.
@@ -342,7 +353,7 @@ func tracePawns(b *board.Board, t *denseTrace) {
 				helpers := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 				totalSupport := supporters.Count() + helpers.Count()
 				if sentries != 0 && totalSupport >= sentries.Count() {
-					t[pawnStructStart+6] += sign // candidate
+					t[pawnStructStart+8] += sign // candidate
 				}
 			}
 		}

@@ -259,10 +259,12 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("PawnProtected      = %d\n", int(math.Round(w[pawnStructStart+0])))
 	fmt.Printf("PawnDoubled        = %d\n", int(math.Round(w[pawnStructStart+1])))
 	fmt.Printf("PawnIsolated       = %d\n", int(math.Round(w[pawnStructStart+2])))
-	fmt.Printf("PawnBackward       = %d\n", int(math.Round(w[pawnStructStart+3])))
-	fmt.Printf("PawnBlocked        = %d\n", int(math.Round(w[pawnStructStart+4])))
-	fmt.Printf("PawnConnectedPasser = %d\n", int(math.Round(w[pawnStructStart+5])))
-	fmt.Printf("PawnCandidate      = %d\n\n", int(math.Round(w[pawnStructStart+6])))
+	fmt.Printf("PawnBackwardDeep   = %d\n", int(math.Round(w[pawnStructStart+3])))
+	fmt.Printf("PawnBackwardMid    = %d\n", int(math.Round(w[pawnStructStart+4])))
+	fmt.Printf("PawnBackwardOpen   = %d\n", int(math.Round(w[pawnStructStart+5])))
+	fmt.Printf("PawnBlocked        = %d\n", int(math.Round(w[pawnStructStart+6])))
+	fmt.Printf("PawnConnectedPasser = %d\n", int(math.Round(w[pawnStructStart+7])))
+	fmt.Printf("PawnCandidate      = %d\n\n", int(math.Round(w[pawnStructStart+8])))
 
 	fmt.Println("// === Passed Pawn Bonus ===")
 	fmt.Printf("PassedPawnBonus = [8]int{0, %d, %d, %d, %d, %d, %d, 0}\n\n",
