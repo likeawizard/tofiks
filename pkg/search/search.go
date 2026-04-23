@@ -217,6 +217,9 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 				if !isPV && legalMoves > 4 && !inCheck && depth > 2 &&
 					currMove.Promotion() == 0 && !currMove.IsEnPassant() && !currMove.IsCapture() {
 					depthR = lmrReduction(depth, legalMoves)
+					if !improving {
+						depthR++
+					}
 				}
 
 				value = -e.PVS(ctx, pvOrder, &pv, depth-1-depthR+ext, ply+1, -(alpha + 1), -alpha, true, -side)
