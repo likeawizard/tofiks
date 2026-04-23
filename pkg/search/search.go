@@ -117,6 +117,14 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 		if !isPV && !inCheck && nmp && e.Board.Occupancy[board.Both].Count() > 6 && !e.Board.IsPawnOnly() {
 			unull := e.Board.MakeNullMove()
 			R := 3 + depth/7
+			// Eval-scaled NMP: when staticEval is above beta, the null move is likely to still fail high.
+			if canPrune && staticEval > beta {
+				bonus := int(staticEval-beta) / 200
+				if bonus > 3 {
+					bonus = 3
+				}
+				R += bonus
+			}
 			e.PrevMove[ply] = 0
 			value := -e.PVS(ctx, pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 			unull()
