@@ -27,9 +27,10 @@ const (
 	threatStart = mobilityStart + mobilityCount
 	threatCount = 4
 
-	// Pawn structure: protected, doubled, isolated, backward, blocked, connectedPass, candidate.
+	// Pawn structure: protected, doubled, isolated, backwardDeep, backwardMid,
+	// backwardOpen, blocked, connectedPass, candidate.
 	pawnStructStart = threatStart + threatCount
-	pawnStructCount = 7
+	pawnStructCount = 9
 
 	// Passed pawn bonus by rank (ranks 1-6; ranks 0 and 7 are fixed at 0).
 	passedPawnStart = pawnStructStart + pawnStructCount
@@ -158,10 +159,12 @@ func InitialParams() [NumParams]float64 {
 	p[pawnStructStart+0] = float64(eval.PawnProtected)
 	p[pawnStructStart+1] = float64(eval.PawnDoubled)
 	p[pawnStructStart+2] = float64(eval.PawnIsolated)
-	p[pawnStructStart+3] = float64(eval.PawnBackward)
-	p[pawnStructStart+4] = float64(eval.PawnBlocked)
-	p[pawnStructStart+5] = float64(eval.PawnConnectedPasser)
-	p[pawnStructStart+6] = float64(eval.PawnCandidate)
+	p[pawnStructStart+3] = float64(eval.PawnBackwardDeep)
+	p[pawnStructStart+4] = float64(eval.PawnBackwardMid)
+	p[pawnStructStart+5] = float64(eval.PawnBackwardOpen)
+	p[pawnStructStart+6] = float64(eval.PawnBlocked)
+	p[pawnStructStart+7] = float64(eval.PawnConnectedPasser)
+	p[pawnStructStart+8] = float64(eval.PawnCandidate)
 
 	// Passed pawn bonus (ranks 1-6).
 	for i := 0; i < passedPawnCount; i++ {
@@ -242,10 +245,12 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.PawnProtected = int(p[pawnStructStart+0])
 	eval.PawnDoubled = int(p[pawnStructStart+1])
 	eval.PawnIsolated = int(p[pawnStructStart+2])
-	eval.PawnBackward = int(p[pawnStructStart+3])
-	eval.PawnBlocked = int(p[pawnStructStart+4])
-	eval.PawnConnectedPasser = int(p[pawnStructStart+5])
-	eval.PawnCandidate = int(p[pawnStructStart+6])
+	eval.PawnBackwardDeep = int(p[pawnStructStart+3])
+	eval.PawnBackwardMid = int(p[pawnStructStart+4])
+	eval.PawnBackwardOpen = int(p[pawnStructStart+5])
+	eval.PawnBlocked = int(p[pawnStructStart+6])
+	eval.PawnConnectedPasser = int(p[pawnStructStart+7])
+	eval.PawnCandidate = int(p[pawnStructStart+8])
 
 	for i := 0; i < passedPawnCount; i++ {
 		eval.PassedPawnBonus[i+1] = int(p[passedPawnStart+i])
