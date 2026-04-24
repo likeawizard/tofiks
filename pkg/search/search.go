@@ -169,6 +169,18 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			if currMove == e.ExcludedMove[ply] {
 				continue
 			}
+
+			// SEE pruning of quiet moves in main search. Skip moves that lose
+			// material beyond a depth-scaled threshold. Gate out the TT move,
+			// captures and promotions; tactical motifs those cover are
+			// handled by qsearch / existing futility paths.
+			if canPrune && depth <= 6 && currMove != pvMove &&
+				!currMove.IsCapture() && currMove.Promotion() == 0 &&
+				bestVal > -CheckmateThreshold &&
+				e.SEE(currMove.From(), currMove.To()) < -84*depth {
+				continue
+			}
+
 			umove := e.Board.MakeMove(currMove)
 			if e.Board.IsChecked(e.Board.Side ^ 1) {
 				umove()
