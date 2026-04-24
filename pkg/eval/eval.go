@@ -19,12 +19,13 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{123, 357, 371, 620, 1248, 10000}
+	PieceWeights = [6]int{133, 390, 386, 626, 1257, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
-	// The rook values are tuned to opposite of what "theory" suggests. Consider dropping.
-	KnightPawnSlope = 1
-	RookPawnSlope   = 8
+	// Tuner persistently finds both opposite-sign from Kaufman's theory — likely
+	// a structural interaction with other eval terms rather than a data artifact.
+	KnightPawnSlope = -2
+	RookPawnSlope   = 2
 
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
@@ -41,39 +42,39 @@ var (
 var (
 	QueenMobility  = 2
 	RookMobility   = 3
-	BishopMobility = 8
+	BishopMobility = 7
 	KnightMobility = 0
 
-	QueenThreat  = 17
+	QueenThreat  = 15
 	RookThreat   = 4
 	BishopThreat = 4
-	KnightThreat = 2
+	KnightThreat = 1
 
-	PawnProtected       = 17
-	PawnDoubled         = -15
-	PawnIsolated        = -12
-	PawnBackwardDeep    = -12
-	PawnBackwardMid     = -4
-	PawnBackwardOpen    = -8
+	PawnProtected       = 18
+	PawnDoubled         = -16
+	PawnIsolated        = -9
+	PawnBackwardDeep    = -15
+	PawnBackwardMid     = -11
+	PawnBackwardOpen    = 8
 	PawnBlocked         = -5
-	PawnConnectedPasser = 7
+	PawnConnectedPasser = 8
 	PawnCandidate       = 8
 
-	RookOpenFile     = 27
-	RookSemiOpenFile = 27
+	RookOpenFile     = 28
+	RookSemiOpenFile = 28
 
-	BishopPair = 24
+	BishopPair = 22
 
-	BadBishop = -8
+	BadBishop = -10
 
-	KingSafetyDistCenter = -3
-	KingSafetyPawnShield = 34
-	KingSafetyFriendly   = 3
+	KingSafetyDistCenter = -11
+	KingSafetyPawnShield = 29
+	KingSafetyFriendly   = 5
 
 	KingActivityDistCenter  = -24
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -23, -31, -15, 16, 65, 206, 0}
+	PassedPawnBonus = [8]int{0, -27, -38, -22, 14, 60, 210, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -82,14 +83,14 @@ var (
 	PasserFriendlyKingDist = -2
 
 	// Tempo is a flat bonus for the side to move.
-	Tempo = 23
+	Tempo = 29
 
 	// Victim-aware threats.
-	ThreatPawnOnMinor  = 11
-	ThreatPawnOnMajor  = 22
-	ThreatMinorOnRook  = 69
-	ThreatMinorOnQueen = 12
-	ThreatRookOnQueen  = 50
+	ThreatPawnOnMinor  = 123
+	ThreatPawnOnMajor  = 97
+	ThreatMinorOnRook  = 76
+	ThreatMinorOnQueen = 13
+	ThreatRookOnQueen  = 57
 )
 
 // Piece protected a pawn.

@@ -118,9 +118,9 @@ func evaluatePawns(b *board.Board) int16 {
 					// Check if no friendly pawn behind on adjacent files can support.
 					behindSupport := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 					if stopAttacked && behindSupport == 0 {
-						ownRank := s / 8
+						ownRank := 7 - s/8
 						if color == board.Black {
-							ownRank = 7 - ownRank
+							ownRank = s / 8
 						}
 						if ownRank <= 2 {
 							value += PawnBackwardDeep
