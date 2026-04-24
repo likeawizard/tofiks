@@ -120,6 +120,20 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 		t[tempoStart] -= 1.0
 	}
 
+	// Pawn breaks: net (white - black) count of push-to-empty squares that
+	// attack an enemy pawn. Mirrors eval.evaluatePawnBreaks.
+	empty := ^b.Occupancy[board.Both]
+	wPawns := b.Pieces[board.White][board.Pawns]
+	bPawns := b.Pieces[board.Black][board.Pawns]
+	wBreakTarget := ((bPawns & ^board.FileMasks[0]) << 7) | ((bPawns & ^board.FileMasks[7]) << 9)
+	bBreakTarget := ((wPawns & ^board.FileMasks[7]) >> 7) | ((wPawns & ^board.FileMasks[0]) >> 9)
+	wSingle := (wPawns >> 8) & empty
+	wDouble := (((wPawns & board.Rank2) >> 8) & empty) >> 8 & empty
+	bSingle := (bPawns << 8) & empty
+	bDouble := (((bPawns & board.Rank7) << 8) & empty) << 8 & empty
+	t[pawnBreakStart] += float64(((wSingle | wDouble) & wBreakTarget).Count() -
+		((bSingle | bDouble) & bBreakTarget).Count())
+
 	// Pawn structure (not phase-dependent).
 	tracePawns(b, &t)
 

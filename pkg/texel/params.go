@@ -79,8 +79,13 @@ const (
 	badBishopStart = threatsStart + threatsCount
 	badBishopCount = 1
 
+	// Pawn break: count of pawn pushes landing on an empty square that attacks
+	// an enemy pawn (i.e. threatens to create a lever).
+	pawnBreakStart = badBishopStart + badBishopCount
+	pawnBreakCount = 1
+
 	// Total parameter count.
-	NumParams = badBishopStart + badBishopCount
+	NumParams = pawnBreakStart + pawnBreakCount
 )
 
 // PST index helpers.
@@ -214,6 +219,9 @@ func InitialParams() [NumParams]float64 {
 	// Bad bishop.
 	p[badBishopStart] = float64(eval.BadBishop)
 
+	// Pawn break.
+	p[pawnBreakStart] = float64(eval.PawnBreak)
+
 	return p
 }
 
@@ -298,4 +306,6 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.ThreatRookOnQueen = int(p[threatsStart+4])
 
 	eval.BadBishop = int(p[badBishopStart])
+
+	eval.PawnBreak = int(p[pawnBreakStart])
 }
