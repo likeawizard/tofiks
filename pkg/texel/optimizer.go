@@ -336,4 +336,8 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Println("// === Bad Bishop ===")
 	fmt.Printf("BadBishop = %d\n", int(math.Round(w[badBishopStart])))
 	fmt.Println()
+
+	fmt.Println("// === Pawn Break ===")
+	fmt.Printf("PawnBreak = %d\n", int(math.Round(w[pawnBreakStart])))
+	fmt.Println()
 }

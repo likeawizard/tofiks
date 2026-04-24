@@ -19,12 +19,12 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{133, 390, 386, 626, 1257, 10000}
+	PieceWeights = [6]int{134, 393, 389, 628, 1261, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
 	// Tuner persistently finds both opposite-sign from Kaufman's theory — likely
 	// a structural interaction with other eval terms rather than a data artifact.
-	KnightPawnSlope = -2
+	KnightPawnSlope = -1
 	RookPawnSlope   = 2
 
 	dist = [64]int{
@@ -52,29 +52,30 @@ var (
 
 	PawnProtected       = 18
 	PawnDoubled         = -16
-	PawnIsolated        = -9
+	PawnIsolated        = -10
 	PawnBackwardDeep    = -15
-	PawnBackwardMid     = -11
+	PawnBackwardMid     = -12
 	PawnBackwardOpen    = 8
 	PawnBlocked         = -5
 	PawnConnectedPasser = 8
 	PawnCandidate       = 8
+	PawnBreak           = 1
 
-	RookOpenFile     = 28
+	RookOpenFile     = 27
 	RookSemiOpenFile = 28
 
-	BishopPair = 22
+	BishopPair = 21
 
 	BadBishop = -10
 
-	KingSafetyDistCenter = -11
+	KingSafetyDistCenter = -13
 	KingSafetyPawnShield = 29
-	KingSafetyFriendly   = 5
+	KingSafetyFriendly   = 6
 
 	KingActivityDistCenter  = -24
 	KingActivityDistSquares = -1
 
-	PassedPawnBonus = [8]int{0, -27, -38, -22, 14, 60, 210, 0}
+	PassedPawnBonus = [8]int{0, -27, -37, -22, 14, 60, 205, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -86,8 +87,8 @@ var (
 	Tempo = 29
 
 	// Victim-aware threats.
-	ThreatPawnOnMinor  = 123
-	ThreatPawnOnMajor  = 97
+	ThreatPawnOnMinor  = 127
+	ThreatPawnOnMajor  = 96
 	ThreatMinorOnRook  = 76
 	ThreatMinorOnQueen = 13
 	ThreatRookOnQueen  = 57
@@ -200,6 +201,8 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 		}
 	}
 
+	eval += evaluatePawnBreaks(b)
+
 	// Tempo bonus for side to move (from White's perspective).
 	if b.Side == board.White {
 		eval += Tempo
@@ -208,6 +211,27 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 	}
 
 	return eval
+}
+
+// evaluatePawnBreaks counts pawn pushes whose destination is empty and attacks an enemy pawn.
+func evaluatePawnBreaks(b *board.Board) int {
+	empty := ^b.Occupancy[board.Both]
+
+	wPawns := b.Pieces[board.White][board.Pawns]
+	bPawns := b.Pieces[board.Black][board.Pawns]
+
+	wBreakTarget := ((bPawns & ^board.FileMasks[0]) << 7) | ((bPawns & ^board.FileMasks[7]) << 9)
+	bBreakTarget := ((wPawns & ^board.FileMasks[7]) >> 7) | ((wPawns & ^board.FileMasks[0]) >> 9)
+
+	wSingle := (wPawns >> 8) & empty
+	wDouble := (((wPawns & board.Rank2) >> 8) & empty) >> 8 & empty
+	bSingle := (bPawns << 8) & empty
+	bDouble := (((bPawns & board.Rank7) << 8) & empty) << 8 & empty
+
+	wBreaks := ((wSingle | wDouble) & wBreakTarget).Count()
+	bBreaks := ((bSingle | bDouble) & bBreakTarget).Count()
+
+	return (wBreaks - bBreaks) * PawnBreak
 }
 
 func DistCenter(sq int) int {
