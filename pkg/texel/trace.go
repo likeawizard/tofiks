@@ -321,9 +321,9 @@ func tracePawns(b *board.Board, t *denseTrace) {
 					stopAttacked := board.PawnAttacks[color][board.Square(stopSq)]&oppPawns != 0
 					behindSupport := board.AdjacentFiles[file] & board.FrontSpan[color^1][sq] & ownPawns
 					if stopAttacked && behindSupport == 0 {
-						ownRank := int(sq) / 8
+						ownRank := 7 - int(sq)/8
 						if color == board.Black {
-							ownRank = 7 - ownRank
+							ownRank = int(sq) / 8
 						}
 						if ownRank <= 2 {
 							t[pawnStructStart+3] += sign // backwardDeep
