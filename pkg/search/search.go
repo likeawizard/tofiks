@@ -304,10 +304,6 @@ func (e *Engine) Quiescence(ctx context.Context, ply int, alpha, beta, side int1
 			return eval
 		}
 
-		if !e.Board.InCheck && eval < alpha-975 {
-			return eval
-		}
-
 		if eval > alpha {
 			alpha = eval
 		}
@@ -327,6 +323,17 @@ func (e *Engine) Quiescence(ctx context.Context, ply int, alpha, beta, side int1
 		var currMove board.Move
 		for i := 0; i < len(all); i++ {
 			currMove = SelectMove(all, i)
+
+			// Per-capture delta pruning. Captures are MVV/LVA-ordered, so if
+			// even the current (largest) victim can't raise eval to alpha,
+			// no later capture will either — break instead of continue.
+			if !e.Board.InCheck && currMove.IsCapture() &&
+				currMove.Promotion() == 0 && !currMove.IsEnPassant() {
+				capturedVal := seeValues[e.Board.PieceAtSquare(currMove.To())]
+				if int(eval)+capturedVal+113 < int(alpha) {
+					break
+				}
+			}
 
 			// SEE pruning: skip losing captures when not in check.
 			if !e.Board.InCheck && currMove.IsCapture() &&
