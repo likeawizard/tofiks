@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -87,8 +86,7 @@ func runBench() {
 		if err := e.Board.ImportFEN(fen); err != nil {
 			log.Fatalf("bad bench FEN: %v", err)
 		}
-		ctx := context.Background()
-		e.IDSearch(ctx, benchDepth, true)
+		e.IDSearch(benchDepth, true)
 		totalNodes += e.Stats.TotalNodes()
 	}
 

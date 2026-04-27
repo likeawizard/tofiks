@@ -2,7 +2,6 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -34,14 +33,15 @@ func TestValidPV(t *testing.T) {
 			e := search.NewEngine()
 			e.Board = board.NewBoard(testPos)
 			position := e.Board.Copy()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+			e.Clock.Movetime = int(5 * time.Second / time.Millisecond)
+			e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, false)
+				e.IDSearch(50, false)
 			}()
 
 			for lr.Scan() {
@@ -60,7 +60,7 @@ func TestValidPV(t *testing.T) {
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.TC.Abort()
 			r.Close()
 		})
 	}

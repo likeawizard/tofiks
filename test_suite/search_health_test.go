@@ -4,7 +4,6 @@ package testsuite
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -57,7 +56,7 @@ func runHealthOnce(t *testing.T, p healthPos, depth int) iterStats {
 	e.Board = board.NewBoard(p.fen)
 
 	start := time.Now()
-	e.IDSearch(context.Background(), depth, false)
+	e.IDSearch(depth, false)
 	elapsed := time.Since(start)
 
 	_ = w.Close()

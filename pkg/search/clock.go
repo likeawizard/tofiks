@@ -1,7 +1,7 @@
 package search
 
 import (
-	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
@@ -24,18 +24,6 @@ type Clock struct {
 	Movetime  int
 	Movestogo int
 	Infinite  bool
-}
-
-func (c *Clock) GetContext(fmCounter int, side int8) (context.Context, context.CancelFunc) {
-	clock := c.GetMovetime(fmCounter, side)
-	switch {
-	case c.Infinite || clock == time.Duration(0):
-		return context.WithCancel(context.Background())
-	default:
-		// Context deadline allows extensions but never exceeds remaining time.
-		hardLimit := min(clock*2, c.remainingTime(side))
-		return context.WithTimeout(context.Background(), hardLimit)
-	}
 }
 
 // remainingTime returns the actual clock time left for the given side,
@@ -70,52 +58,87 @@ func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
 	}
 }
 
-// TimeControl manages time for a single search. It tracks iteration durations
-// and predicts whether the next iteration will complete within the budget,
-// avoiding wasted time on doomed iterations that the context would abort.
+// TimeControl manages time for a single search. Owns the soft per-iteration
+// budget for prediction-based stops and a hard wall-clock deadline that
+// aborts the search via the aborted flag.
 //
-// budget is the soft limit (initially = base). maxBudget is the hard cap
-// (2x base, matching the context deadline). Extensions on volatile positions
-// push budget toward maxBudget.
+// budget=0 disables iteration prediction (used for movetime / UCI infinite /
+// no-clock fallback). hardLimit=0 disables the deadline timer.
 type TimeControl struct {
 	start            time.Time
 	lastIterStart    time.Time
+	timer            *time.Timer
 	budget           time.Duration
 	maxBudget        time.Duration
+	hardLimit        time.Duration
 	lastIterDuration time.Duration
 	bestMoveChanges  int
 	iterations       int
 	prevBestMove     board.Move
+	aborted          atomic.Bool
 	prevEval         int16
-	infinite         bool
 }
 
 // NewTimeControl creates a TimeControl for the current search.
-// Fixed movetime and infinite searches bypass time prediction.
-func (c *Clock) NewTimeControl(fmCounter int, side int8) TimeControl {
-	if c.Infinite || c.Movetime > 0 {
-		return TimeControl{start: time.Now(), infinite: true}
+func (c *Clock) NewTimeControl(fmCounter int, side int8) *TimeControl {
+	now := time.Now()
+	tc := &TimeControl{start: now, lastIterStart: now}
+
+	if c.Infinite {
+		return tc
 	}
 	base := c.GetMovetime(fmCounter, side)
 	if base <= 0 {
-		return TimeControl{start: time.Now(), infinite: true}
+		return tc
 	}
-	now := time.Now()
-	remaining := c.remainingTime(side)
-	return TimeControl{
-		start:         now,
-		budget:        base,
-		maxBudget:     min(base*2, remaining),
-		lastIterStart: now,
+	hardLimit := base * 2
+	if r := c.remainingTime(side); r > 0 && r < hardLimit {
+		hardLimit = r
 	}
+	tc.hardLimit = hardLimit
+	tc.armDeadline()
+	if c.Movetime > 0 {
+		// Movetime mode: hard deadline only, no iteration prediction.
+		return tc
+	}
+	tc.budget = base
+	tc.maxBudget = hardLimit
+	return tc
+}
+
+// armDeadline starts a timer that flips the aborted flag when hardLimit
+// elapses. Keeps the per-node abort check to a single atomic load instead
+// of a time.Now() syscall.
+func (tc *TimeControl) armDeadline() {
+	if tc.hardLimit <= 0 {
+		return
+	}
+	tc.timer = time.AfterFunc(tc.hardLimit, func() { tc.aborted.Store(true) })
+}
+
+// Stop cancels the deadline timer when the search finishes naturally.
+func (tc *TimeControl) Stop() {
+	if tc.timer != nil {
+		tc.timer.Stop()
+	}
+}
+
+// ShouldAbort reports whether the search must stop. Hot-path: single atomic load.
+func (tc *TimeControl) ShouldAbort() bool {
+	return tc.aborted.Load()
+}
+
+// Abort signals the running search to stop at its next abort check.
+func (tc *TimeControl) Abort() {
+	tc.aborted.Store(true)
 }
 
 // ShouldStop returns true if the next iteration is predicted to not complete
 // within the remaining budget. Uses the last iteration's duration to
 // estimate the next (assuming ~4x branching factor).
-// A zero-value TimeControl never stops (safe for direct IDSearch calls in tests).
+// budget==0 disables prediction (movetime / infinite / no-clock).
 func (tc *TimeControl) ShouldStop() bool {
-	if tc.infinite || tc.budget == 0 {
+	if tc.budget == 0 {
 		return false
 	}
 	elapsed := time.Since(tc.start)
@@ -131,7 +154,7 @@ func (tc *TimeControl) RecordIteration(best board.Move, eval int16) {
 		if best != tc.prevBestMove {
 			tc.bestMoveChanges++
 		}
-		if !tc.infinite && tc.budget > 0 {
+		if tc.budget > 0 {
 			drop := int(tc.prevEval) - int(eval)
 			if drop > tcEvalDropThreshold {
 				tc.extend(tc.budget / tcEvalDropExtendDiv)
@@ -146,7 +169,7 @@ func (tc *TimeControl) RecordIteration(best board.Move, eval int16) {
 // AspirationFailed extends the budget on aspiration window failure — the
 // position is volatile and worth investing more time.
 func (tc *TimeControl) AspirationFailed() {
-	if tc.infinite || tc.budget == 0 {
+	if tc.budget == 0 {
 		return
 	}
 	tc.extend(tc.budget / 2)

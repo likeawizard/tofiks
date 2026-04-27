@@ -26,23 +26,19 @@ func TestGetMovetimeLowTimeNotInfinite(t *testing.T) {
 func TestNewTimeControlLowTimeNotInfinite(t *testing.T) {
 	c := &Clock{Wtime: 10, Btime: 4879}
 	tc := c.NewTimeControl(94, board.White)
-	if tc.infinite {
-		t.Fatal("NewTimeControl fell back to infinite with 10ms wtime (issue #106)")
-	}
 	if tc.budget <= 0 {
-		t.Fatalf("budget = %v, want > 0", tc.budget)
+		t.Fatalf("budget = %v, want > 0 (issue #106)", tc.budget)
 	}
 	if tc.maxBudget <= 0 || tc.maxBudget > 10*time.Millisecond {
 		t.Fatalf("maxBudget = %v, want in (0, 10ms]", tc.maxBudget)
 	}
 }
 
-func TestGetContextLowTimeHasDeadline(t *testing.T) {
+func TestNewTimeControlLowTimeHasHardLimit(t *testing.T) {
 	c := &Clock{Wtime: 10, Btime: 4879}
-	ctx, cancel := c.GetContext(94, board.White)
-	defer cancel()
-	if _, ok := ctx.Deadline(); !ok {
-		t.Fatal("GetContext returned a context without a deadline for low-time search (issue #106)")
+	tc := c.NewTimeControl(94, board.White)
+	if tc.hardLimit <= 0 {
+		t.Fatal("NewTimeControl with low time should set a hardLimit (issue #106)")
 	}
 }
 
@@ -52,26 +48,19 @@ func TestGetContextLowTimeHasDeadline(t *testing.T) {
 func TestNewTimeControlGoNoArgs(t *testing.T) {
 	c := &Clock{}
 	tc := c.NewTimeControl(10, board.White)
-	if !tc.infinite {
-		t.Fatal("NewTimeControl with no time info should be infinite")
+	if tc.budget != 0 {
+		t.Fatalf("NewTimeControl with no time info budget = %v, want 0", tc.budget)
+	}
+	if tc.hardLimit != 0 {
+		t.Fatalf("NewTimeControl with no time info hardLimit = %v, want 0", tc.hardLimit)
 	}
 }
 
-func TestGetContextGoNoArgs(t *testing.T) {
-	c := &Clock{}
-	ctx, cancel := c.GetContext(10, board.White)
-	defer cancel()
-	if _, ok := ctx.Deadline(); ok {
-		t.Fatal("GetContext with no time info should have no deadline")
-	}
-}
-
-func TestGetContextInfiniteFlag(t *testing.T) {
+func TestNewTimeControlInfiniteFlag(t *testing.T) {
 	c := &Clock{Wtime: 10_000, Infinite: true}
-	ctx, cancel := c.GetContext(10, board.White)
-	defer cancel()
-	if _, ok := ctx.Deadline(); ok {
-		t.Fatal("GetContext with Infinite=true should have no deadline")
+	tc := c.NewTimeControl(10, board.White)
+	if tc.hardLimit != 0 {
+		t.Fatalf("NewTimeControl with Infinite=true hardLimit = %v, want 0", tc.hardLimit)
 	}
 }
 

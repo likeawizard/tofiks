@@ -1,7 +1,6 @@
 package search
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"strings"
@@ -65,9 +64,8 @@ type Engine struct {
 	Board        *board.Board
 	TTable       *TTable
 	Eval         *eval.Eval
-	Stop         context.CancelFunc
+	TC           *TimeControl
 	Stats        Stats
-	TC           TimeControl
 	History      HistoryHeuristic
 	Plys         [512]uint64
 	Clock        Clock
@@ -99,11 +97,12 @@ func NewEngine() *Engine {
 		Board:  board.NewBoard(board.StartPos),
 		TTable: NewTTable(64),
 		Eval:   eval.New(),
+		TC:     &TimeControl{},
 	}
 }
 
 // Returns the best move and best opponent response - ponder.
-func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.Move, board.Move) {
+func (e *Engine) GetMove(depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	if e.OwnBook && book.InBook(e.Board) {
 		move := book.GetWeighted(e.Board)
@@ -111,7 +110,7 @@ func (e *Engine) GetMove(ctx context.Context, depth int, infinite bool) (board.M
 	}
 
 	e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
-	best, ponder, _ = e.IDSearch(ctx, depth, infinite)
+	best, ponder, _ = e.IDSearch(depth, infinite)
 
 	return best, ponder
 }

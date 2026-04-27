@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"context"
 	"os"
 	"testing"
 
@@ -26,7 +25,7 @@ func BenchmarkPVS(b *testing.B) {
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				var line []board.Move
-				e.PVS(context.Background(), nil, &line, searchBenchDepth, 0, -search.Inf, search.Inf, true, color)
+				e.PVS(nil, &line, searchBenchDepth, 0, -search.Inf, search.Inf, true, color)
 			}
 		})
 	}
@@ -44,7 +43,7 @@ func BenchmarkQuiescence(b *testing.B) {
 
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				e.Quiescence(context.Background(), 0, -search.Inf, search.Inf, color)
+				e.Quiescence(0, -search.Inf, search.Inf, color)
 			}
 		})
 	}
@@ -79,7 +78,7 @@ func BenchmarkIDSearch(b *testing.B) {
 
 		b.Run(perft.position, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				e.IDSearch(context.Background(), searchBenchDepth, false)
+				e.IDSearch(searchBenchDepth, false)
 			}
 		})
 	}

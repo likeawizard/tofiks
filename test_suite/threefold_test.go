@@ -2,7 +2,6 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -40,14 +39,15 @@ func TestForceThreeFoldRepetition(t *testing.T) {
 			e := search.NewEngine()
 			e.Board = board.NewBoard(testPos.fen)
 			e.PlayMovesUCI(testPos.moves)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			e.Clock.Movetime = int(time.Minute / time.Millisecond)
+			e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, true)
+				e.IDSearch(50, true)
 			}()
 
 			for lr.Scan() {
@@ -60,11 +60,11 @@ func TestForceThreeFoldRepetition(t *testing.T) {
 				score, err = strconv.Atoi(scoreStr)
 				assert.Nil(t, err, "failed to parse cp score: %s", err)
 				if score == 0 {
-					cancel()
+					e.TC.Abort()
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.TC.Abort()
 			assert.Equal(t, 0, score)
 			r.Close()
 		})
