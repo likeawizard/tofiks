@@ -10,8 +10,7 @@ import (
 )
 
 func (c *Go) Exec(e *search.Engine) bool {
-	// Check if internal state is ready - should be done by gui
-	e.WG.Wait()
+	defer e.WG.Done()
 	if c.isPerft {
 		e.Board.PerftDebug(c.depth)
 		return true
@@ -38,7 +37,6 @@ func (c *Go) Exec(e *search.Engine) bool {
 }
 
 func (c *Stop) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
 	if e.Stop != nil {
 		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
 		if c.ponderhit && !e.MateFound {
@@ -60,7 +58,7 @@ func (c *Position) Exec(e *search.Engine) bool {
 }
 
 func (c *IsReady) Exec(e *search.Engine) bool {
-	e.WG.Wait()
+	defer e.WG.Done()
 	fmt.Println("readyok")
 	return true
 }

@@ -55,7 +55,7 @@ func main() {
 			switch cmd.(type) {
 			case *uci.Quit:
 				return
-			case *uci.Go, *uci.IsReady:
+			case *uci.Stop:
 				go cmd.Exec(e)
 			default:
 				e.WG.Wait()
