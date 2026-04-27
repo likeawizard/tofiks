@@ -35,16 +35,16 @@ func (e *Engine) PVS(ctx context.Context, pvOrder []board.Move, line *[]board.Mo
 			depth++
 		}
 
+		if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficientMaterial() || e.IsDrawByRepetition()) {
+			return 0
+		}
+
 		// If search depth is reached and not in check enter Qsearch
 		if depth <= 0 {
 			return e.Quiescence(ctx, ply, alpha, beta, side)
 		}
 
 		e.Stats.nodes++
-
-		if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficientMaterial() || e.IsDrawByRepetition()) {
-			return 0
-		}
 
 		// Static eval for pruning decisions.
 		var staticEval int16
