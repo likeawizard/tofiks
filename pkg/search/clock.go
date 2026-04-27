@@ -33,7 +33,7 @@ func (c *Clock) remainingTime(side int8) time.Duration {
 	if side == board.Black {
 		t = c.Btime
 	}
-	return time.Millisecond * time.Duration(max(t-c.Overhead, 0))
+	return time.Millisecond * time.Duration(max(t-c.Overhead, 1))
 }
 
 func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
@@ -89,11 +89,18 @@ func (c *Clock) NewTimeControl(fmCounter int, side int8) *TimeControl {
 	}
 	base := c.GetMovetime(fmCounter, side)
 	if base <= 0 {
-		return tc
+		if c.Wtime <= 0 && c.Btime <= 0 && c.Movetime <= 0 {
+			return tc
+		}
+		// Add bare minimum of time when nothing is allocated.
+		base = time.Millisecond
 	}
 	hardLimit := base * 2
-	if r := c.remainingTime(side); r > 0 && r < hardLimit {
-		hardLimit = r
+	// Movetime mode is independent of wtime/btime — don't clamp by remaining clock.
+	if c.Movetime <= 0 {
+		if r := c.remainingTime(side); r < hardLimit {
+			hardLimit = r
+		}
 	}
 	tc.hardLimit = hardLimit
 	tc.armDeadline()
