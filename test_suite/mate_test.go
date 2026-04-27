@@ -2,7 +2,6 @@ package testsuite
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -29,14 +28,15 @@ func TestMate(t *testing.T) {
 
 			e := search.NewEngine()
 			e.Board = board.NewBoard(testPos.fen)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+			e.Clock.Movetime = int(time.Minute / time.Millisecond)
+			e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 			lr := bufio.NewScanner(r)
 			var wg sync.WaitGroup
 			wg.Add(1)
 			go func() {
 				defer w.Close()
 				defer wg.Done()
-				e.IDSearch(ctx, 50, true)
+				e.IDSearch(50, true)
 			}()
 
 			mateInMin := 100
@@ -60,11 +60,11 @@ func TestMate(t *testing.T) {
 					mateInMin = max(mateInMin, mateIn)
 				}
 				if mateInMin == testPos.mateIn {
-					cancel()
+					e.TC.Abort()
 				}
 			}
 			wg.Wait()
-			cancel()
+			e.TC.Abort()
 			assert.Equal(t, testPos.mateIn, mateInMin)
 			r.Close()
 		})

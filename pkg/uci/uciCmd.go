@@ -23,27 +23,23 @@ func (c *Go) Exec(e *search.Engine) bool {
 	e.Clock.Movestogo = c.movestogo
 	e.Clock.Movetime = c.movetime
 	e.Clock.Infinite = c.infinite
-	ctx, cancel := e.Clock.GetContext(int(e.Board.FullMoveCounter), e.Board.Side)
 	depth := c.depth
 	if depth == 0 {
 		depth = 50
 	}
-	e.Stop = cancel
-	defer cancel()
-	move, ponder := e.GetMove(ctx, depth, c.infinite)
+	defer func() { e.TC.Stop() }()
+	move, ponder := e.GetMove(depth, c.infinite)
 	e.ReportMove(move, ponder, e.Ponder)
 
 	return true
 }
 
 func (c *Stop) Exec(e *search.Engine) bool {
-	if e.Stop != nil {
-		// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
-		if c.ponderhit && !e.MateFound {
-			time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
-		}
-		e.Stop()
+	// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
+	if c.ponderhit && !e.MateFound {
+		time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
 	}
+	e.TC.Abort()
 	return true
 }
 
