@@ -384,6 +384,18 @@ func (e *Engine) IDSearch(ctx context.Context, depth int, infinite bool) (board.
 	e.TTable.age = 0
 	e.AgeHistory()
 	e.Stability.reset()
+
+	// Quick fix - if search fails to return a valid move - play the first legal move.
+	for _, m := range e.Board.PseudoMoveGen() {
+		umove := e.Board.MakeMove(m)
+		legal := !e.Board.IsChecked(e.Board.Side ^ 1)
+		umove()
+		if legal {
+			best = m
+			break
+		}
+	}
+
 	done, ok := false, true
 	wg.Add(1)
 	go func() {

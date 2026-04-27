@@ -12,25 +12,25 @@ include cmd/texel/Makefile
 
 fastchess: build
 	@-rm games.pgn
-	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=1+0.1 timemargin=50 -rounds 5000 -concurrency 4 -repeat -openings file=${OPENINGS} format=epd order=random -pgnout file=games.pgn -recover
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=1+0.1 timemargin=50 -rounds 5000 -concurrency 4 -repeat -openings file=${OPENINGS} format=epd order=random -pgnout file=games.pgn
 
 test-fastchess-ltc: build
-	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=60+0.6 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=60+0.6 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random
 
 test-fastchess-stc: build
-	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=10+0 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=10+0 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random
 
 test-fastchess-vstc: build
-	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.5+0.05 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.5+0.05 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random
 
 test-fastchess-vvstc: build
-	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.2+0.02 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=0.2+0.02 timemargin=50 -rounds 2000 -concurrency 7 -repeat -sprt elo0=-5 elo1=15 alpha=0.1 beta=0.1 -openings file=${OPENINGS} format=epd order=random
 
 pgo-fastchess: build
-	${FASTCHESS} -engine cmd=./tofiks args=-pgo name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=2+0.2 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks args=-pgo name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=2+0.2 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=epd order=random
 
 memprof-fastchess: build
-	${FASTCHESS} -engine cmd=./tofiks args=-memprof name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=epd order=random -recover
+	${FASTCHESS} -engine cmd=./tofiks args=-memprof name=tofiks-dev -engine cmd=${TOFIKS_PROD} name=tofiks-prod -each proto=uci tc=30+1 timemargin=50 -rounds 1 -openings file=${OPENINGS} format=epd order=random
 
 spsa-init:
 	@echo '{"params":[{"name":"ExampleParam","type":"int","value":100,"min":50,"max":150,"c_end":10,"r_end":0.002}],"spsa_alpha":0.602,"spsa_gamma":0.101,"spsa_A_ratio":0.1,"spsa_iterations":10000,"spsa_pairs_per":32,"spsa_reporting_type":"BULK","spsa_distribution_type":"SINGLE"}' | jq . > spsa.json
