@@ -42,6 +42,28 @@ func TestNewTimeControlLowTimeHasHardLimit(t *testing.T) {
 	}
 }
 
+// TestNewTimeControlOverheadExceedsTime guards against the corner case where
+// remaining time is less than the configured overhead. hardLimit must still
+// be clamped to remainingTime so the deadline timer fires before we flag.
+func TestNewTimeControlOverheadExceedsTime(t *testing.T) {
+	c := &Clock{Wtime: 3, Btime: 4879, Overhead: 20}
+	tc := c.NewTimeControl(50, board.White)
+	if tc.hardLimit <= 0 || tc.hardLimit > 3*time.Millisecond {
+		t.Fatalf("hardLimit = %v, want in (0, 3ms]", tc.hardLimit)
+	}
+}
+
+// TestNewTimeControlMovetimeBelowOverhead guards against the case where
+// movetime is set but ≤ overhead. Should panic-search, not fall through to
+// the bare-"go"-is-infinite path.
+func TestNewTimeControlMovetimeBelowOverhead(t *testing.T) {
+	c := &Clock{Movetime: 10, Overhead: 20}
+	tc := c.NewTimeControl(10, board.White)
+	if tc.hardLimit <= 0 {
+		t.Fatalf("hardLimit = %v, want > 0 (panic mode)", tc.hardLimit)
+	}
+}
+
 // TestGetMovetimeGoNoArgsStillInfinite preserves the `go` (no parameters)
 // behavior: without any time info, the engine should search infinitely until
 // an external stop. Only c.Infinite / truly-zero clocks should trigger this.
