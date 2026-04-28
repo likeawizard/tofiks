@@ -52,9 +52,9 @@ func TestValidPV(t *testing.T) {
 				}
 				pv := m[capturePV.SubexpIndex("pv")]
 				tmpPos := position.Copy()
-				pvMoves := strings.Fields(pv)
+				pvMoves := strings.FieldsSeq(pv)
 
-				for _, uciMove := range pvMoves {
+				for uciMove := range pvMoves {
 					_, ok := tmpPos.MoveUCI(uciMove)
 					assert.True(t, ok, "error parsing PV, position '%v' pv: %v on move: %v\n", position.ExportFEN(), info, uciMove)
 				}

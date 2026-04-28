@@ -22,7 +22,7 @@ func BenchmarkTTStore(b *testing.B) {
 
 	b.ResetTimer()
 	for i := range b.N {
-		tt.Store(hashes[i], TT_EXACT, 100, 10, 0, 0)
+		tt.Store(hashes[i], Exact, 100, 10, 0, 0)
 	}
 }
 
@@ -31,7 +31,7 @@ func BenchmarkTTProbeHit(b *testing.B) {
 	hashes := generateHashes(b.N)
 
 	for i := range b.N {
-		tt.Store(hashes[i], TT_EXACT, 100, 10, 0, 0)
+		tt.Store(hashes[i], Exact, 100, 10, 0, 0)
 	}
 
 	b.ResetTimer()
@@ -45,7 +45,7 @@ func BenchmarkTTProbeMiss(b *testing.B) {
 	// Store one set of hashes, probe with a different set.
 	stored := generateHashes(b.N)
 	for i := range b.N {
-		tt.Store(stored[i], TT_EXACT, 100, 10, 0, 0)
+		tt.Store(stored[i], Exact, 100, 10, 0, 0)
 	}
 
 	r := rand.New(rand.NewPCG(3, 4))
@@ -64,7 +64,7 @@ func BenchmarkTTStoreMixed(b *testing.B) {
 	tt := NewTTable(benchTTSize)
 	hashes := generateHashes(b.N)
 	depths := []int{0, 2, 5, 8, 12}
-	types := []EntryType{TT_UPPER, TT_LOWER, TT_EXACT}
+	types := []EntryType{Upper, Lower, Exact}
 
 	b.ResetTimer()
 	for i := range b.N {

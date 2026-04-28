@@ -73,7 +73,7 @@ func TestMateScoreAcrossPlies(t *testing.T) {
 				expectedScore = -search.CheckmateScore + int16(tc.retrievePly) + int16(tc.mateDistance)
 			}
 
-			tt.Store(hash, search.TT_EXACT, storedScore, 10, tc.storePly, 0)
+			tt.Store(hash, search.Exact, storedScore, 10, tc.storePly, 0)
 
 			entry, ok := tt.Probe(hash)
 			assert.True(t, ok, "TT probe should hit")

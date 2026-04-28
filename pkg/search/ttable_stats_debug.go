@@ -35,12 +35,12 @@ func (s *TTStats) recordCutoff(bound EntryType, rawEval, alpha, beta int16) {
 	s.scoreCuts++
 	overshoot := 0
 	switch bound {
-	case TT_EXACT:
+	case Exact:
 		s.scoreCutsExact++
-	case TT_LOWER:
+	case Lower:
 		s.scoreCutsLower++
 		overshoot = int(rawEval) - int(beta)
-	case TT_UPPER:
+	case Upper:
 		s.scoreCutsUpper++
 		overshoot = int(alpha) - int(rawEval)
 	}

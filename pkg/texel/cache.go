@@ -54,9 +54,7 @@ func BuildCache(dataPath, cachePath string, limit int, workers int) (int, error)
 	// Writer goroutine — serializes entries to disk.
 	var writeWg sync.WaitGroup
 	var count int
-	writeWg.Add(1)
-	go func() {
-		defer writeWg.Done()
+	writeWg.Go(func() {
 		for batch := range resultCh {
 			for _, pe := range batch {
 				if !pe.valid {
@@ -69,14 +67,12 @@ func BuildCache(dataPath, cachePath string, limit int, workers int) (int, error)
 			}
 		}
 		bw.Flush()
-	}()
+	})
 
 	// Worker goroutines — compute traces.
 	var workerWg sync.WaitGroup
-	for w := 0; w < workers; w++ {
-		workerWg.Add(1)
-		go func() {
-			defer workerWg.Done()
+	for range workers {
+		workerWg.Go(func() {
 			for raws := range rawCh {
 				processed := make([]processedEntry, len(raws))
 				for i, r := range raws {
@@ -92,7 +88,7 @@ func BuildCache(dataPath, cachePath string, limit int, workers int) (int, error)
 				}
 				resultCh <- processed
 			}
-		}()
+		})
 	}
 
 	// Reader — scan file and dispatch batches.
@@ -196,7 +192,7 @@ func (cr *cacheReader) readEntry(e *Entry) error {
 		e.Trace = make(Trace, count)
 	}
 	off := 0
-	for i := 0; i < count; i++ {
+	for i := range count {
 		e.Trace[i].Index = binary.LittleEndian.Uint16(cr.buf[off : off+2])
 		e.Trace[i].Value = math.Float32frombits(binary.LittleEndian.Uint32(cr.buf[off+2 : off+6]))
 		off += 6

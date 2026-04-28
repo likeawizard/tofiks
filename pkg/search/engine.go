@@ -26,18 +26,9 @@ func init() {
 // lmrReduction looks up the late-move reduction for a given depth and move
 // number, clamping both to the table bounds and flooring at 1.
 func lmrReduction(depth, legalMoves int) int {
-	d := depth
-	if d > 63 {
-		d = 63
-	}
-	m := legalMoves
-	if m > 63 {
-		m = 63
-	}
-	r := int(LmrTable[d][m])
-	if r < 1 {
-		r = 1
-	}
+	d := min(depth, 63)
+	m := min(legalMoves, 63)
+	r := max(int(LmrTable[d][m]), 1)
 	return r
 }
 
@@ -143,8 +134,8 @@ func (e *Engine) GetHistory(move board.Move) int {
 
 func (e *Engine) AgeHistory() {
 	for side := 0; side <= 1; side++ {
-		for from := 0; from < 64; from++ {
-			for to := 0; to < 64; to++ {
+		for from := range 64 {
+			for to := range 64 {
 				e.History[side][from][to] /= 2
 			}
 		}

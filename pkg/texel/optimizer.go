@@ -70,7 +70,7 @@ func StreamGradientAndMSE(cachePath string, n int, weights *[NumParams]float64, 
 // OptimizeK finds the K constant that minimizes MSE on the given entries.
 func OptimizeK(entries []Entry, weights *[NumParams]float64) float64 {
 	lo, hi := 0.0, 10.0
-	for step := 0; step < 100; step++ {
+	for range 100 {
 		m1 := lo + (hi-lo)/3.0
 		m2 := hi - (hi-lo)/3.0
 		e1 := MeanSquaredError(entries, weights, m1)
@@ -88,7 +88,7 @@ func OptimizeK(entries []Entry, weights *[NumParams]float64) float64 {
 // 30 ternary search steps give precision to ~1e-9, more than enough.
 func StreamOptimizeK(cachePath string, n int, weights *[NumParams]float64) float64 {
 	lo, hi := 0.0, 10.0
-	for step := 0; step < 30; step++ {
+	for range 30 {
 		m1 := lo + (hi-lo)/3.0
 		m2 := hi - (hi-lo)/3.0
 		e1 := StreamMSE(cachePath, n, weights, m1)
@@ -135,7 +135,7 @@ func Optimize(entries []Entry, weights *[NumParams]float64, k float64, iteration
 
 		// Adam update.
 		t := float64(iter)
-		for i := 0; i < NumParams; i++ {
+		for i := range NumParams {
 			m[i] = cfg.Beta1*m[i] + (1.0-cfg.Beta1)*grad[i]
 			v[i] = cfg.Beta2*v[i] + (1.0-cfg.Beta2)*grad[i]*grad[i]
 			mHat := m[i] / (1.0 - math.Pow(cfg.Beta1, t))
@@ -190,7 +190,7 @@ func StreamOptimize(cachePath string, n int, weights *[NumParams]float64, k floa
 
 		// Adam update.
 		t := float64(iter)
-		for i := 0; i < NumParams; i++ {
+		for i := range NumParams {
 			m[i] = cfg.Beta1*m[i] + (1.0-cfg.Beta1)*grad[i]
 			v[i] = cfg.Beta2*v[i] + (1.0-cfg.Beta2)*grad[i]*grad[i]
 			mHat := m[i] / (1.0 - math.Pow(cfg.Beta1, t))
@@ -218,10 +218,10 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Println("// === Piece-Square Tables ===")
 	pieceNames := []string{"pawn", "bishop", "knight", "rook", "queen", "king"}
 	stageNames := []string{"", "EG"}
-	for stage := 0; stage < 2; stage++ {
-		for piece := 0; piece < 6; piece++ {
+	for stage := range 2 {
+		for piece := range 6 {
 			fmt.Printf("var %s%sPST = [64]int{\n", pieceNames[piece], stageNames[stage])
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				if sq%8 == 0 {
 					fmt.Print("\t")
 				}
@@ -298,7 +298,7 @@ func PrintParams(w *[NumParams]float64) {
 			offset += 64
 		}
 		fmt.Printf("var %sOutposts = [64]int{\n", name)
-		for sq := 0; sq < 64; sq++ {
+		for sq := range 64 {
 			if sq%8 == 0 {
 				fmt.Print("\t")
 			}

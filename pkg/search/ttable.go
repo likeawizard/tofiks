@@ -34,11 +34,11 @@ type (
 
 func (et EntryType) String() string {
 	switch et {
-	case TT_EXACT:
+	case Exact:
 		return "exact"
-	case TT_UPPER:
+	case Upper:
 		return "upper"
-	case TT_LOWER:
+	case Lower:
 		return "lower"
 	default:
 		return "none"
@@ -47,29 +47,29 @@ func (et EntryType) String() string {
 
 const (
 	// Enum values for EntryType.
-	TT_UPPER EntryType = iota
-	TT_LOWER
-	TT_EXACT
+	Upper EntryType = iota
+	Lower
+	Exact
 
 	// Mask and shift values for EntryData.
-	move_mask   = board.MoveDataMask
-	type_mask   = (1 << 2) - 1
-	depth_mask  = (1 << 7) - 1
-	age_mask    = (1 << 7) - 1
-	score_mask  = (1 << 16) - 1
-	depth_shift = 32
-	type_shift  = 39
-	age_shift   = 41
-	score_shift = 48
+	moveMask   = board.MoveDataMask
+	typeMask   = (1 << 2) - 1
+	depthMask  = (1 << 7) - 1
+	ageMask    = (1 << 7) - 1
+	scoreMask  = (1 << 16) - 1
+	depthShift = 32
+	typeShift  = 39
+	ageShift   = 41
+	scoreShift = 48
 )
 
 func NewEntry(move board.Move, depth int, eType EntryType, age int8, score int16) EntryData {
 	// depth is masked to 7 bits to prevent spillage into the type field.
 	return EntryData(move) |
-		EntryData(depth&depth_mask)<<depth_shift |
-		EntryData(eType)<<type_shift |
-		EntryData(age)<<age_shift |
-		EntryData(score)<<score_shift
+		EntryData(depth&depthMask)<<depthShift |
+		EntryData(eType)<<typeShift |
+		EntryData(age)<<ageShift |
+		EntryData(score)<<scoreShift
 }
 
 func (ed EntryData) GetScore(depth, ply int, alpha, beta int16) (int16, bool) {
@@ -88,11 +88,11 @@ func (ed EntryData) GetScore(depth, ply int, alpha, beta int16) (int16, bool) {
 	}
 
 	switch {
-	case ttType == TT_EXACT:
+	case ttType == Exact:
 		return eval, true
-	case ttType == TT_UPPER && eval <= alpha:
+	case ttType == Upper && eval <= alpha:
 		return alpha, true
-	case ttType == TT_LOWER && eval >= beta:
+	case ttType == Lower && eval >= beta:
 		return beta, true
 	}
 
@@ -100,23 +100,23 @@ func (ed EntryData) GetScore(depth, ply int, alpha, beta int16) (int16, bool) {
 }
 
 func (ed EntryData) Depth() int {
-	return int((ed >> depth_shift) & depth_mask)
+	return int((ed >> depthShift) & depthMask)
 }
 
 func (ed EntryData) Move() board.Move {
-	return board.Move(ed & move_mask)
+	return board.Move(ed & moveMask)
 }
 
 func (ed EntryData) Score() int16 {
-	return int16(ed >> score_shift)
+	return int16(ed >> scoreShift)
 }
 
 func (ed EntryData) Type() EntryType {
-	return EntryType((ed >> type_shift) & type_mask)
+	return EntryType((ed >> typeShift) & typeMask)
 }
 
 func (ed EntryData) Age() int8 {
-	return int8((ed >> age_shift) & age_mask)
+	return int8((ed >> ageShift) & ageMask)
 }
 
 const bucketsPerEntry = 2
@@ -139,7 +139,7 @@ func (tt *TTable) Probe(hash uint64) (*EntryData, bool) {
 	tt.Stats.recordProbe()
 	base := (hash & (tt.size - 1)) * bucketsPerEntry
 
-	for i := uint64(0); i < bucketsPerEntry; i++ {
+	for i := range uint64(bucketsPerEntry) {
 		e := &tt.entries[base+i]
 		if e.key^uint64(e.data) == hash {
 			tt.Stats.recordHit(e.data.Depth())
@@ -171,7 +171,7 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 	base := (hash & (tt.size - 1)) * bucketsPerEntry
 
 	// Check for empty or same position in existing buckets.
-	for i := uint64(0); i < bucketsPerEntry; i++ {
+	for i := range uint64(bucketsPerEntry) {
 		d := tt.entries[base+i].data
 		if d == 0 {
 			tt.entries[base+i] = newEntry
@@ -200,7 +200,7 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 		}
 	}
 
-	if entryType == TT_EXACT || weakestScore < newScore {
+	if entryType == Exact || weakestScore < newScore {
 		tt.entries[weakestIdx] = newEntry
 		tt.overWrite++
 		tt.Stats.recordOverWrite()

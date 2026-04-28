@@ -17,17 +17,17 @@ func ParseUCI(uciCmd string) Cmd {
 	args := match[cmdRE.SubexpIndex("args")]
 
 	switch cmd {
-	case C_UCI:
+	case CmdUci:
 		return &UCI{}
-	case C_IS_READY:
+	case CmdIsReady:
 		return &IsReady{}
-	case C_STOP:
+	case CmdStop:
 		return &Stop{}
-	case C_PONDERHIT:
+	case CmdPonderhit:
 		return &Stop{ponderhit: true}
-	case C_QUIT:
+	case CmdQuit:
 		return &Quit{}
-	case C_POSITION:
+	case CmdPosition:
 		pos := Position{}
 		posRE := regexp.MustCompile(`(startpos|(fen\s(?P<fen>.+?)))\s*(?:$|moves\s)(?P<moves>.*)?`)
 		match = posRE.FindStringSubmatch(args)
@@ -36,7 +36,7 @@ func ParseUCI(uciCmd string) Cmd {
 		pos.pos = fen
 		pos.moves = moves
 		return &pos
-	case C_SET_OPTION:
+	case CmdSetOption:
 		opt := SetOption{}
 		optRE := regexp.MustCompile(`name\s(?P<name>[\w\s]+)\svalue\s(?P<value>\w+)`)
 		match = optRE.FindStringSubmatch(args)
@@ -70,7 +70,7 @@ func ParseUCI(uciCmd string) Cmd {
 			return &opt
 		}
 		return nil
-	case C_GO:
+	case CmdGo:
 		goCmd := Go{}
 		goParts := strings.Fields(args)
 		for i, s := range goParts {
@@ -97,7 +97,7 @@ func ParseUCI(uciCmd string) Cmd {
 			}
 		}
 		return &goCmd
-	case C_NEW_GAME:
+	case CmdNewGame:
 		return &NewGame{}
 	}
 

@@ -12,9 +12,9 @@ func InitPSTs() {
 	invert := func(sq int) int {
 		return (7-sq/8)*8 + sq%8
 	}
-	for stage := 0; stage < 2; stage++ {
+	for stage := range 2 {
 		for piece := board.Pawns; piece <= board.Kings; piece++ {
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				PST[stage][board.Black][piece][sq] = PST[stage][board.White][piece][invert(sq)]
 			}
 		}
@@ -22,7 +22,7 @@ func InitPSTs() {
 	OutpostsScores[board.White][board.Knights] = knightOutposts
 	OutpostsScores[board.White][board.Bishops] = bishopOutposts
 	for piece := board.Pawns; piece <= board.Kings; piece++ {
-		for sq := 0; sq < 64; sq++ {
+		for sq := range 64 {
 			OutpostsScores[board.Black][piece][sq] = OutpostsScores[board.White][piece][invert(sq)]
 		}
 	}
