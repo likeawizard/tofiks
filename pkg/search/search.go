@@ -378,7 +378,7 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 	if e.Board.Side != board.White {
 		color = -color
 	}
-	e.TTable.age = 0
+	e.TTable.IncAge()
 	e.AgeHistory()
 	e.Stability.reset()
 
@@ -406,7 +406,6 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 			}
 
 			e.TC.IterationStarted()
-			e.TTable.age = int8(d)
 			e.Stats.Start()
 			e.TTable.Stats.reset()
 			e.Eval.PawnTable.Stats.Reset()
