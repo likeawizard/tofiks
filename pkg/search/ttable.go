@@ -210,6 +210,12 @@ func (tt *TTable) Store(hash uint64, entryType EntryType, eval int16, depth, ply
 	}
 }
 
+// IncAge bumps the TT generation counter, used by the replacement strategy
+// to distinguish entries written in the current root search from older ones.
+func (tt *TTable) IncAge() {
+	tt.age = int8((int(tt.age) + 1) & ageMask)
+}
+
 func (tt *TTable) Clear() {
 	tt.newWrite = 0
 	tt.overWrite = 0
