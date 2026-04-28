@@ -24,6 +24,10 @@ linters:
     govet:
       enable:
         - fieldalignment
+    staticcheck:
+      checks:
+        - all
+        - -QF1012 # Allow WriteString(fmt.Sprintf(...)) instead of fmt.Fprintf.
     revive:
       confidence: 0.8
       severity: warning

@@ -5,16 +5,16 @@ import (
 )
 
 const (
-	C_UCI = "uci"
-	// C_DEBUG      = "debug" // on | off.
-	C_IS_READY   = "isready"
-	C_SET_OPTION = "setoption" // name [value]
-	C_POSITION   = "position"  // [ fen | startpos] moves ...
-	C_GO         = "go"        // many opts
-	C_STOP       = "stop"
-	C_PONDERHIT  = "ponderhit"
-	C_QUIT       = "quit"
-	C_NEW_GAME   = "ucinewgame"
+	CmdUci = "uci"
+	// CmdDebug      = "debug" // on | off.
+	CmdIsReady   = "isready"
+	CmdSetOption = "setoption" // name [value]
+	CmdPosition  = "position"  // [ fen | startpos] moves ...
+	CmdGo        = "go"        // many opts
+	CmdStop      = "stop"
+	CmdPonderhit = "ponderhit"
+	CmdQuit      = "quit"
+	CmdNewGame   = "ucinewgame"
 )
 
 type Cmd interface {

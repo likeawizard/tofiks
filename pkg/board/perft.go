@@ -23,7 +23,7 @@ func traverse(b *Board, depth int) int64 {
 	}
 
 	all := b.PseudoMoveGen()
-	for i := 0; i < len(all); i++ {
+	for i := range all {
 		umove := b.MakeMove(all[i])
 		if b.IsChecked(b.Side ^ 1) {
 			umove()

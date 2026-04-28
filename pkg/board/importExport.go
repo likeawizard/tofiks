@@ -176,31 +176,31 @@ func (b *Board) serializePosition() string {
 	}
 
 	empty := 0
-	fen := ""
+	var fen strings.Builder
 	for i, val := range byteBoard {
 		if i%8 == 0 {
 			if empty > 0 {
-				fen += fmt.Sprint(empty)
+				fen.WriteString(fmt.Sprint(empty))
 			}
 			empty = 0
 			if i != 0 {
-				fen += "/"
+				fen.WriteString("/")
 			}
 		}
 		if val == 0 {
 			empty++
 		} else {
 			if empty > 0 {
-				fen += fmt.Sprint(empty)
+				fen.WriteString(fmt.Sprint(empty))
 				empty = 0
 			}
-			fen += string([]byte{val})
+			fen.WriteString(string([]byte{val}))
 		}
 	}
 
 	if empty > 0 {
-		fen += fmt.Sprint(empty)
+		fen.WriteString(fmt.Sprint(empty))
 	}
 
-	return fen
+	return fen.String()
 }

@@ -8,18 +8,18 @@ import (
 
 // String returns a human-readable string representation of a bitboard.
 func (bb BBoard) String() string {
-	s := ""
-	for r := 0; r < 8; r++ {
-		s += fmt.Sprintf(" %d ", 8-r)
-		for f := 0; f < 8; f++ {
+	var s strings.Builder
+	for r := range 8 {
+		s.WriteString(fmt.Sprintf(" %d ", 8-r))
+		for f := range 8 {
 			sq := r*8 + f
-			s += fmt.Sprintf(" %d", bb.Get(sq))
+			s.WriteString(fmt.Sprintf(" %d", bb.Get(sq)))
 		}
-		s += "\n"
+		s.WriteString("\n")
 	}
-	s += "\n    a b c d e f g h"
-	s += fmt.Sprintf("\n\n Bitboard: %d", bb)
-	return s
+	s.WriteString("\n    a b c d e f g h")
+	s.WriteString(fmt.Sprintf("\n\n Bitboard: %d", bb))
+	return s.String()
 }
 
 func (bb BBoard) Flip() BBoard {
@@ -285,7 +285,7 @@ func (b *Board) MakeMove(move Move) func() {
 
 	for side := White; side <= Black; side++ {
 		b.Occupancy[side] = b.Pieces[side][Kings]
-		for piece := Pawns; piece < Kings; piece++ {
+		for piece := range Kings {
 			b.Occupancy[side] |= b.Pieces[side][piece]
 		}
 	}
@@ -357,9 +357,9 @@ func (b *Board) MoveUCI(uciMove string) (func(), bool) {
 
 // Play out a line of UCI moves in succession. Returns success.
 func (b *Board) PlayMovesUCI(uciMoves string) bool {
-	moveSlice := strings.Fields(uciMoves)
+	moveSlice := strings.FieldsSeq(uciMoves)
 
-	for _, uciMove := range moveSlice {
+	for uciMove := range moveSlice {
 		_, ok := b.MoveUCI(uciMove)
 		if !ok {
 			return false

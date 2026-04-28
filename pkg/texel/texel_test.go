@@ -109,7 +109,7 @@ func TestTraceCoefficientsMatchEval(t *testing.T) {
 			traceMap[int(c.Index)] = float64(c.Value)
 		}
 
-		for i := 0; i < NumParams; i++ {
+		for i := range NumParams {
 			perturbed := baseline
 			perturbed[i] += float64(delta)
 			ApplyParams(&perturbed)

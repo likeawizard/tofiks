@@ -2,6 +2,7 @@ package search
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -128,7 +129,7 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 	// Singular extension: check if the TT move is significantly better than all alternatives.
 	singularExtension := 0
 	if ply > 0 && depth >= 8 && pvMove != 0 && e.ExcludedMove[ply] == 0 &&
-		ttHit && ttDepth >= depth-3 && (ttBound == TT_LOWER || ttBound == TT_EXACT) &&
+		ttHit && ttDepth >= depth-3 && (ttBound == Lower || ttBound == Exact) &&
 		ttValue > -CheckmateThreshold && ttValue < CheckmateThreshold {
 		singularBeta := ttValue - 2*int16(depth)
 		singularDepth := depth / 2
@@ -153,7 +154,7 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 	e.ScoreMoves(pvMove, all, pvOrder, ply)
 
 	value := int16(0)
-	entryType := TT_UPPER
+	entryType := Upper
 	bestVal := -Inf
 	var currMove, bestMove board.Move
 	var pv []board.Move
@@ -162,7 +163,7 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 		bestMove = all[0]
 	}
 
-	for i := 0; i < moveCount; i++ {
+	for i := range moveCount {
 		currMove = SelectMove(all, i)
 		// Skip the excluded move during singular extension verification search.
 		if currMove == e.ExcludedMove[ply] {
@@ -252,13 +253,13 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 				}
 			}
 
-			entryType = TT_LOWER
+			entryType = Lower
 			break
 		}
 		e.DecrementHistory(currMove)
 
 		if value > alpha {
-			entryType = TT_EXACT
+			entryType = Exact
 			bestMove = currMove
 			alpha = value
 			*line = []board.Move{currMove}
@@ -318,7 +319,7 @@ func (e *Engine) Quiescence(ply int, alpha, beta, side int16) int16 {
 	legalMoves := 0
 	bestVal := eval
 	var bestMove board.Move
-	entryType := TT_UPPER
+	entryType := Upper
 
 	e.ScoreMovesQ(all)
 	var currMove board.Move
@@ -346,12 +347,12 @@ func (e *Engine) Quiescence(ply int, alpha, beta, side int16) int16 {
 		}
 
 		if value > alpha {
-			entryType = TT_EXACT
+			entryType = Exact
 			alpha = value
 		}
 
 		if alpha >= beta {
-			entryType = TT_LOWER
+			entryType = Lower
 			break
 		}
 	}
@@ -393,17 +394,14 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 	}
 
 	done, ok := false, true
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		for d := 1; d <= depth; d++ {
 			if done {
-				wg.Done()
 				return
 			}
 
 			// Don't start a new iteration if it's predicted to not finish in time.
 			if d > 1 && e.TC.ShouldStop() {
-				wg.Done()
 				return
 			}
 
@@ -433,7 +431,6 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 			if e.TC.ShouldAbort() {
 				// Search was aborted; results unreliable.
 				done = true
-				wg.Done()
 				return
 			}
 			if len(line) == 0 {
@@ -447,9 +444,9 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 			e.TC.IterationFinished()
 			e.TC.RecordIteration(best, eval)
 			e.Stability.recordIteration(best, eval)
-			lineStr := ""
+			var lineStr strings.Builder
 			for _, m := range line {
-				lineStr += " " + m.String()
+				lineStr.WriteString(" " + m.String())
 			}
 			totalN := e.Stats.nodes + e.Stats.qNodes
 			timeSince := time.Since(start)
@@ -457,7 +454,7 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 			if timeSince.Milliseconds() != 0 {
 				nps = (1000 * nps) / timeSince.Milliseconds()
 			}
-			fmt.Printf("info depth %d seldepth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.Stats.SelDepth, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr)
+			fmt.Printf("info depth %d seldepth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n", d, e.Stats.SelDepth, e.ConvertEvalToScore(eval), totalN, nps, timeSince.Milliseconds(), e.TTable.Hashfull(), lineStr.String())
 			if s := e.TTable.Stats.String(); s != "" {
 				fmt.Printf("info string %s\n", s)
 			}
@@ -480,8 +477,7 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 				done = true
 			}
 		}
-		wg.Done()
-	}()
+	})
 
 	wg.Wait()
 	return best, ponder, ok

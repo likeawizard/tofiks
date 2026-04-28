@@ -16,7 +16,7 @@ func init() {
 	rng := rand.New(rand.NewSource(0x4F4649_4B5321))
 	seed = rng.Uint64()
 	castlingKeys = make(map[CastlingRights]uint64)
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		for color := White; color <= Black; color++ {
 			for pieceType := Pawns; pieceType <= Kings; pieceType++ {
 				pieceKeys[color][pieceType][sq] = rng.Uint64()

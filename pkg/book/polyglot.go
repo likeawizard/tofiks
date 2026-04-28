@@ -11,18 +11,18 @@ import (
 )
 
 const (
-	black_pawn = iota
-	white_pawn
-	black_knight
-	white_knight
-	black_bishop
-	white_bishop
-	black_rook
-	white_rook
-	black_queen
-	white_queen
-	black_king
-	white_king
+	blackPawn = iota
+	whitePawn
+	blackKnight
+	whiteKnight
+	blackBishop
+	whiteBishop
+	blackRook
+	whiteRook
+	blackQueen
+	whiteQueen
+	blackKing
+	whiteKing
 
 	entrySize = 16
 	sideHash  = 780
@@ -48,17 +48,17 @@ func convertPiece(piece, color int) int {
 	color ^= 1
 	switch piece {
 	case board.Pawns:
-		piece = black_pawn
+		piece = blackPawn
 	case board.Bishops:
-		piece = black_bishop
+		piece = blackBishop
 	case board.Knights:
-		piece = black_knight
+		piece = blackKnight
 	case board.Rooks:
-		piece = black_rook
+		piece = blackRook
 	case board.Queens:
-		piece = black_queen
+		piece = blackQueen
 	case board.Kings:
-		piece = black_king
+		piece = blackKing
 	}
 	return piece + color
 }

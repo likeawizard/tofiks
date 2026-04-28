@@ -85,7 +85,7 @@ func init() {
 }
 
 func InitSquares() {
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		SquareBitboards[i] = 1 << i
 		if SquareBitboards[i]&LightSquares != 0 {
 			SquareColorMask[i] = LightSquares
@@ -119,7 +119,7 @@ func InitPawnAttacks() {
 
 		return attacks
 	}
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		PawnAttacks[White][sq] = pawnAttack(sq, true)
 		PawnAttacks[Black][sq] = pawnAttack(sq, false)
 	}
@@ -270,7 +270,7 @@ func InitPawnStructureMasks() {
 
 	FileMasks = [8]BBoard{AFile, BFile, CFile, DFile, EFile, FFile, GFile, HFile}
 
-	for f := 0; f < 8; f++ {
+	for f := range 8 {
 		if f > 0 {
 			AdjacentFiles[f] |= FileMasks[f-1]
 		}
@@ -282,7 +282,7 @@ func InitPawnStructureMasks() {
 	// RankMasks indexed 0..7 where 0 = Rank8 (top), 7 = Rank1 (bottom).
 	rankMasks := [8]BBoard{Rank8, Rank7, Rank6, Rank5, Rank4, Rank3, Rank2, Rank1}
 
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		IsolatedPawns[sq] = isolatedMask(sq)
 		DoubledPawns[sq] = doubledMask(sq)
 		PassedPawns[White][sq] = passedMask(sq, White)
@@ -295,7 +295,7 @@ func InitPawnStructureMasks() {
 		// FrontSpan: squares ahead on the same file.
 		// White advances toward rank 0 (Rank8), Black toward rank 7 (Rank1).
 		var wSpan, bSpan BBoard
-		for r := 0; r < rank; r++ {
+		for r := range rank {
 			wSpan |= rankMasks[r] & FileMasks[file]
 		}
 		for r := rank + 1; r < 8; r++ {
@@ -334,7 +334,7 @@ func InitKnightAttacks() {
 
 		return attacks
 	}
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		KnightAttacks[sq] = knightAttack(sq)
 	}
 }
@@ -362,7 +362,7 @@ func InitKingAttacks() {
 
 		return attacks
 	}
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		KingAttacks[sq] = kingAttack(sq)
 	}
 }
@@ -400,7 +400,7 @@ func InitKingSafetyMasks() {
 		return attacks
 	}
 	for color := White; color <= Black; color++ {
-		for sq := 0; sq < 64; sq++ {
+		for sq := range 64 {
 			KingSafetyMask[color][sq] = safetyMask(sq, color)
 		}
 	}
@@ -452,7 +452,7 @@ func RookRelOcc(sq int) BBoard {
 
 // Initialize sliding piece lookup tables with magic numbers.
 func InitSliders() {
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		BishopAttackMasks[sq] = BishopRelOcc(sq)
 		RookAttackMasks[sq] = RookRelOcc(sq)
 
@@ -464,13 +464,13 @@ func InitSliders() {
 		occIdxR := 1 << occRook
 		occIdxB := 1 << occBishop
 
-		for i := 0; i < occIdxB; i++ {
+		for i := range occIdxB {
 			occ := Occupancy(i, occBishop, attackBishop)
 			mIdx := (occ * BishopMagics[sq]) >> (64 - occBishop)
 			BishopAttacks[sq][mIdx] = BishopAttacksWithBlocker(sq, occ)
 		}
 
-		for i := 0; i < occIdxR; i++ {
+		for i := range occIdxR {
 			occ := Occupancy(i, occRook, attackRook)
 			mIdx := (occ * RookMagics[sq]) >> (64 - occRook)
 			RookAttacks[sq][mIdx] = RookAttacksWithBlocker(sq, occ)
@@ -482,7 +482,7 @@ func InitSliders() {
 func Occupancy(index, count int, attack BBoard) BBoard {
 	occ := BBoard(0)
 
-	for i := 0; i < count; i++ {
+	for i := range count {
 		sq := attack.LS1B()
 		attack.Clear(sq)
 
@@ -572,7 +572,7 @@ func RookAttacksWithBlocker(sq int, blocker BBoard) BBoard {
 
 // Calculate and initialize the number of relevant occupancies for Bishops and Rooks for all squares.
 func InitOccBitCounts() {
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		BishopOccBitCount[sq] = BishopRelOcc(sq).Count()
 		RookOccBitCount[sq] = RookRelOcc(sq).Count()
 	}
@@ -596,7 +596,7 @@ func FindMagicNumber(sq, bitCount int, isBishop bool) BBoard {
 
 	occIdx := 1 << bitCount
 
-	for i := 0; i < occIdx; i++ {
+	for i := range occIdx {
 		occ[i] = Occupancy(i, bitCount, attack)
 		if isBishop {
 			attacks[i] = BishopAttacksWithBlocker(sq, occ[i])
@@ -605,7 +605,7 @@ func FindMagicNumber(sq, bitCount int, isBishop bool) BBoard {
 		}
 	}
 
-	for randC := 0; randC < 1<<32; randC++ {
+	for range 1 << 32 {
 		magicNum := GetMagicNumber()
 
 		if ((attack * magicNum) & 0xFF00000000000000).Count() < 6 {

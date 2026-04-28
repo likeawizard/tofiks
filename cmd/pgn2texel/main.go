@@ -112,7 +112,7 @@ func parsePGN(path string) ([]game, error) {
 		allMoves := strings.Join(moveLines, " ")
 		// Remove move numbers like "7." "12."
 		var moves []string
-		for _, tok := range strings.Fields(allMoves) {
+		for tok := range strings.FieldsSeq(allMoves) {
 			// Skip move numbers, results, and comments.
 			if strings.HasSuffix(tok, ".") {
 				continue

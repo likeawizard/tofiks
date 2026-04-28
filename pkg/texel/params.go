@@ -98,11 +98,11 @@ func pstIndex(stage, piece, sq int) int {
 // modified — the optimizer adjusts them naturally. Pawn PST entries on ranks
 // 1 and 8 are pinned to zero since pawns can never occupy those squares.
 func recenterPSTs(w *[NumParams]float64) {
-	for piece := 0; piece < pieceWeightCount; piece++ {
-		for stage := 0; stage < 2; stage++ {
+	for piece := range pieceWeightCount {
+		for stage := range 2 {
 			// Pin impossible pawn squares (ranks 1 and 8) to zero.
 			if piece == 0 { // Pawns
-				for sq := 0; sq < 8; sq++ {
+				for sq := range 8 {
 					w[pstIndex(stage, piece, sq)] = 0    // rank 8
 					w[pstIndex(stage, piece, 56+sq)] = 0 // rank 1
 				}
@@ -110,7 +110,7 @@ func recenterPSTs(w *[NumParams]float64) {
 
 			var sum float64
 			var count float64
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				// Skip impossible pawn squares.
 				if piece == 0 && (sq < 8 || sq >= 56) {
 					continue
@@ -119,7 +119,7 @@ func recenterPSTs(w *[NumParams]float64) {
 				count++
 			}
 			mean := sum / count
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				if piece == 0 && (sq < 8 || sq >= 56) {
 					continue
 				}
@@ -134,16 +134,16 @@ func InitialParams() [NumParams]float64 {
 	var p [NumParams]float64
 
 	// PSTs (read from white's perspective).
-	for stage := 0; stage < 2; stage++ {
+	for stage := range 2 {
 		for piece := board.Pawns; piece <= board.Kings; piece++ {
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				p[pstIndex(stage, piece, sq)] = float64(eval.PST[stage][board.White][piece][sq])
 			}
 		}
 	}
 
 	// Piece weights.
-	for i := 0; i < pieceWeightCount; i++ {
+	for i := range pieceWeightCount {
 		p[pieceWeightStart+i] = float64(eval.PieceWeights[i])
 	}
 
@@ -172,7 +172,7 @@ func InitialParams() [NumParams]float64 {
 	p[pawnStructStart+8] = float64(eval.PawnCandidate)
 
 	// Passed pawn bonus (ranks 1-6).
-	for i := 0; i < passedPawnCount; i++ {
+	for i := range passedPawnCount {
 		p[passedPawnStart+i] = float64(eval.PassedPawnBonus[i+1])
 	}
 
@@ -193,7 +193,7 @@ func InitialParams() [NumParams]float64 {
 	p[kingActivityStart+1] = float64(eval.KingActivityDistSquares)
 
 	// Outposts.
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		p[outpostStart+sq] = float64(eval.OutpostsScores[board.White][board.Knights][sq])
 		p[outpostStart+64+sq] = float64(eval.OutpostsScores[board.White][board.Bishops][sq])
 	}
@@ -227,16 +227,16 @@ func InitialParams() [NumParams]float64 {
 
 // ApplyParams writes tuned weights back to the eval package globals.
 func ApplyParams(p *[NumParams]float64) {
-	for stage := 0; stage < 2; stage++ {
+	for stage := range 2 {
 		for piece := board.Pawns; piece <= board.Kings; piece++ {
-			for sq := 0; sq < 64; sq++ {
+			for sq := range 64 {
 				eval.PST[stage][board.White][piece][sq] = int(p[pstIndex(stage, piece, sq)])
 			}
 		}
 	}
 	eval.InitPSTs()
 
-	for i := 0; i < pieceWeightCount; i++ {
+	for i := range pieceWeightCount {
 		eval.PieceWeights[i] = int(p[pieceWeightStart+i])
 	}
 
@@ -260,7 +260,7 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.PawnConnectedPasser = int(p[pawnStructStart+7])
 	eval.PawnCandidate = int(p[pawnStructStart+8])
 
-	for i := 0; i < passedPawnCount; i++ {
+	for i := range passedPawnCount {
 		eval.PassedPawnBonus[i+1] = int(p[passedPawnStart+i])
 	}
 
@@ -275,14 +275,14 @@ func ApplyParams(p *[NumParams]float64) {
 
 	eval.KingActivityDistCenter = int(p[kingActivityStart+0])
 	eval.KingActivityDistSquares = int(p[kingActivityStart+1])
-	for sq := 0; sq < 64; sq++ {
+	for sq := range 64 {
 		eval.OutpostsScores[board.White][board.Knights][sq] = int(p[outpostStart+sq])
 		eval.OutpostsScores[board.White][board.Bishops][sq] = int(p[outpostStart+64+sq])
 	}
 	// Rebuild black-side outpost tables.
 	invert := func(sq int) int { return (7-sq/8)*8 + sq%8 }
 	for piece := board.Pawns; piece <= board.Kings; piece++ {
-		for sq := 0; sq < 64; sq++ {
+		for sq := range 64 {
 			eval.OutpostsScores[board.Black][piece][sq] = eval.OutpostsScores[board.White][piece][invert(sq)]
 		}
 	}
