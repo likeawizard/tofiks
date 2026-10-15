@@ -35,8 +35,13 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 		depth++
 	}
 
-	if ply > 0 && (e.Board.HalfMoveCounter >= 100 || e.Board.InsufficientMaterial() || e.IsDrawByRepetition()) {
-		return 0
+	if ply > 0 {
+		if e.Board.HalfMoveCounter >= 100 || e.Board.InsufficientMaterial() {
+			return 0
+		}
+		if e.IsDrawByRepetition() {
+			return 1 - int16(e.Stats.nodes&2)
+		}
 	}
 
 	// If search depth is reached and not in check enter Qsearch
@@ -120,6 +125,9 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 		e.PrevMove[ply] = 0
 		value := -e.PVS(pvOrder, &[]board.Move{}, depth-R-1, ply+1, -beta, -beta+1, false, -side)
 		unull()
+		if e.TC.ShouldAbort() {
+			return 0
+		}
 		e.Prune.recordNMP(value >= beta)
 		if value >= beta {
 			return beta
@@ -137,6 +145,9 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 		e.ExcludedMove[ply] = pvMove
 		seValue := e.PVS(pvOrder, &[]board.Move{}, singularDepth, ply, singularBeta-1, singularBeta, true, side)
 		e.ExcludedMove[ply] = 0
+		if e.TC.ShouldAbort() {
+			return 0
+		}
 
 		applied := seValue < singularBeta
 		multiCut := !applied && seValue >= beta
@@ -236,6 +247,10 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 		}
 		umove()
 		e.RemovePly()
+
+		if e.TC.ShouldAbort() {
+			return 0
+		}
 
 		if value > bestVal {
 			bestVal = value
@@ -340,6 +355,9 @@ func (e *Engine) Quiescence(ply int, alpha, beta, side int16) int16 {
 		legalMoves++
 		value := -e.Quiescence(ply+1, -beta, -alpha, -side)
 		umove()
+		if e.TC.ShouldAbort() {
+			return 0
+		}
 
 		if value > bestVal {
 			bestVal = value

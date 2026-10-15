@@ -28,8 +28,11 @@ func TestThreefoldRepetition(t *testing.T) {
 }
 
 func TestForceThreeFoldRepetition(t *testing.T) {
+	// Repetition draws are dithered by ±1cp in search.
+	const drawBand = 1
 	captureScore := regexp.MustCompile(`cp (?P<cp>-?\d+)`)
-	score := 1
+	// Sentinel well outside the draw band so a test that never parses a score fails.
+	score := 1000
 	var err error
 	for _, testPos := range forceThreeFoldPositions {
 		t.Run(fmt.Sprintf("Position %d", testPos.number), func(t *testing.T) {
@@ -59,13 +62,13 @@ func TestForceThreeFoldRepetition(t *testing.T) {
 				scoreStr := m[captureScore.SubexpIndex("cp")]
 				score, err = strconv.Atoi(scoreStr)
 				assert.Nil(t, err, "failed to parse cp score: %s", err)
-				if score == 0 {
+				if score >= -drawBand && score <= drawBand {
 					e.TC.Abort()
 				}
 			}
 			wg.Wait()
 			e.TC.Abort()
-			assert.Equal(t, 0, score)
+			assert.InDelta(t, 0, score, drawBand, "expected forced threefold to score as a draw")
 			r.Close()
 		})
 	}
