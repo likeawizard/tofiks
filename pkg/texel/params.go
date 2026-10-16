@@ -190,7 +190,7 @@ func InitialParams() [NumParams]float64 {
 
 	// King activity EG.
 	p[kingActivityStart+0] = float64(eval.KingActivityDistCenter)
-	p[kingActivityStart+1] = float64(eval.KingActivityDistSquares)
+	p[kingActivityStart+1] = float64(eval.KingShoulder)
 
 	// Outposts.
 	for sq := range 64 {
@@ -274,7 +274,7 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.KingSafetyFriendly = int(p[kingSafetyStart+2])
 
 	eval.KingActivityDistCenter = int(p[kingActivityStart+0])
-	eval.KingActivityDistSquares = int(p[kingActivityStart+1])
+	eval.KingShoulder = int(p[kingActivityStart+1])
 	for sq := range 64 {
 		eval.OutpostsScores[board.White][board.Knights][sq] = int(p[outpostStart+sq])
 		eval.OutpostsScores[board.White][board.Bishops][sq] = int(p[outpostStart+64+sq])
