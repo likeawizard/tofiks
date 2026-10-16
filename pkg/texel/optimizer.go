@@ -288,8 +288,8 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("KingSafetyFriendly   = %d\n\n", int(math.Round(w[kingSafetyStart+2])))
 
 	fmt.Println("// === King Activity (EG) ===")
-	fmt.Printf("KingActivityDistCenter  = %d\n", int(math.Round(w[kingActivityStart+0])))
-	fmt.Printf("KingActivityDistSquares = %d\n\n", int(math.Round(w[kingActivityStart+1])))
+	fmt.Printf("KingActivityDistCenter = %d\n", int(math.Round(w[kingActivityStart+0])))
+	fmt.Printf("KingShoulder           = %d\n\n", int(math.Round(w[kingActivityStart+1])))
 
 	fmt.Println("// === Outposts ===")
 	for _, name := range []string{"knight", "bishop"} {

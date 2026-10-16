@@ -266,10 +266,12 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 	t[kingSafetyStart+1] += sign * pawnShield * mgPhase
 	t[kingSafetyStart+2] += sign * friendlyNonPawn * mgPhase
 
-	// King activity (EG): distCenter, distSquares.
-	distS := float64(eval.DistSquares(int(king), b.Pieces[side^1][board.Kings].LS1B()))
+	// King activity (EG): distCenter, shouldering.
+	oppKing := b.Pieces[side^1][board.Kings].LS1B()
+	prox := float64(7 - eval.KingDist(int(king), oppKing))
+	shoulder := prox * float64(eval.DistCenter(oppKing)-eval.DistCenter(int(king)))
 	t[kingActivityStart+0] += sign * distC * egPhase
-	t[kingActivityStart+1] += sign * distS * egPhase
+	t[kingActivityStart+1] += sign * shoulder * egPhase
 }
 
 // tracePawns computes pawn structure coefficients for both sides.
