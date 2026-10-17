@@ -33,3 +33,23 @@ func TestNoTTStoreAfterAbort(t *testing.T) {
 		t.Fatal("aborted search stored a TT entry for the root position")
 	}
 }
+
+// TestQuiescenceInCheck checks that quiescence does not stand pat while in
+// check: a checkmated side gets a mate score, not its static eval.
+func TestQuiescenceInCheck(t *testing.T) {
+	e := NewEngine()
+	// White to move, checkmated by the queen on f2.
+	e.Board = board.NewBoard("r1b1k1nr/pppp1ppp/2n5/2b1p3/2B1P3/P7/1PPP1qPP/RNBQK1NR w KQkq - 0 5")
+	tc := (&Clock{Infinite: true}).NewTimeControl(0, 0)
+	defer tc.Stop()
+	e.TC = tc
+
+	if !e.Board.InCheck {
+		t.Fatal("test position is not a check")
+	}
+	got := e.Quiescence(1, -Inf, Inf, 1)
+	want := int16(1) - CheckmateScore
+	if got != want {
+		t.Fatalf("quiescence in checkmate returned %d, want mate score %d", got, want)
+	}
+}

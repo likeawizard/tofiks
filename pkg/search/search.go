@@ -310,29 +310,30 @@ func (e *Engine) Quiescence(ply int, alpha, beta, side int16) int16 {
 		}
 	}
 
-	e.Stats.evals++
-	eval := side * int16(e.Eval.GetEvaluation(e.Board))
-
-	if !e.Board.InCheck && eval >= beta {
-		return eval
-	}
-
-	if !e.Board.InCheck && eval < alpha-975 {
-		return eval
-	}
-
-	if eval > alpha {
-		alpha = eval
-	}
+	// Standing pat is only an option when not in check: in check every evasion
+	// must be searched and the static eval is not a floor, so it isn't computed.
+	var eval int16
+	bestVal := -Inf
 	var all []board.Move
 	if e.Board.InCheck {
 		all = e.Board.PseudoMoveGen()
 	} else {
+		e.Stats.evals++
+		eval = side * int16(e.Eval.GetEvaluation(e.Board))
+		if eval >= beta {
+			return eval
+		}
+		if eval < alpha-975 {
+			return eval
+		}
+		bestVal = eval
+		if eval > alpha {
+			alpha = eval
+		}
 		all = e.Board.PseudoCaptureAndQueenPromoGen()
 	}
 
 	legalMoves := 0
-	bestVal := eval
 	var bestMove board.Move
 	entryType := Upper
 
@@ -376,6 +377,9 @@ func (e *Engine) Quiescence(ply int, alpha, beta, side int16) int16 {
 	}
 
 	if legalMoves == 0 {
+		if e.Board.InCheck {
+			return int16(ply) - CheckmateScore
+		}
 		return eval
 	}
 
