@@ -16,6 +16,8 @@ const (
 	CheckmateThreshold = CheckmateScore - 1024
 	// Inf should be an unachievable score treated as infinity.
 	Inf = 2 * CheckmateScore
+	// maxQuietsTried caps how many quiet moves per node are remembered for the history malus.
+	maxQuietsTried = 64
 )
 
 func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, alpha, beta int16, nmp bool, side int16) int16 {
@@ -173,6 +175,9 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 	if moveCount > 0 {
 		bestMove = all[0]
 	}
+	// Quiet moves searched at this node, for the history malus on a quiet cutoff.
+	var quietsTried [maxQuietsTried]board.Move
+	nQuiets := 0
 
 	for i := range moveCount {
 		currMove = SelectMove(all, i)
@@ -252,6 +257,11 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 			return 0
 		}
 
+		if !currMove.IsCapture() && nQuiets < maxQuietsTried {
+			quietsTried[nQuiets] = currMove
+			nQuiets++
+		}
+
 		if value > bestVal {
 			bestVal = value
 			bestMove = currMove
@@ -261,7 +271,7 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 			e.MoveOrder.recordFailHigh(legalMoves == 1)
 			if !currMove.IsCapture() {
 				e.AddKillerMove(ply, currMove)
-				e.IncrementHistory(depth, currMove)
+				e.UpdateQuietHistory(depth, currMove, quietsTried[:nQuiets])
 				if ply > 0 {
 					from, to := e.PrevMove[ply-1].FromTo()
 					e.CounterMoves[from][to] = currMove
@@ -271,8 +281,6 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 			entryType = Lower
 			break
 		}
-		e.DecrementHistory(currMove)
-
 		if value > alpha {
 			entryType = Exact
 			bestMove = currMove

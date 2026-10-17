@@ -34,6 +34,36 @@ func TestNoTTStoreAfterAbort(t *testing.T) {
 	}
 }
 
+// TestQuietHistoryMalus checks that a quiet cutoff move gains history while the
+// quiet moves searched before it lose the same amount, and that negative history
+// never leaks into the 10-bit move score.
+func TestQuietHistoryMalus(t *testing.T) {
+	e := NewEngine()
+	moves := e.Board.PseudoMoveGen()
+	if len(moves) < 3 {
+		t.Fatal("startpos move generation broken")
+	}
+	best, tried := moves[0], []board.Move{moves[1], moves[2], moves[0]}
+
+	e.UpdateQuietHistory(3, best, tried)
+
+	if got := e.GetHistory(best); got != 9 {
+		t.Fatalf("cutoff move history = %d, want 9", got)
+	}
+	for _, m := range tried[:2] {
+		if got := e.GetHistory(m); got != -9 {
+			t.Fatalf("tried move history = %d, want -9", got)
+		}
+	}
+
+	e.ScoreMoves(0, moves, nil, 0)
+	for _, m := range moves {
+		if s := int(m >> 22); s > scoreHistMax { // score lives in the top 10 bits
+			t.Fatalf("quiet move %s scored %d above scoreHistMax; negative history wrapped", m.ClearScore(), s)
+		}
+	}
+}
+
 // TestQuiescenceInCheck checks that quiescence does not stand pat while in
 // check: a checkmated side gets a mate score, not its static eval.
 func TestQuiescenceInCheck(t *testing.T) {
