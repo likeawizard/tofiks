@@ -77,14 +77,19 @@ func ParseUCI(uciCmd string) Cmd {
 			switch s {
 			case "wtime":
 				goCmd.wtime, _ = strconv.Atoi(goParts[i+1])
+				goCmd.hasClock = true
 			case "btime":
 				goCmd.btime, _ = strconv.Atoi(goParts[i+1])
+				goCmd.hasClock = true
 			case "winc":
 				goCmd.winc, _ = strconv.Atoi(goParts[i+1])
+				goCmd.hasClock = true
 			case "binc":
 				goCmd.binc, _ = strconv.Atoi(goParts[i+1])
+				goCmd.hasClock = true
 			case "movestogo":
 				goCmd.movestogo, _ = strconv.Atoi(goParts[i+1])
+				goCmd.hasClock = true
 			case "depth":
 				goCmd.depth, _ = strconv.Atoi(goParts[i+1])
 			case "movetime":

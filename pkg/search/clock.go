@@ -24,6 +24,7 @@ type Clock struct {
 	Movetime  int
 	Movestogo int
 	Infinite  bool
+	HasClock  bool
 }
 
 // remainingTime returns the actual clock time left for the given side,
@@ -37,12 +38,14 @@ func (c *Clock) remainingTime(side int8) time.Duration {
 }
 
 func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
-	c.Movestogo = max(40-fmCounter, 10)
 	switch {
 	case c.Movetime > 0:
 		return time.Millisecond * time.Duration(c.Movetime-c.Overhead)
 	default:
 		movestogo := c.Movestogo
+		if movestogo <= 0 {
+			movestogo = max(40-fmCounter, 10)
+		}
 		t := c.Wtime
 		inc := c.Winc
 		if side == board.Black {
@@ -89,7 +92,7 @@ func (c *Clock) NewTimeControl(fmCounter int, side int8) *TimeControl {
 	}
 	base := c.GetMovetime(fmCounter, side)
 	if base <= 0 {
-		if c.Wtime <= 0 && c.Btime <= 0 && c.Movetime <= 0 {
+		if !c.HasClock && c.Movetime <= 0 {
 			return tc
 		}
 		// Add bare minimum of time when nothing is allocated.

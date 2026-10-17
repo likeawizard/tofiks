@@ -95,3 +95,23 @@ func TestGetMovetimeMovetime(t *testing.T) {
 		t.Fatalf("GetMovetime with movetime=500 returned %v, want 500ms", got)
 	}
 }
+
+// TestNewTimeControlZeroClockHasDeadline checks that a clock at zero still
+// gets a hard deadline.
+func TestNewTimeControlZeroClockHasDeadline(t *testing.T) {
+	c := &Clock{Wtime: 0, Btime: 0, HasClock: true}
+	tc := c.NewTimeControl(60, board.White)
+	if tc.hardLimit <= 0 || tc.hardLimit > 2*time.Millisecond {
+		t.Fatalf("hardLimit = %v, want in (0, 2ms]", tc.hardLimit)
+	}
+}
+
+// TestGetMovetimeHonoursMovestogo checks that a movestogo from the GUI is used
+// instead of the built-in estimate.
+func TestGetMovetimeHonoursMovestogo(t *testing.T) {
+	paced := (&Clock{Wtime: 60000, Btime: 60000, HasClock: true}).GetMovetime(1, board.White)
+	last := (&Clock{Wtime: 60000, Btime: 60000, Movestogo: 1, HasClock: true}).GetMovetime(1, board.White)
+	if last <= 5*paced {
+		t.Fatalf("movestogo 1 allocated %v, paced default %v; want movestogo honoured", last, paced)
+	}
+}
