@@ -164,6 +164,10 @@ func (e *Engine) PVS(pvOrder []board.Move, line *[]board.Move, depth, ply int, a
 
 	all := e.Board.PseudoMoveGen()
 	legalMoves := 0
+
+	if !isPV {
+		pvOrder = nil
+	}
 	e.ScoreMoves(pvMove, all, pvOrder, ply)
 
 	value := int16(0)
