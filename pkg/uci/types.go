@@ -46,6 +46,7 @@ type Go struct {
 	movestogo int
 	infinite  bool
 	isPerft   bool
+	hasClock  bool
 }
 
 type SetOption struct {

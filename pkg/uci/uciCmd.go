@@ -23,6 +23,7 @@ func (c *Go) Exec(e *search.Engine) bool {
 	e.Clock.Movestogo = c.movestogo
 	e.Clock.Movetime = c.movetime
 	e.Clock.Infinite = c.infinite
+	e.Clock.HasClock = c.hasClock
 	depth := c.depth
 	if depth == 0 {
 		depth = 50
