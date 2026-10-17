@@ -34,13 +34,15 @@ func lmrReduction(depth, legalMoves int) int {
 
 // Move ordering score tiers (10-bit range 0-1023, embedded in Move bits 22-31).
 const (
-	scorePV      = 1023
-	scoreHash    = 1022
-	scoreCap     = 512 // + mvvlva (5-50)
-	scoreKiller0 = 511
-	scoreKiller1 = 510
-	scoreCounter = 509
-	scoreHistMax = 508
+	scorePV        = 1023
+	scoreHash      = 1022
+	scoreCap       = 512 // + mvvlva (5-50)
+	scoreKiller0   = 511
+	scoreKiller1   = 510
+	scoreCounter   = 509
+	scoreHistMax   = 508
+	scoreHistZero  = scoreHistMax / 2
+	scoreHistScale = 4
 )
 
 type HistoryHeuristic [2][64][64]int
@@ -113,17 +115,19 @@ func (e *Engine) AddKillerMove(ply int, move board.Move) {
 	}
 }
 
-func (e *Engine) IncrementHistory(depth int, move board.Move) {
-	from, to := move.FromTo()
-	e.History[e.Board.Side][from][to] += depth * depth
-}
-
-func (e *Engine) DecrementHistory(move board.Move) {
-	if move.IsCapture() {
-		from, to := move.FromTo()
-		if e.History[e.Board.Side][from][to] > 0 {
-			e.History[e.Board.Side][from][to]--
+// UpdateQuietHistory rewards the quiet move that caused a beta cutoff and
+// penalises the quiet moves searched before it at the same node.
+func (e *Engine) UpdateQuietHistory(depth int, best board.Move, tried []board.Move) {
+	bonus := depth * depth
+	hist := &e.History[e.Board.Side]
+	from, to := best.FromTo()
+	hist[from][to] += bonus
+	for _, m := range tried {
+		if m == best {
+			continue
 		}
+		from, to := m.FromTo()
+		hist[from][to] -= bonus
 	}
 }
 
@@ -192,7 +196,7 @@ func (e *Engine) ScoreMoves(hashMove board.Move, moves, pvOrder []board.Move, pl
 		case counterMove != 0 && moves[i] == counterMove:
 			moves[i] = moves[i].SetScore(scoreCounter)
 		default:
-			moves[i] = moves[i].SetScore(min(e.GetHistory(moves[i]), scoreHistMax))
+			moves[i] = moves[i].SetScore(max(0, min(scoreHistZero+e.GetHistory(moves[i])/scoreHistScale, scoreHistMax)))
 		}
 	}
 }
