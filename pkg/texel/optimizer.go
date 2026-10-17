@@ -283,13 +283,11 @@ func PrintParams(w *[NumParams]float64) {
 	fmt.Printf("BishopPairBonus = %d\n\n", int(math.Round(w[bishopPairStart])))
 
 	fmt.Println("// === King Safety (MG) ===")
-	fmt.Printf("KingSafetyDistCenter = %d\n", int(math.Round(w[kingSafetyStart+0])))
-	fmt.Printf("KingSafetyPawnShield = %d\n", int(math.Round(w[kingSafetyStart+1])))
-	fmt.Printf("KingSafetyFriendly   = %d\n\n", int(math.Round(w[kingSafetyStart+2])))
+	fmt.Printf("KingSafetyPawnShield = %d\n", int(math.Round(w[kingSafetyStart+0])))
+	fmt.Printf("KingSafetyFriendly   = %d\n\n", int(math.Round(w[kingSafetyStart+1])))
 
 	fmt.Println("// === King Activity (EG) ===")
-	fmt.Printf("KingActivityDistCenter = %d\n", int(math.Round(w[kingActivityStart+0])))
-	fmt.Printf("KingShoulder           = %d\n\n", int(math.Round(w[kingActivityStart+1])))
+	fmt.Printf("KingShoulder = %d\n\n", int(math.Round(w[kingActivityStart+0])))
 
 	fmt.Println("// === Outposts ===")
 	for _, name := range []string{"knight", "bishop"} {
@@ -335,9 +333,5 @@ func PrintParams(w *[NumParams]float64) {
 
 	fmt.Println("// === Bad Bishop ===")
 	fmt.Printf("BadBishop = %d\n", int(math.Round(w[badBishopStart])))
-	fmt.Println()
-
-	fmt.Println("// === Pawn Break ===")
-	fmt.Printf("PawnBreak = %d\n", int(math.Round(w[pawnBreakStart])))
 	fmt.Println()
 }
