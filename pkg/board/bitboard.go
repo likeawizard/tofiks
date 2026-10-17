@@ -311,7 +311,7 @@ func (b *Board) GetGamePhase() int {
 		2*(b.Pieces[White][Rooks].Count()+b.Pieces[Black][Rooks].Count()) -
 		4*(b.Pieces[White][Queens].Count()+b.Pieces[Black][Queens].Count())
 
-	return (phase * 268) / 24
+	return min(max((phase*268)/24, 0), 256)
 }
 
 func (b *Board) MakeNullMove() func() {

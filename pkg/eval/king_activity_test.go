@@ -15,6 +15,11 @@ func netKingActivity(fen string) int {
 }
 
 func TestKingShoulderBreaksSymmetry(t *testing.T) {
+	// The shape of the term is under test, not its tuned weight.
+	orig := KingShoulder
+	KingShoulder = 2
+	defer func() { KingShoulder = orig }()
+
 	// Both kings equally central: centralization cancels, shouldering must too.
 	if got := netKingActivity("8/8/2k5/8/8/2K5/8/8 w - - 0 1"); got != 0 {
 		t.Errorf("equal centralization: want 0, got %d", got)
@@ -24,8 +29,8 @@ func TestKingShoulderBreaksSymmetry(t *testing.T) {
 	// centralization gap, kings in contact must score more than kings far apart.
 	closeGap := DistCenter(sq("b6")) - DistCenter(sq("d4"))
 	farGap := DistCenter(sq("a8")) - DistCenter(sq("d4"))
-	closeShoulder := netKingActivity("8/8/1k6/8/3K4/8/8/8 w - - 0 1") + KingActivityDistCenter*closeGap
-	farShoulder := netKingActivity("k7/8/8/8/3K4/8/8/8 w - - 0 1") + KingActivityDistCenter*farGap
+	closeShoulder := netKingActivity("8/8/1k6/8/3K4/8/8/8 w - - 0 1")
+	farShoulder := netKingActivity("k7/8/8/8/3K4/8/8/8 w - - 0 1")
 	if closeShoulder <= 0 {
 		t.Errorf("shouldering should favor the central king, got %d", closeShoulder)
 	}

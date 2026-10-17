@@ -120,20 +120,6 @@ func TraceEvaluate(b *board.Board) (Trace, int) {
 		t[tempoStart] -= 1.0
 	}
 
-	// Pawn breaks: net (white - black) count of push-to-empty squares that
-	// attack an enemy pawn. Mirrors eval.evaluatePawnBreaks.
-	empty := ^b.Occupancy[board.Both]
-	wPawns := b.Pieces[board.White][board.Pawns]
-	bPawns := b.Pieces[board.Black][board.Pawns]
-	wBreakTarget := ((bPawns & ^board.FileMasks[0]) << 7) | ((bPawns & ^board.FileMasks[7]) << 9)
-	bBreakTarget := ((wPawns & ^board.FileMasks[7]) >> 7) | ((wPawns & ^board.FileMasks[0]) >> 9)
-	wSingle := (wPawns >> 8) & empty
-	wDouble := (((wPawns & board.Rank2) >> 8) & empty) >> 8 & empty
-	bSingle := (bPawns << 8) & empty
-	bDouble := (((bPawns & board.Rank7) << 8) & empty) << 8 & empty
-	t[pawnBreakStart] += float64(((wSingle | wDouble) & wBreakTarget).Count() -
-		((bSingle | bDouble) & bBreakTarget).Count())
-
 	// Pawn structure (not phase-dependent).
 	tracePawns(b, &t)
 
@@ -250,28 +236,25 @@ func traceKing(b *board.Board, king board.Square, side int, sign float64, phase 
 	mgPhase := float64(256-phase) / 256.0
 	egPhase := float64(phase) / 256.0
 
-	// King safety (MG): distCenter, pawnShield, friendlyNearKing.
+	// King safety (MG): pawnShield, friendlyNearKing.
 	// Note: enemyNearKing was removed — it correlated with material count,
 	// causing the tuner to flip its sign. Per-piece threats already capture
 	// enemy pressure on the king zone more accurately.
 	// Note: king mobility (MG and EG) was removed — a noisy proxy that
 	// conflated castled kings (few moves, good) with mating-net kings (few
 	// moves, losing), and active endgame kings with exposed center kings.
-	distC := float64(eval.DistCenter(int(king)))
 	pawnShield := float64((board.KingSafetyMask[side][king] & b.Pieces[side][board.Pawns]).Count())
 	allFriendly := float64((board.KingSafetyMask[side][king] & b.Occupancy[side]).Count())
 	friendlyNonPawn := allFriendly - pawnShield
 
-	t[kingSafetyStart+0] += sign * distC * mgPhase
-	t[kingSafetyStart+1] += sign * pawnShield * mgPhase
-	t[kingSafetyStart+2] += sign * friendlyNonPawn * mgPhase
+	t[kingSafetyStart+0] += sign * pawnShield * mgPhase
+	t[kingSafetyStart+1] += sign * friendlyNonPawn * mgPhase
 
-	// King activity (EG): distCenter, shouldering.
+	// King activity (EG): shouldering.
 	oppKing := b.Pieces[side^1][board.Kings].LS1B()
 	prox := float64(7 - eval.KingDist(int(king), oppKing))
 	shoulder := prox * float64(eval.DistCenter(oppKing)-eval.DistCenter(int(king)))
-	t[kingActivityStart+0] += sign * distC * egPhase
-	t[kingActivityStart+1] += sign * shoulder * egPhase
+	t[kingActivityStart+0] += sign * shoulder * egPhase
 }
 
 // tracePawns computes pawn structure coefficients for both sides.

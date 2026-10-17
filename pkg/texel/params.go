@@ -44,14 +44,13 @@ const (
 	bishopPairStart = rookFileStart + rookFileCount
 	bishopPairCount = 1
 
-	// King safety MG: distCenter, pawnShield, friendlyNearKing.
-	// King mobility was removed — bad proxy conflating safety with mating nets.
+	// King safety MG: pawnShield, friendlyNearKing.
 	kingSafetyStart = bishopPairStart + bishopPairCount
-	kingSafetyCount = 3
+	kingSafetyCount = 2
 
-	// King activity EG: distCenter, distSquares.
+	// King activity EG: shouldering.
 	kingActivityStart = kingSafetyStart + kingSafetyCount
-	kingActivityCount = 2
+	kingActivityCount = 1
 
 	// Outpost tables: knight[64] + bishop[64].
 	outpostStart = kingActivityStart + kingActivityCount
@@ -79,13 +78,8 @@ const (
 	badBishopStart = threatsStart + threatsCount
 	badBishopCount = 1
 
-	// Pawn break: count of pawn pushes landing on an empty square that attacks
-	// an enemy pawn (i.e. threatens to create a lever).
-	pawnBreakStart = badBishopStart + badBishopCount
-	pawnBreakCount = 1
-
 	// Total parameter count.
-	NumParams = pawnBreakStart + pawnBreakCount
+	NumParams = badBishopStart + badBishopCount
 )
 
 // PST index helpers.
@@ -183,14 +177,12 @@ func InitialParams() [NumParams]float64 {
 	// Bishop pair.
 	p[bishopPairStart] = float64(eval.BishopPair)
 
-	// King safety MG (enemyNearKing + king mobility removed).
-	p[kingSafetyStart+0] = float64(eval.KingSafetyDistCenter)
-	p[kingSafetyStart+1] = float64(eval.KingSafetyPawnShield)
-	p[kingSafetyStart+2] = float64(eval.KingSafetyFriendly)
+	// King safety MG.
+	p[kingSafetyStart+0] = float64(eval.KingSafetyPawnShield)
+	p[kingSafetyStart+1] = float64(eval.KingSafetyFriendly)
 
 	// King activity EG.
-	p[kingActivityStart+0] = float64(eval.KingActivityDistCenter)
-	p[kingActivityStart+1] = float64(eval.KingShoulder)
+	p[kingActivityStart+0] = float64(eval.KingShoulder)
 
 	// Outposts.
 	for sq := range 64 {
@@ -218,9 +210,6 @@ func InitialParams() [NumParams]float64 {
 
 	// Bad bishop.
 	p[badBishopStart] = float64(eval.BadBishop)
-
-	// Pawn break.
-	p[pawnBreakStart] = float64(eval.PawnBreak)
 
 	return p
 }
@@ -269,12 +258,10 @@ func ApplyParams(p *[NumParams]float64) {
 
 	eval.BishopPair = int(p[bishopPairStart])
 
-	eval.KingSafetyDistCenter = int(p[kingSafetyStart+0])
-	eval.KingSafetyPawnShield = int(p[kingSafetyStart+1])
-	eval.KingSafetyFriendly = int(p[kingSafetyStart+2])
+	eval.KingSafetyPawnShield = int(p[kingSafetyStart+0])
+	eval.KingSafetyFriendly = int(p[kingSafetyStart+1])
 
-	eval.KingActivityDistCenter = int(p[kingActivityStart+0])
-	eval.KingShoulder = int(p[kingActivityStart+1])
+	eval.KingShoulder = int(p[kingActivityStart+0])
 	for sq := range 64 {
 		eval.OutpostsScores[board.White][board.Knights][sq] = int(p[outpostStart+sq])
 		eval.OutpostsScores[board.White][board.Bishops][sq] = int(p[outpostStart+64+sq])
@@ -306,6 +293,4 @@ func ApplyParams(p *[NumParams]float64) {
 	eval.ThreatRookOnQueen = int(p[threatsStart+4])
 
 	eval.BadBishop = int(p[badBishopStart])
-
-	eval.PawnBreak = int(p[pawnBreakStart])
 }

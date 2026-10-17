@@ -19,13 +19,13 @@ func New() *Eval {
 
 var (
 	// PieceWeights represents the base value of each piece.
-	PieceWeights = [6]int{120, 367, 377, 614, 1229, 10000}
+	PieceWeights = [6]int{125, 369, 379, 622, 1249, 10000}
 
 	// KnightPawnSlope and RookPawnSlope are L. Kaufman's piece-value adjustments
 	// Tuner persistently finds both opposite-sign from Kaufman's theory — likely
 	// a structural interaction with other eval terms rather than a data artifact.
-	KnightPawnSlope = 4
-	RookPawnSlope   = 5
+	KnightPawnSlope = 2
+	RookPawnSlope   = 4
 
 	dist = [64]int{
 		4, 3, 3, 3, 3, 3, 3, 4,
@@ -42,40 +42,37 @@ var (
 var (
 	QueenMobility  = 1
 	RookMobility   = 3
-	BishopMobility = 7
-	KnightMobility = -1
+	BishopMobility = 8
+	KnightMobility = 0
 
-	QueenThreat  = 19
-	RookThreat   = 3
+	QueenThreat  = 18
+	RookThreat   = 4
 	BishopThreat = 4
 	KnightThreat = 2
 
-	PawnProtected       = 18
-	PawnDoubled         = -13
-	PawnIsolated        = -10
+	PawnProtected       = 19
+	PawnDoubled         = -14
+	PawnIsolated        = -11
 	PawnBackwardDeep    = -12
-	PawnBackwardMid     = -10
-	PawnBackwardOpen    = 9
+	PawnBackwardMid     = -11
+	PawnBackwardOpen    = 7
 	PawnBlocked         = -5
-	PawnConnectedPasser = 11
+	PawnConnectedPasser = 10
 	PawnCandidate       = 8
-	PawnBreak           = 0
 
 	RookOpenFile     = 30
-	RookSemiOpenFile = 29
+	RookSemiOpenFile = 30
 
-	BishopPair = 29
+	BishopPair = 28
 
-	BadBishop = -7
+	BadBishop = -8
 
-	KingSafetyDistCenter = -13
-	KingSafetyPawnShield = 35
-	KingSafetyFriendly   = 3
+	KingSafetyPawnShield = 33
+	KingSafetyFriendly   = 4
 
-	KingActivityDistCenter = -21
-	KingShoulder           = 2
+	KingShoulder = 0
 
-	PassedPawnBonus = [8]int{0, -22, -35, -23, 10, 55, 190, 0}
+	PassedPawnBonus = [8]int{0, -22, -36, -21, 12, 55, 193, 0}
 
 	// PasserEnemyKingDist / PasserFriendlyKingDist scale rank × Manhattan
 	// distance to each king and are applied EG-only. Enemy-king-far is good,
@@ -84,14 +81,14 @@ var (
 	PasserFriendlyKingDist = -2
 
 	// Tempo is a flat bonus for the side to move.
-	Tempo = 32
+	Tempo = 31
 
 	// Victim-aware threats.
-	ThreatPawnOnMinor  = 141
-	ThreatPawnOnMajor  = 139
-	ThreatMinorOnRook  = 93
-	ThreatMinorOnQueen = 32
-	ThreatRookOnQueen  = 78
+	ThreatPawnOnMinor  = 139
+	ThreatPawnOnMajor  = 131
+	ThreatMinorOnRook  = 92
+	ThreatMinorOnQueen = 27
+	ThreatRookOnQueen  = 72
 )
 
 // Piece protected a pawn.
@@ -201,8 +198,6 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 		}
 	}
 
-	eval += evaluatePawnBreaks(b)
-
 	// Tempo bonus for side to move (from White's perspective).
 	if b.Side == board.White {
 		eval += Tempo
@@ -211,27 +206,6 @@ func (e *Eval) GetEvaluation(b *board.Board) int {
 	}
 
 	return eval
-}
-
-// evaluatePawnBreaks counts pawn pushes whose destination is empty and attacks an enemy pawn.
-func evaluatePawnBreaks(b *board.Board) int {
-	empty := ^b.Occupancy[board.Both]
-
-	wPawns := b.Pieces[board.White][board.Pawns]
-	bPawns := b.Pieces[board.Black][board.Pawns]
-
-	wBreakTarget := ((bPawns & ^board.FileMasks[0]) << 7) | ((bPawns & ^board.FileMasks[7]) << 9)
-	bBreakTarget := ((wPawns & ^board.FileMasks[7]) >> 7) | ((wPawns & ^board.FileMasks[0]) >> 9)
-
-	wSingle := (wPawns >> 8) & empty
-	wDouble := (((wPawns & board.Rank2) >> 8) & empty) >> 8 & empty
-	bSingle := (bPawns << 8) & empty
-	bDouble := (((bPawns & board.Rank7) << 8) & empty) << 8 & empty
-
-	wBreaks := ((wSingle | wDouble) & wBreakTarget).Count()
-	bBreaks := ((bSingle | bDouble) & bBreakTarget).Count()
-
-	return (wBreaks - bBreaks) * PawnBreak
 }
 
 func DistCenter(sq int) int {
@@ -253,7 +227,6 @@ func DistSquares(us, them int) int {
 // use board direction to value own pieces: i.e. a King in front of 3 pawns is not the same as a king behind 3 pawns
 // consider using opponent piece attacks around the king instead of actual pieces. use piece weights for opponent threat levels: a queen near our king should be a larger concern than a bishop.
 func getKingSafety(b *board.Board, king int, side int) (kingSafety int) {
-	kingSafety += KingSafetyDistCenter * DistCenter(king)
 	pawnShield := (board.KingSafetyMask[side][king] & b.Pieces[side][board.Pawns]).Count()
 	kingSafety += KingSafetyPawnShield*pawnShield + KingSafetyFriendly*((board.KingSafetyMask[side][king]&b.Occupancy[side]).Count()-pawnShield)
 	return kingSafety
@@ -274,7 +247,7 @@ func KingDist(us, them int) int {
 func getKingActivity(b *board.Board, king int, side int) (kingActivity int) {
 	oppKing := b.Pieces[side^1][board.Kings].LS1B()
 	prox := 7 - KingDist(king, oppKing)
-	kingActivity = KingActivityDistCenter*DistCenter(king) + KingShoulder*prox*(DistCenter(oppKing)-DistCenter(king))
+	kingActivity = KingShoulder * prox * (DistCenter(oppKing) - DistCenter(king))
 	return kingActivity
 }
 
