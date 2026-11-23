@@ -49,18 +49,8 @@ func main() {
 	input := bufio.NewScanner(os.Stdin)
 	for {
 		input.Scan()
-		cmd := uci.ParseUCI(input.Text())
-		if cmd != nil {
-			switch cmd.(type) {
-			case *uci.Quit:
-				return
-			case *uci.Stop:
-				go cmd.Exec(e)
-			default:
-				e.WG.Wait()
-				e.WG.Add(1)
-				go cmd.Exec(e)
-			}
+		if cmd := uci.ParseUCI(input.Text()); cmd != nil && uci.Dispatch(e, cmd) {
+			return
 		}
 	}
 }

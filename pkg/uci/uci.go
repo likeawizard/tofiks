@@ -4,6 +4,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/likeawizard/tofiks/pkg/search"
 )
 
 // Parse uci command and return executable Cmd on successful parse or nil.
@@ -107,4 +109,19 @@ func ParseUCI(uciCmd string) Cmd {
 	}
 
 	return nil
+}
+
+// Dispatch executes one parsed command on the UCI reader. stop and ponderhit
+// act on the running search at once; every other command waits for it to
+// finish first. Returns true when the engine should exit.
+func Dispatch(e *search.Engine, cmd Cmd) bool {
+	switch cmd.(type) {
+	case *Quit:
+		return true
+	case *Stop:
+	default:
+		e.WG.Wait()
+	}
+	cmd.Exec(e)
+	return false
 }

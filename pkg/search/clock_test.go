@@ -79,10 +79,14 @@ func TestNewTimeControlGoNoArgs(t *testing.T) {
 }
 
 func TestNewTimeControlInfiniteFlag(t *testing.T) {
-	c := &Clock{Wtime: 10_000, Infinite: true}
+	c := &Clock{Wtime: 10_000, Btime: 600_000, HasClock: true, Infinite: true}
 	tc := c.NewTimeControl(10, board.White)
-	if tc.hardLimit != 0 {
-		t.Fatalf("NewTimeControl with Infinite=true hardLimit = %v, want 0", tc.hardLimit)
+	defer tc.Stop()
+	if !tc.infinite || tc.timer != nil || tc.ShouldStop() {
+		t.Fatal("go infinite/ponder must run unlimited until stop or ponderhit")
+	}
+	if tc.budget <= 0 || tc.hardLimit <= 0 {
+		t.Fatalf("budget=%v hardLimit=%v: the go command's limits must be kept for ponderhit", tc.budget, tc.hardLimit)
 	}
 }
 
@@ -113,5 +117,67 @@ func TestGetMovetimeHonoursMovestogo(t *testing.T) {
 	last := (&Clock{Wtime: 60000, Btime: 60000, Movestogo: 1, HasClock: true}).GetMovetime(1, board.White)
 	if last <= 5*paced {
 		t.Fatalf("movestogo 1 allocated %v, paced default %v; want movestogo honoured", last, paced)
+	}
+}
+
+// TestPonderHitBudgetFromOwnClock guards against the lichess time forfeits:
+// after a ponderhit the remaining think time must derive from the pondering
+// side's own clock (20s here), never from the opponent's (600s).
+func TestPonderHitBudgetFromOwnClock(t *testing.T) {
+	c := &Clock{Wtime: 20_000, Btime: 600_000, HasClock: true, Infinite: true}
+	tc := c.NewTimeControl(45, board.White)
+	defer tc.Stop()
+	tc.PonderHit()
+	if tc.infinite || !tc.IsPonderHit() || tc.timer == nil {
+		t.Fatal("PonderHit must arm the search")
+	}
+	// Own budget is 20s/11 ≈ 1.8s: soft stop ≈ 0.6s, hard stop ≈ 1.2s.
+	// The opponent's clock would give 18s and 36s.
+	if tc.budget <= 0 || tc.budget > 2*time.Second {
+		t.Fatalf("budget = %v, want within (0, 2s]", tc.budget)
+	}
+	if tc.hardLimit <= 0 || tc.hardLimit > 4*time.Second {
+		t.Fatalf("hardLimit = %v, want within (0, 4s]", tc.hardLimit)
+	}
+}
+
+// TestPonderHitWithoutLimitsKeepsSearching: a go ponder without clocks has no
+// time limits to apply, so after ponderhit the search runs on as a bare go
+// would, until its depth limit or stop.
+func TestPonderHitWithoutLimitsKeepsSearching(t *testing.T) {
+	tc := (&Clock{Infinite: true}).NewTimeControl(10, board.White)
+	tc.PonderHit()
+	if tc.infinite || tc.ShouldStop() || tc.timer != nil || tc.ShouldAbort() {
+		t.Fatal("ponderhit without limits must neither stop nor abort the search")
+	}
+}
+
+// TestPonderHitIgnoresTimedSearch: a stale ponderhit, arriving after the
+// ponder search ended and a normal search started, must not touch the latter.
+func TestPonderHitIgnoresTimedSearch(t *testing.T) {
+	c := &Clock{Wtime: 20_000, Btime: 20_000, HasClock: true}
+	tc := c.NewTimeControl(45, board.White)
+	defer tc.Stop()
+	budget := tc.budget
+	tc.PonderHit()
+	if tc.budget != budget || tc.IsPonderHit() {
+		t.Fatalf("budget %v -> %v: ponderhit altered a timed search", budget, tc.budget)
+	}
+}
+
+// TestPonderHitHardDeadlineAborts checks that the deadline armed by PonderHit
+// flips the abort flag.
+func TestPonderHitHardDeadlineAborts(t *testing.T) {
+	// 60ms on our clock: budget 5ms, so ponderhit allows 1ms soft / 2ms hard.
+	c := &Clock{Wtime: 60, Btime: 600_000, HasClock: true, Infinite: true}
+	tc := c.NewTimeControl(45, board.White)
+	defer tc.Stop()
+	tc.PonderHit()
+	deadline := time.Now().Add(time.Second)
+	for !tc.ShouldAbort() && time.Now().Before(deadline) {
+		time.Sleep(time.Millisecond)
+	}
+	if !tc.ShouldAbort() {
+		t.Fatal("hard deadline after ponderhit did not abort the search")
 	}
 }

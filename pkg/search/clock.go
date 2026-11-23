@@ -1,6 +1,7 @@
 package search
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -13,6 +14,9 @@ const (
 	tcEvalDropThreshold = 30
 	// Fraction of budget to extend on significant eval drop (1/4 = 25%).
 	tcEvalDropExtendDiv = 4
+	// Fraction of the normal move budget to keep searching after a ponderhit:
+	// the position has already been searched for the opponent's whole think time.
+	tcPonderHitDiv = 3
 )
 
 type Clock struct {
@@ -61,12 +65,24 @@ func (c *Clock) GetMovetime(fmCounter int, side int8) time.Duration {
 	}
 }
 
+// hardLimitFor caps a soft budget: twice the budget, never more than the
+// side's remaining clock, never below a millisecond.
+func (c *Clock) hardLimitFor(side int8, soft time.Duration) time.Duration {
+	return max(min(2*soft, c.remainingTime(side)), time.Millisecond)
+}
+
 // TimeControl manages time for a single search. Owns the soft per-iteration
 // budget for prediction-based stops and a hard wall-clock deadline that
 // aborts the search via the aborted flag.
 //
-// budget=0 disables iteration prediction (used for movetime / UCI infinite /
-// no-clock fallback). hardLimit=0 disables the deadline timer.
+// budget=0 disables iteration prediction (movetime / no-clock fallback).
+// hardLimit=0 disables the deadline timer. An infinite search (go infinite,
+// go ponder) carries the limits its go command described but leaves them
+// unarmed until PonderHit.
+//
+// The search goroutine consults the limits once per iteration; the UCI reader
+// may call Abort, PonderHit and Stop at any time. ShouldAbort stays a single
+// atomic load on the per-node hot path.
 type TimeControl struct {
 	start            time.Time
 	lastIterStart    time.Time
@@ -77,49 +93,53 @@ type TimeControl struct {
 	lastIterDuration time.Duration
 	bestMoveChanges  int
 	iterations       int
+	mu               sync.Mutex
 	prevBestMove     board.Move
 	aborted          atomic.Bool
+	infinite         bool
+	ponderHit        bool
 	prevEval         int16
 }
 
 // NewTimeControl creates a TimeControl for the current search.
 func (c *Clock) NewTimeControl(fmCounter int, side int8) *TimeControl {
 	now := time.Now()
-	tc := &TimeControl{start: now, lastIterStart: now}
+	tc := &TimeControl{start: now, lastIterStart: now, infinite: c.Infinite}
 
-	if c.Infinite {
-		return tc
-	}
 	base := c.GetMovetime(fmCounter, side)
 	if base <= 0 {
 		if !c.HasClock && c.Movetime <= 0 {
+			// Bare go, go infinite or go depth: no time limits at all.
 			return tc
 		}
 		// Add bare minimum of time when nothing is allocated.
 		base = time.Millisecond
 	}
-	hardLimit := base * 2
-	// Movetime mode is independent of wtime/btime — don't clamp by remaining clock.
-	if c.Movetime <= 0 {
-		if r := c.remainingTime(side); r < hardLimit {
-			hardLimit = r
-		}
-	}
-	tc.hardLimit = hardLimit
-	tc.armDeadline()
 	if c.Movetime > 0 {
-		// Movetime mode: hard deadline only, no iteration prediction.
-		return tc
+		// Movetime mode: hard deadline only, no iteration prediction,
+		// independent of wtime/btime.
+		tc.hardLimit = 2 * base
+	} else {
+		tc.budget = base
+		tc.maxBudget = c.hardLimitFor(side, base)
+		tc.hardLimit = tc.maxBudget
 	}
-	tc.budget = base
-	tc.maxBudget = hardLimit
+	if !tc.infinite {
+		tc.mu.Lock()
+		tc.armDeadline()
+		tc.mu.Unlock()
+	}
 	return tc
 }
 
-// armDeadline starts a timer that flips the aborted flag when hardLimit
-// elapses. Keeps the per-node abort check to a single atomic load instead
-// of a time.Now() syscall.
+// armDeadline starts the timer that flips the aborted flag when hardLimit
+// elapses, replacing any earlier timer. Keeps the per-node abort check to a
+// single atomic load instead of a time.Now() syscall. mu must be held.
 func (tc *TimeControl) armDeadline() {
+	if tc.timer != nil {
+		tc.timer.Stop()
+		tc.timer = nil
+	}
 	if tc.hardLimit <= 0 {
 		return
 	}
@@ -128,6 +148,8 @@ func (tc *TimeControl) armDeadline() {
 
 // Stop cancels the deadline timer when the search finishes naturally.
 func (tc *TimeControl) Stop() {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
 	if tc.timer != nil {
 		tc.timer.Stop()
 	}
@@ -143,17 +165,46 @@ func (tc *TimeControl) Abort() {
 	tc.aborted.Store(true)
 }
 
+// PonderHit turns a pondering search into the timed search its go command
+// described, measured from now. The position has already been searched for
+// the opponent's whole think time, so only a fraction of the budget is kept.
+// A no-op unless the search is infinite.
+func (tc *TimeControl) PonderHit() {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	if !tc.infinite {
+		return
+	}
+	tc.infinite = false
+	tc.ponderHit = true
+	tc.start = time.Now()
+	if tc.budget > 0 {
+		tc.budget = max(tc.budget/tcPonderHitDiv, time.Millisecond)
+		tc.maxBudget = min(2*tc.budget, tc.maxBudget)
+		tc.hardLimit = tc.maxBudget
+	}
+	tc.armDeadline()
+}
+
+// IsPonderHit reports whether a ponder search has been converted into a timed
+// search by PonderHit.
+func (tc *TimeControl) IsPonderHit() bool {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	return tc.ponderHit
+}
+
 // ShouldStop returns true if the next iteration is predicted to not complete
 // within the remaining budget. Uses the last iteration's duration to
 // estimate the next (assuming ~4x branching factor).
-// budget==0 disables prediction (movetime / infinite / no-clock).
+// Never stops an infinite search or one without a budget.
 func (tc *TimeControl) ShouldStop() bool {
-	if tc.budget == 0 {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	if tc.infinite || tc.budget == 0 {
 		return false
 	}
-	elapsed := time.Since(tc.start)
-	predicted := tc.lastIterDuration * 4
-	return elapsed+predicted > tc.budget
+	return time.Since(tc.start)+tc.lastIterDuration*4 > tc.budget
 }
 
 // RecordIteration updates TC tracking after a completed iteration.
@@ -164,11 +215,8 @@ func (tc *TimeControl) RecordIteration(best board.Move, eval int16) {
 		if best != tc.prevBestMove {
 			tc.bestMoveChanges++
 		}
-		if tc.budget > 0 {
-			drop := int(tc.prevEval) - int(eval)
-			if drop > tcEvalDropThreshold {
-				tc.extend(tc.budget / tcEvalDropExtendDiv)
-			}
+		if int(tc.prevEval)-int(eval) > tcEvalDropThreshold {
+			tc.extend(tcEvalDropExtendDiv)
 		}
 	}
 	tc.prevBestMove = best
@@ -179,10 +227,7 @@ func (tc *TimeControl) RecordIteration(best board.Move, eval int16) {
 // AspirationFailed extends the budget on aspiration window failure — the
 // position is volatile and worth investing more time.
 func (tc *TimeControl) AspirationFailed() {
-	if tc.budget == 0 {
-		return
-	}
-	tc.extend(tc.budget / 2)
+	tc.extend(2)
 }
 
 // IterationStarted records the start of a new depth iteration.
@@ -195,9 +240,13 @@ func (tc *TimeControl) IterationFinished() {
 	tc.lastIterDuration = time.Since(tc.lastIterStart)
 }
 
-func (tc *TimeControl) extend(d time.Duration) {
-	tc.budget += d
-	if tc.budget > tc.maxBudget {
-		tc.budget = tc.maxBudget
+// extend adds budget/div to the budget, capped at maxBudget. A no-op while
+// pondering or without a budget.
+func (tc *TimeControl) extend(div int) {
+	tc.mu.Lock()
+	defer tc.mu.Unlock()
+	if tc.infinite || tc.budget == 0 {
+		return
 	}
+	tc.budget = min(tc.budget+tc.budget/time.Duration(div), tc.maxBudget)
 }
