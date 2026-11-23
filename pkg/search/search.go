@@ -506,7 +506,7 @@ func (e *Engine) IDSearch(depth int, infinite bool) (board.Move, board.Move, boo
 			if eval > CheckmateThreshold || eval < -CheckmateThreshold {
 				e.MateFound = true
 			}
-			if !infinite && e.MateFound {
+			if (!infinite || e.TC.IsPonderHit()) && e.MateFound {
 				done = true
 			}
 		}

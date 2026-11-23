@@ -94,7 +94,8 @@ func NewEngine() *Engine {
 	}
 }
 
-// Returns the best move and best opponent response - ponder.
+// GetMove runs the search under the installed time control. Returns the best
+// move and best opponent response - ponder.
 func (e *Engine) GetMove(depth int, infinite bool) (board.Move, board.Move) {
 	var best, ponder board.Move
 	if e.OwnBook && book.InBook(e.Board) {
@@ -102,7 +103,6 @@ func (e *Engine) GetMove(depth int, infinite bool) (board.Move, board.Move) {
 		return move, 0
 	}
 
-	e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
 	best, ponder, _ = e.IDSearch(depth, infinite)
 
 	return best, ponder

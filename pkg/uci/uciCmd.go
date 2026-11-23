@@ -2,15 +2,16 @@ package uci
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/likeawizard/tofiks/pkg/board"
 	"github.com/likeawizard/tofiks/pkg/book"
 	"github.com/likeawizard/tofiks/pkg/search"
 )
 
+// Exec installs the clock and time control, then runs the search on its own
+// goroutine. The time control exists before that goroutine does, so a stop or
+// ponderhit arriving on the reader can only ever address this search.
 func (c *Go) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
 	if c.isPerft {
 		e.Board.PerftDebug(c.depth)
 		return true
@@ -28,19 +29,26 @@ func (c *Go) Exec(e *search.Engine) bool {
 	if depth == 0 {
 		depth = 50
 	}
-	defer func() { e.TC.Stop() }()
-	move, ponder := e.GetMove(depth, c.infinite)
-	e.ReportMove(move, ponder, e.Ponder)
+	e.TC = e.Clock.NewTimeControl(int(e.Board.FullMoveCounter), e.Board.Side)
+	e.WG.Add(1)
+	go func() {
+		defer e.WG.Done()
+		defer e.TC.Stop()
+		move, ponder := e.GetMove(depth, c.infinite)
+		e.ReportMove(move, ponder, e.Ponder)
+	}()
 
 	return true
 }
 
+// Exec handles stop and ponderhit. Both act on the running search's time
+// control without waiting for it.
 func (c *Stop) Exec(e *search.Engine) bool {
-	// If we scored a ponderhit think for 1/3rd of the normal time unless mate has been already found
-	if c.ponderhit && !e.MateFound {
-		time.Sleep(e.Clock.GetMovetime(int(e.Board.FullMoveCounter), e.Board.Side) / 3)
+	if c.ponderhit {
+		e.TC.PonderHit()
+	} else {
+		e.TC.Abort()
 	}
-	e.TC.Abort()
 	return true
 }
 
@@ -49,19 +57,16 @@ func (c *Quit) Exec(_ *search.Engine) bool {
 }
 
 func (c *Position) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
 	e.Board = board.NewBoard(c.pos)
 	return e.PlayMovesUCI(c.moves)
 }
 
-func (c *IsReady) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
+func (c *IsReady) Exec(_ *search.Engine) bool {
 	fmt.Println("readyok")
 	return true
 }
 
-func (c *UCI) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
+func (c *UCI) Exec(_ *search.Engine) bool {
 	availOpts := []Opt{&Ponder{}, &Hash{}, &Clear{}, &MoveOverhead{}, &OwnBook{}}
 	fmt.Println("id name Tofiks v1.6.0")
 	fmt.Println("id author Arturs Priede")
@@ -73,13 +78,11 @@ func (c *UCI) Exec(e *search.Engine) bool {
 }
 
 func (c *SetOption) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
 	c.option.Set(e)
 	return true
 }
 
 func (c *NewGame) Exec(e *search.Engine) bool {
-	defer e.WG.Done()
 	e.TTable.Clear()
 	e.Eval.PawnTable.Clear()
 	e.KillerMoves = [100][2]board.Move{}
